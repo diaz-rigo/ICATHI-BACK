@@ -24,6 +24,21 @@ const Usuario = {
       throw error;
     }
   },
+  // Listar todos los usuarios
+async listarUsuarios() {
+  const query = `
+    SELECT * FROM usuarios;
+  `;
+
+  try {
+    const result = await pool.query(query);
+    return result.rows; // Retorna la lista de usuarios
+  } catch (error) {
+    console.error('Error al listar usuarios:', error.message);
+    throw error;
+  }
+},
+
 
   // Obtener un usuario por email o username
   async obtenerUsuarioPorEmailOUsername(email, username) {
