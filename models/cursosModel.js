@@ -1,10 +1,6 @@
 const pool = require('../config/database');
 
 const CursosModel = {
-
-
-
-
   async getCursoDetailsById(id) {
     const query = `
       SELECT 
