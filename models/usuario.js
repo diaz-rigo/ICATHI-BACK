@@ -4,6 +4,9 @@ const bcrypt = require('bcrypt');
 const Usuario = {
   // Crear un nuevo usuario
   async cambiarRol(id, nuevoRol) {
+    console.log('ID para actualizar:', id);
+    console.log('Nuevo rol:', nuevoRol);
+  
     const query = `
       UPDATE usuarios
       SET rol = $1, updated_at = now()
@@ -11,7 +14,7 @@ const Usuario = {
       RETURNING *;
     `;
     const values = [nuevoRol, id];
-
+  
     try {
       const result = await pool.query(query, values);
       if (result.rowCount === 0) {
@@ -22,7 +25,8 @@ const Usuario = {
       console.error('Error al cambiar rol:', error.message);
       throw error;
     }
-  },
+  }
+  ,
   async crearUsuario(data) {
     const { nombre, apellidos, email, username, password, rol } = data;
 
