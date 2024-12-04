@@ -3,6 +3,30 @@ const bcrypt = require('bcrypt');
 
 const Usuario = {
   // Crear un nuevo usuario
+  async cambiarRol(id, nuevoRol) {
+    console.log('ID para actualizar:', id);
+    console.log('Nuevo rol:', nuevoRol);
+  
+    const query = `
+      UPDATE usuarios
+      SET rol = $1, updated_at = now()
+      WHERE id = $2
+      RETURNING *;
+    `;
+    const values = [nuevoRol, id];
+  
+    try {
+      const result = await pool.query(query, values);
+      if (result.rowCount === 0) {
+        throw new Error(`No se encontró un usuario con el id ${id}`);
+      }
+      return result.rows[0]; // Retorna el usuario con el rol actualizado
+    } catch (error) {
+      console.error('Error al cambiar rol:', error.message);
+      throw error;
+    }
+  }
+  ,
   async crearUsuario(data) {
     const { nombre, apellidos, email, username, password, rol } = data;
 
@@ -24,6 +48,21 @@ const Usuario = {
       throw error;
     }
   },
+  // Listar todos los usuarios
+async listarUsuarios() {
+  const query = `
+    SELECT * FROM usuarios;
+  `;
+
+  try {
+    const result = await pool.query(query);
+    return result.rows; // Retorna la lista de usuarios
+  } catch (error) {
+    console.error('Error al listar usuarios:', error.message);
+    throw error;
+  }
+},
+
 
   // Obtener un usuario por email o username
   async obtenerUsuarioPorEmailOUsername(email, username) {

@@ -1,9 +1,34 @@
 
 const Usuario = require('../models/usuario');
 
+exports.manejarCambioDeRol = async (req, res) => {
+  const { id } = req.params;
+  const { rol } = req.body;
 
+  console.log('ID recibido:', id); // Verifica que este log muestre un ID válido
+  console.log('Rol recibido:', rol); // Verifica que este log muestre un rol válido
 
+  if (!id || !rol) {
+    return res.status(400).json({ mensaje: 'ID o rol faltante' });
+  }
 
+  try {
+    const usuario = await Usuario.cambiarRol(id, rol); // Llama a tu método de modelo
+    res.status(200).json({ mensaje: 'Rol actualizado correctamente', usuario });
+  } catch (error) {
+    console.error('Error al cambiar rol:', error.message);
+    res.status(500).json({ mensaje: 'Error al actualizar el rol', error: error.message });
+  }
+};
+
+exports.listarUsuarios = async (req, res) => {
+  try {
+    const usuarios = await Usuario.listarUsuarios(); // Llama al modelo para obtener todos los usuarios
+    res.status(200).json({ message: 'Usuarios listados exitosamente', usuarios });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al listar usuarios', error: error.message });
+  }
+};
 exports.crearUsuario = async (req, res) => {
   try {
     const nuevoUsuario = await Usuario.crearUsuario(req.body);
