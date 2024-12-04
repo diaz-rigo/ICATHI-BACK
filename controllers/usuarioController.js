@@ -1,7 +1,23 @@
 
 const Usuario = require('../models/usuario');
 
+exports.manejarCambioDeRol = async (req, res) => {
 
+  const { id, nuevoRol } = req.body;
+
+  try {
+    const usuarioActualizado = await Usuario.cambiarRol(id, nuevoRol);
+    res.status(200).json({
+      mensaje: 'Rol actualizado correctamente',
+      usuario: usuarioActualizado,
+    });
+  } catch (error) {
+    res.status(500).json({
+      mensaje: 'Error al actualizar el rol',
+      error: error.message,
+    });
+  }
+}
 
 exports.listarUsuarios = async (req, res) => {
   try {

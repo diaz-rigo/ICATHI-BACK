@@ -3,6 +3,26 @@ const bcrypt = require('bcrypt');
 
 const Usuario = {
   // Crear un nuevo usuario
+  async cambiarRol(id, nuevoRol) {
+    const query = `
+      UPDATE usuarios
+      SET rol = $1, updated_at = now()
+      WHERE id = $2
+      RETURNING *;
+    `;
+    const values = [nuevoRol, id];
+
+    try {
+      const result = await pool.query(query, values);
+      if (result.rowCount === 0) {
+        throw new Error(`No se encontró un usuario con el id ${id}`);
+      }
+      return result.rows[0]; // Retorna el usuario con el rol actualizado
+    } catch (error) {
+      console.error('Error al cambiar rol:', error.message);
+      throw error;
+    }
+  },
   async crearUsuario(data) {
     const { nombre, apellidos, email, username, password, rol } = data;
 
