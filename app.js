@@ -7,6 +7,11 @@ const usuarioRoutes = require('./routes/usuarioRoutes'); // Asegúrate de que la
 const auth = require('./routes/authRoutes'); // Asegúrate de que la ruta al archivo de rutas sea correcta
 const temariosRouter = require('./routes/temariosRouter');
 const plantelRouter = require('./routes/plantelesRouter');
+const areasRoutes = require('./routes/areasRoutes');
+const especialidadesRoutes = require('./routes/especialidadesRoutes');
+const tipos_curso = require ('./routes/tiposCursoRoutes')
+
+
 
 
 // const pool = require('./config/database'); // Importa el pool de conexión
@@ -37,6 +42,9 @@ app.use('/user', usuarioRoutes); // Asigna el router de cursos
 app.use('/auth', auth); // Asigna el router de cursos
 app.use('/temarios', temariosRouter);
 app.use('/plantel', plantelRouter);
+app.use('/areas', areasRoutes);
+app.use('/especialidades', especialidadesRoutes);
+app.use('/tiposCurso', tipos_curso);
 
 // Middleware para manejar errores de rutas no encontradas
 app.use((req, res, next) => {

@@ -4,37 +4,86 @@ const CursosModel = {
   async getAll() {
     const query = `
       SELECT 
-        id, 
-        nombre, 
-        descripcion, 
-        duracion_horas,
-        nivel -- Incluimos el campo nivel aquí
-      FROM cursos
+        c.id, 
+        c.nombre, 
+        c.clave,
+        c.duracion_horas,
+        c.descripcion, -- Incluimos el campo descripcion
+        c.area_id,
+        a.nombre AS area_nombre,
+        c.especialidad_id,
+        e.nombre AS especialidad_nombre,
+        c.tipo_curso_id,
+        t.nombre AS tipo_curso_nombre,
+        c.vigencia_inicio,
+        c.fecha_publicacion,
+        c.ultima_actualizacion
+      FROM cursos c
+      JOIN areas a ON c.area_id = a.id
+      JOIN especialidades e ON c.especialidad_id = e.id
+      JOIN tipos_curso t ON c.tipo_curso_id = t.id
     `;
     const { rows } = await pool.query(query);
     return rows;
   },
 
   async getById(id) {
-    const query = 'SELECT * FROM cursos WHERE id = \$1';
+    const query = `
+      SELECT 
+        c.id, 
+        c.nombre, 
+        c.clave,
+        c.duracion_horas,
+        c.descripcion, -- Incluimos el campo descripcion
+        c.area_id,
+        a.nombre AS area_nombre,
+        c.especialidad_id,
+        e.nombre AS especialidad_nombre,
+        c.tipo_curso_id,
+        t.nombre AS tipo_curso_nombre,
+        c.vigencia_inicio,
+        c.fecha_publicacion,
+        c.ultima_actualizacion
+      FROM cursos c
+      JOIN areas a ON c.area_id = a.id
+      JOIN especialidades e ON c.especialidad_id = e.id
+      JOIN tipos_curso t ON c.tipo_curso_id = t.id
+      WHERE c.id = \$1
+    `;
     const { rows } = await pool.query(query, [id]);
     return rows[0];
   },
 
   async create(curso) {
     const query = `
-      INSERT INTO cursos (nombre, descripcion, duracion_horas, nivel, costo, requisitos, estatus, usuario_validador_id, fecha_validacion)
-      VALUES (\$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$9) RETURNING *`;
+      INSERT INTO cursos (
+        nombre, 
+        clave, 
+        duracion_horas, 
+        descripcion, 
+        nivel, -- Incluimos el campo nivel
+        area_id, 
+        especialidad_id, 
+        tipo_curso_id, 
+        vigencia_inicio, 
+        fecha_publicacion, 
+        ultima_actualizacion
+      )
+      VALUES (\$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$9, \$10, \$11) 
+      RETURNING *
+    `;
     const values = [
       curso.nombre,
-      curso.descripcion,
+      curso.clave,
       curso.duracion_horas,
-      curso.nivel,
-      curso.costo || 0,
-      curso.requisitos || null,
-      curso.estatus || true,
-      curso.usuario_validador_id || null,
-      curso.fecha_validacion || null,
+      curso.descripcion,
+      curso.nivel || 'Básico', // Valor predeterminado
+      curso.area_id,
+      curso.especialidad_id,
+      curso.tipo_curso_id,
+      curso.vigencia_inicio || null,
+      curso.fecha_publicacion || null,
+      curso.ultima_actualizacion || null,
     ];
     const { rows } = await pool.query(query, values);
     return rows[0];
@@ -43,27 +92,32 @@ const CursosModel = {
   async update(id, curso) {
     const query = `
       UPDATE cursos
-      SET nombre = \$1,
-          descripcion = \$2,
-          duracion_horas = \$3,
-          nivel = \$4,
-          costo = \$5,
-          requisitos = \$6,
-          estatus = \$7,
-          usuario_validador_id = \$8,
-          fecha_validacion = \$9,
-          updated_at = NOW()
-      WHERE id = \$10 RETURNING *`;
+      SET 
+        nombre = \$1,
+        clave = \$2,
+        duracion_horas = \$3,
+        descripcion = \$4, -- Incluimos el campo descripcion
+        area_id = \$5,
+        especialidad_id = \$6,
+        tipo_curso_id = \$7,
+        vigencia_inicio = \$8,
+        fecha_publicacion = \$9,
+        ultima_actualizacion = \$10,
+        updated_at = NOW()
+      WHERE id = \$11
+      RETURNING *
+    `;
     const values = [
       curso.nombre,
-      curso.descripcion,
+      curso.clave,
       curso.duracion_horas,
-      curso.nivel, // Asegúrate de que este campo esté presente
-      curso.costo || 0,
-      curso.requisitos || null,
-      curso.estatus || true,
-      curso.usuario_validador_id || null,
-      curso.fecha_validacion || null,
+      curso.descripcion, // Aseguramos que este valor no sea null
+      curso.area_id,
+      curso.especialidad_id,
+      curso.tipo_curso_id,
+      curso.vigencia_inicio || null,
+      curso.fecha_publicacion || null,
+      curso.ultima_actualizacion || null,
       id,
     ];
     const { rows } = await pool.query(query, values);
