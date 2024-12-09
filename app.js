@@ -10,6 +10,8 @@ const plantelRouter = require('./routes/plantelesRouter');
 const areasRoutes = require('./routes/areasRoutes');
 const especialidadesRoutes = require('./routes/especialidadesRoutes');
 const tipos_curso = require ('./routes/tiposCursoRoutes')
+const docentes = require ('./routes/docentes')
+
 const correoRoutes = require ('./routes/correoRouter')
 // const correoRoutes = require('./'); // Ruta correcta al archivo de rutas
 
@@ -46,6 +48,7 @@ app.use('/plantel', plantelRouter);
 app.use('/areas', areasRoutes);
 app.use('/especialidades', especialidadesRoutes);
 app.use('/tiposCurso', tipos_curso);
+app.use('/docentes', docentes)
 app.use('/enviar-correo', correoRoutes);
 
 // Middleware para manejar errores de rutas no encontradas
