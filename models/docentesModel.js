@@ -1,6 +1,9 @@
 const pool = require('../config/database');
 
 const DocentesModel = {
+
+
+
   async getAll() {
     const query = `
       SELECT 

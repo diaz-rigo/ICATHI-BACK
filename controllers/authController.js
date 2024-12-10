@@ -1,9 +1,9 @@
 require('dotenv').config();
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const pool = require('../config/database'); // Tu configuración del pool de PostgreSQL
+const { generateAuthToken } = require('../config/authUtils'); // Ajusta la ruta según tu estructura
 
-const MAX_LOGIN_ATTEMPTS = 5;
+// const MAX_LOGIN_ATTEMPTS = 5;
 
 exports.signIn = async (req, res) => {
   const { email, password } = req.body;
@@ -32,6 +32,8 @@ exports.signIn = async (req, res) => {
     if (passwordMatch) {
       // Generar el token
       const token = generateAuthToken(user);
+
+      // const token = generateAuthToken(user);
       return res.status(200).json({ 
         message: 'Inicio de sesión exitoso',
         token 
@@ -45,19 +47,3 @@ exports.signIn = async (req, res) => {
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
-
-// Función para generar el token de autenticación
-function generateAuthToken(user) {
-  const payload = {
-    id: user.id,
-    email: user.email,
-    nombre: user.nombre,
-    apellidos: user.apellidos,
-    rol: user.rol, // Rol del usuario incluido en el token
-  };
-
-  const secretKey = process.env.JWT_KEY || 'clave_secreta'; // Define tu clave secreta en el .env
-  const expiresIn = '5h'; // El tiempo de expiración del token
-
-  return jwt.sign(payload, secretKey, { expiresIn });
-}

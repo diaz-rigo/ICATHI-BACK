@@ -1,12 +1,57 @@
 const pool = require('../config/database'); // Importa la configuración del pool de conexiones
 const bcrypt = require('bcrypt');
+const { generateAuthToken } = require('../config/authUtils'); // Importa la función para generar el token
 
 const Usuario = {
-  // Crear un nuevo usuario
+
+
+
+
+
+
+  async insertarUsuario(nombre, apellidos, email, telefono, rol, estatus,username,passwordHash) {
+
+    const query = `
+    INSERT INTO usuarios (nombre, apellidos, email, telefono, rol, estatus,username,password_hash)
+    VALUES ($1, $2, $3, $4, $5, $6,$7,$8)
+    RETURNING id;
+  `;
+    const { rows } = await pool.query(query, [nombre, apellidos, email, telefono, rol, estatus, username,passwordHash]);
+    return rows[0].id;
+  },
+  async insertarTokenValidacion(id, token) {
+    const query = `
+    INSERT INTO validaciones_email (usuario_id, token)
+    VALUES ($1, $2);
+  `;
+    await pool.query(query, [id, token]);
+
+  },
+  async generarToken(id, nuevoRol) {
+    // Consulta para obtener los datos del usuario
+    const query = `SELECT id, email, nombre, apellidos FROM usuarios WHERE id = $1`;
+    const { rows } = await pool.query(query, [id]);
+
+    const usuario = rows[0];
+
+    if (!usuario) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    // Agregar el nuevo rol al usuario
+    usuario.rol = nuevoRol;
+
+    // Generar el token con la función importada
+    const token = generateAuthToken(usuario);
+
+    return token; // Devolver el token generado
+  },
+
+
   async cambiarRol(id, nuevoRol) {
     console.log('ID para actualizar:', id);
     console.log('Nuevo rol:', nuevoRol);
-  
+
     const query = `
       UPDATE usuarios
       SET rol = $1, updated_at = now()
@@ -14,7 +59,7 @@ const Usuario = {
       RETURNING *;
     `;
     const values = [nuevoRol, id];
-  
+
     try {
       const result = await pool.query(query, values);
       if (result.rowCount === 0) {
@@ -26,6 +71,10 @@ const Usuario = {
       throw error;
     }
   }
+
+
+
+
   ,
   async crearUsuario(data) {
     const { nombre, apellidos, email, username, password, rol } = data;
@@ -49,19 +98,19 @@ const Usuario = {
     }
   },
   // Listar todos los usuarios
-async listarUsuarios() {
-  const query = `
+  async listarUsuarios() {
+    const query = `
     SELECT * FROM usuarios;
   `;
 
-  try {
-    const result = await pool.query(query);
-    return result.rows; // Retorna la lista de usuarios
-  } catch (error) {
-    console.error('Error al listar usuarios:', error.message);
-    throw error;
-  }
-},
+    try {
+      const result = await pool.query(query);
+      return result.rows; // Retorna la lista de usuarios
+    } catch (error) {
+      console.error('Error al listar usuarios:', error.message);
+      throw error;
+    }
+  },
 
 
   // Obtener un usuario por email o username

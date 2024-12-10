@@ -1,6 +1,6 @@
 
-const Usuario = require('../models/usuario');
 
+const Usuario = require('../models/usuario');
 exports.manejarCambioDeRol = async (req, res) => {
   const { id } = req.params;
   const { rol } = req.body;
