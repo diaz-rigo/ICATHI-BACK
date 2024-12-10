@@ -53,8 +53,8 @@ VALUES ($1, $2, $3, $4, $5) RETURNING id;
     await Usuario.insertarTokenValidacion(userId, token);
 
     // Crear el enlace de validación con el token
-    // const validationLink = `https://icathi.vercel.app/public/validar-correo?token=${token}`;
-    const validationLink = `http://localhost:4200/public/validar-correo?token=${token}`;
+    const validationLink = `https://icathi.vercel.app/public/validar-correo?token=${token}`;
+    // const validationLink = `http://localhost:4200/public/validar-correo?token=${token}`;
 
     const mailOptions = {
       from: '"ICATHI" <icathi.edu@gmail.com>',
