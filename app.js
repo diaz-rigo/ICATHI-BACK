@@ -43,6 +43,7 @@ app.use('/auth', auth); // Asigna el router de cursos
 app.use('/temarios', temariosRouter);
 app.use('/plantel', plantelRouter);
 app.use('/areas', areasRoutes);
+app.use('/docente', areasRoutes);
 app.use('/especialidades', especialidadesRoutes);
 app.use('/tiposCurso', tipos_curso);
 

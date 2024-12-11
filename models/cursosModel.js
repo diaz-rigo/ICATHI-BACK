@@ -14,6 +14,7 @@ const CursosModel = {
         c.especialidad_id,
         e.nombre AS especialidad_nombre,
         c.tipo_curso_id,
+        c.estatus,
         t.nombre AS tipo_curso_nombre,
         c.vigencia_inicio,
         c.fecha_publicacion,

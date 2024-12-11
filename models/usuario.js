@@ -1,5 +1,9 @@
 const pool = require('../config/database'); // Importa la configuración del pool de conexiones
 const bcrypt = require('bcrypt');
+const CryptoJS = require('crypto-js');
+const fs = require('fs');
+
+// const publicKey = fs.readFileSync('./keys/public.pem', 'utf8');
 
 const Usuario = {
   // Crear un nuevo usuario
@@ -27,27 +31,33 @@ const Usuario = {
     }
   }
   ,
-  async crearUsuario(data) {
-    const { nombre, apellidos, email, username, password, rol } = data;
 
-    // Cifrar la contraseña
-    const passwordHash = await bcrypt.hash(password, 10);
 
-    const query = `
-      INSERT INTO usuarios (nombre, apellidos, email, username, password_hash, rol, estatus)
-      VALUES ($1, $2, $3, $4, $5, $6, true)
-      RETURNING *;
-    `;
-    const values = [nombre, apellidos, email, username, passwordHash, rol];
+async crearUsuario(data) {
+  const { nombre, apellidos, email, username, password, rol } = data;
 
-    try {
-      const result = await pool.query(query, values);
-      return result.rows[0]; // Retorna el usuario creado
-    } catch (error) {
-      console.error('Error al crear usuario:', error.message);
-      throw error;
-    }
-  },
+  // Leer la clave pública desde un archivo
+  const publicKey = fs.readFileSync('certs/localhost+2.pem', 'utf8');
+
+  // Cifrar la contraseña usando la clave pública
+  const encryptedPassword = CryptoJS.AES.encrypt(password, publicKey).toString();
+
+  const query = `
+    INSERT INTO usuarios (nombre, apellidos, email, username, password_hash, rol, estatus)
+    VALUES ($1, $2, $3, $4, $5, $6, true)
+    RETURNING *;
+  `;
+  const values = [nombre, apellidos, email, username, encryptedPassword, rol];
+
+  try {
+    const result = await pool.query(query, values);
+    return result.rows[0]; // Retorna el usuario creado
+  } catch (error) {
+    console.error('Error al crear usuario:', error.message);
+    throw error;
+  }
+}
+,
   // Listar todos los usuarios
 async listarUsuarios() {
   const query = `
