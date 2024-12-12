@@ -1,3 +1,4 @@
+
 const CursosModel = require('../models/cursosModel');
 
 exports.getAll = async (req, res) => {
@@ -79,3 +80,5 @@ exports.delete = async (req, res) => {
     res.status(500).json({ error: 'Error al eliminar el curso' }); // Devuelve un error 500
   }
 };
+
+
