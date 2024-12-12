@@ -15,8 +15,8 @@ const docentes = require ('./routes/docentes')
 const correoRoutes = require ('./routes/correoRouter')
 const postulacion = require ('./routes/postulacionRouter')
 const alumno = require ('./routes/alumnoRouter')
-const aspirante= require ('./routes/registrosAspirantesRouter')
 
+const aspirante= require ('./routes/registrosAspirantesRouter')
 
 // const pool = require('./config/database'); // Importa el pool de conexión
 
@@ -53,8 +53,8 @@ app.use('/docentes', docentes)
 app.use('/enviar-correo', correoRoutes);
 app.use('/postulacion', postulacion);
 app.use('/alumno', alumno);
-app.use('/aspirante', aspirante);
 
+app.use('/aspirante', aspirante);
 // Middleware para manejar errores de rutas no encontradas
 app.use((req, res, next) => {
   const error = new Error('Recurso no encontrado');
