@@ -1,6 +1,31 @@
 const pool = require('../config/database');
 
 const AlumnoModel = {
+  // async Registro() {
+  //    async crearUsuario(data) {
+  //     const passwordHash = await bcrypt.hash(data.curp, 10);
+  //     const usuarioResult = await pool.query(`
+  //         INSERT INTO usuarios (nombre, apellidos, email, telefono, username, password_hash, rol)
+  //         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id
+  //     `, [data.name, '', data.email, data.telefono, data.curp, passwordHash, 'aspirante']);
+  //     return usuarioResult.rows[0].id;
+  // }
+
+  //  async crearAlumno(data, usuarioId) {
+  //     const alumnoResult = await pool.query(`
+  //         INSERT INTO alumnos (nombre, apellidos, email, telefono, fecha_nacimiento, genero, documento_identificacion, num_documento_identificacion, nivel_escolaridad, direccion)
+  //         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id
+  //     `, [data.name, '', data.email, data.telefono, 'fecha_nacimiento', 'genero', data.curp, data.curp, 'nivel_escolaridad', 'direccion']);
+  //     return alumnoResult.rows[0].id;
+  // }
+
+  //  async inscribirCurso(alumnoId, cursoId, plantelId) {
+  //     await pool.query(`
+  //         INSERT INTO alumnos_cursos (alumno_id, curso_id, plantel_id)
+  //         VALUES ($1, $2, $3)
+  //     `, [alumnoId, cursoId, plantelId]);
+  // }
+  // },
   async getAll() {
     try {
       const query = 'SELECT * FROM alumnos';
