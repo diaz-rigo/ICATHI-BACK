@@ -10,7 +10,14 @@ const plantelRouter = require('./routes/plantelesRouter');
 const areasRoutes = require('./routes/areasRoutes');
 const especialidadesRoutes = require('./routes/especialidadesRoutes');
 const tipos_curso = require ('./routes/tiposCursoRoutes')
+const docentes = require ('./routes/docentes')
+const plantelesRouter = require ('./routes/planteles_cursosRoutes')
+const plantelesCursosRouter = require ('./routes/planteles_cursosRoutes')
+const cursosDocente = require ('./routes/cursosDocente.Router')
 
+const correoRoutes = require ('./routes/correoRouter')
+const postulacion = require ('./routes/postulacionRouter')
+// const correoRoutes = require('./'); // Ruta correcta al archivo de rutas
 
 
 
@@ -43,10 +50,14 @@ app.use('/auth', auth); // Asigna el router de cursos
 app.use('/temarios', temariosRouter);
 app.use('/plantel', plantelRouter);
 app.use('/areas', areasRoutes);
-app.use('/docente', areasRoutes);
 app.use('/especialidades', especialidadesRoutes);
 app.use('/tiposCurso', tipos_curso);
-
+app.use('/docentes', docentes)
+app.use('/enviar-correo', correoRoutes);
+app.use('/postulacion', postulacion);
+app.use('/planteles-curso', plantelesCursosRouter);
+app.use('/curso-docente', cursosDocente);
+app.use('/planteles', plantelesRouter);
 // Middleware para manejar errores de rutas no encontradas
 app.use((req, res, next) => {
   const error = new Error('Recurso no encontrado');
