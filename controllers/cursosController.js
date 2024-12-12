@@ -79,3 +79,45 @@ exports.delete = async (req, res) => {
     res.status(500).json({ error: 'Error al eliminar el curso' }); // Devuelve un error 500
   }
 };
+
+  // Nuevo método para actualizar el campo 'validado' de un curso  
+  exports.updateValidado = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { validado } = req.body;
+
+      // Validar que 'validado' sea booleano  
+      if (typeof validado !== 'boolean') {
+        return res.status(400).json({ error: 'El campo "validado" es obligatorio y debe ser booleano' });
+      }
+
+      const cursoActualizado = await CursosModel.updateValidado(id, validado);
+      if (!cursoActualizado) {
+        return res.status(404).json({ error: 'Curso no encontrado' });
+      }
+      res.status(200).json(cursoActualizado);
+    } catch (error) {
+      console.error('Error al actualizar el estado validado del curso:', error);
+      res.status(500).json({ error: 'Error al actualizar el estado validado del curso' });
+    }
+    exports.updateValidado = async (req, res) => {  
+        try {  
+          const { id } = req.params;  
+          const { validado } = req.body;  
+      
+          // Validar que 'validado' sea booleano  
+          if (typeof validado !== 'boolean') {  
+            return res.status(400).json({ error: 'El campo "validado" es obligatorio y debe ser booleano' });  
+          }  
+      
+          const cursoActualizado = await CursosModel.updateValidado(id, validado);  
+          if (!cursoActualizado) {  
+            return res.status(404).json({ error: 'Curso no encontrado' });  
+          }  
+          res.status(200).json(cursoActualizado);  
+        } catch (error) {  
+          console.error('Error al actualizar el estado validado del curso:', error);  
+          res.status(500).json({ error: 'Error al actualizar el estado validado del curso' });  
+        }  
+      };  
+  };

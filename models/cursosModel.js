@@ -128,7 +128,22 @@ const CursosModel = {
     const query = 'DELETE FROM cursos WHERE id = \$1 RETURNING *'; // Consulta para eliminar el curso
     const { rows } = await pool.query(query, [id]); // Ejecuta la consulta con el ID
     return rows[0]; // Devuelve el curso eliminado
-  }
+  },
+
+  async updateStatus(id, estatus, observaciones = '') {  
+    const query = `  
+      UPDATE cursos  
+      SET   
+        estatus = \$1,  
+        observaciones = \$2,  
+        updated_at = NOW()  
+      WHERE id = \$3  
+      RETURNING *  
+    `;  
+    const values = [estatus, observaciones, id];  
+    const { rows } = await pool.query(query, values);  
+    return rows[0];  
+  },
 };
 
 module.exports = CursosModel;
