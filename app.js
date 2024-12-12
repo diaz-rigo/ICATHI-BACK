@@ -14,6 +14,7 @@ const docentes = require ('./routes/docentes')
 
 const correoRoutes = require ('./routes/correoRouter')
 const postulacion = require ('./routes/postulacionRouter')
+const alumno = require ('./routes/alumnoRouter')
 // const correoRoutes = require('./'); // Ruta correcta al archivo de rutas
 
 
@@ -52,6 +53,7 @@ app.use('/tiposCurso', tipos_curso);
 app.use('/docentes', docentes)
 app.use('/enviar-correo', correoRoutes);
 app.use('/postulacion', postulacion);
+app.use('/alumno', alumno);
 
 // Middleware para manejar errores de rutas no encontradas
 app.use((req, res, next) => {
