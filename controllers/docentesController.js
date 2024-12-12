@@ -1,5 +1,27 @@
 const DocentesModel = require('../models/docentesModel');
 
+exports.getDocentesByUserId = async (req, res) => {
+// async getDocentesByUserId(req, res) {
+  const { userId } = req.params;
+
+  if (!userId) {
+    return res.status(400).json({ error: 'El ID del usuario es requerido.' });
+  }
+
+  try {
+    const docentes = await DocentesModel.getByUserId(userId);
+
+    if (docentes.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron docentes para este usuario.' });
+    }
+
+    return res.status(200).json(docentes);
+  } catch (error) {
+    console.error('Error en el controlador al obtener docentes:', error);
+    return res.status(500).json({ error: 'Error al obtener docentes.' });
+  }
+}
+
 exports.getAll = async (req, res) => {
   try {
     const docentes = await DocentesModel.getAll();

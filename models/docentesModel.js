@@ -2,7 +2,24 @@ const pool = require('../config/database');
 
 const DocentesModel = {
 
-
+  async getByUserId(userId) {
+    try {
+      const query = `
+        SELECT 
+          id, nombre, apellidos, email, telefono, especialidad, certificado_profesional,
+          cedula_profesional, documento_identificacion, num_documento_identificacion,
+          curriculum_url, estatus, created_at, updated_at, usuario_validador_id,
+          fecha_validacion, foto_url, rol
+        FROM docentes
+        WHERE id_usuario = $1
+      `;
+      const result = await pool.query(query, [userId]);
+      return result.rows; // Retorna todos los registros asociados al ID del usuario
+    } catch (error) {
+      console.error('Error al obtener los docentes por ID del usuario:', error);
+      throw error;
+    }
+  },
 
   async getAll() {
     const query = `
