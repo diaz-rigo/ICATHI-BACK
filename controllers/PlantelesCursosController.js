@@ -46,6 +46,7 @@ module.exports = {
     }
   },
 
+  
   async obtenerSolicitudes(req, res) {
     try {
       const solicitudes = await PlantelesCursosModel.obtenerSolicitudes();
