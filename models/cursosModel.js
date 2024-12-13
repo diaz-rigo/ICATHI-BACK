@@ -1,33 +1,32 @@
 const pool = require('../config/database');  
 
-const CursosModel = {  
-  async getAll() {  
-    const query = `  
-      SELECT   
-        c.id,   
-        c.nombre,   
-        c.clave,  
-        c.duracion_horas,  
-        c.descripcion,  
-        c.area_id,  
-        a.nombre AS area_nombre,  
-        c.especialidad_id,  
-        e.nombre AS especialidad_nombre,  
-        c.tipo_curso_id,  
-        t.nombre AS tipo_curso_nombre,  
-        c.vigencia_inicio,  
-        c.fecha_publicacion,  
-        c.ultima_actualizacion  
-        c.estatus  -- Asegúrate de incluir este campo  
-
-      FROM cursos c  
-      JOIN areas a ON c.area_id = a.id  
-      JOIN especialidades e ON c.especialidad_id = e.id  
-      JOIN tipos_curso t ON c.tipo_curso_id = t.id  
-    `;  
-    const { rows } = await pool.query(query);  
-    return rows;  
-  },  
+const CursosModel = {
+  async getAll() {
+    const query = `
+      SELECT 
+        c.id, 
+        c.nombre, 
+        c.clave,
+        c.duracion_horas,
+        c.descripcion, -- Incluimos el campo descripcion
+        c.area_id,
+        a.nombre AS area_nombre,
+        c.especialidad_id,
+        e.nombre AS especialidad_nombre,
+        c.tipo_curso_id,
+        c.estatus,
+        t.nombre AS tipo_curso_nombre,
+        c.vigencia_inicio,
+        c.fecha_publicacion,
+        c.ultima_actualizacion
+      FROM cursos c
+      JOIN areas a ON c.area_id = a.id
+      JOIN especialidades e ON c.especialidad_id = e.id
+      JOIN tipos_curso t ON c.tipo_curso_id = t.id
+    `;
+    const { rows } = await pool.query(query);
+    return rows;
+  },
 
   async getById(id) {  
     const query = `  

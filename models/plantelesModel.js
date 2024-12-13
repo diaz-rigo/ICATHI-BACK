@@ -1,3 +1,4 @@
+const bcrypt = require('bcrypt');
 const pool = require('../config/database');
 
 const PlantelesModel = {
@@ -14,12 +15,19 @@ const PlantelesModel = {
   },
 
   async create(plantel) {
+    const saltRounds = 10;
+
+    // Generar hash de la contraseña si se proporciona
+    const hashedPassword = plantel.password
+      ? await bcrypt.hash(plantel.password, saltRounds)
+      : null;
+
     const query = `
       INSERT INTO planteles (
         nombre, direccion, telefono, email, director, capacidad_alumnos, 
-        estatus, usuario_gestor_id, estado, municipio
+        estatus, usuario_gestor_id, estado, municipio, password
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`;
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`;
     const values = [
       plantel.nombre,
       plantel.direccion,
@@ -31,12 +39,20 @@ const PlantelesModel = {
       plantel.usuario_gestor_id || null,
       plantel.estado,
       plantel.municipio,
+      hashedPassword, // Aquí pasa el hash directamente como contraseña
     ];
     const { rows } = await pool.query(query, values);
     return rows[0];
   },
 
   async update(id, plantel) {
+    const saltRounds = 10;
+
+    // Generar hash de la nueva contraseña si se proporciona
+    const hashedPassword = plantel.password
+      ? await bcrypt.hash(plantel.password, saltRounds)
+      : null;
+
     const query = `
       UPDATE planteles
       SET nombre = $1,
@@ -49,8 +65,9 @@ const PlantelesModel = {
           usuario_gestor_id = $8,
           estado = $9,
           municipio = $10,
+          password = COALESCE($11, password),
           updated_at = NOW()
-      WHERE id = $11 RETURNING *`;
+      WHERE id = $12 RETURNING *`;
     const values = [
       plantel.nombre,
       plantel.direccion,
@@ -62,6 +79,7 @@ const PlantelesModel = {
       plantel.usuario_gestor_id || null,
       plantel.estado,
       plantel.municipio,
+      hashedPassword, // Aquí también pasa el hash directamente
       id,
     ];
     const { rows } = await pool.query(query, values);

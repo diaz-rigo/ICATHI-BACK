@@ -1,13 +1,15 @@
 const pool = require('../config/database'); // Importa la configuración del pool de conexiones
 const bcrypt = require('bcrypt');
+// <<<<<<< HEAD
+// const CryptoJS = require('crypto-js');
+// const fs = require('fs');
+
+// const publicKey = fs.readFileSync('./keys/public.pem', 'utf8');
+// =======
 const { generateAuthToken } = require('../config/authUtils'); // Importa la función para generar el token
+// >>>>>>> padilla
 
 const Usuario = {
-
-
-
-
-
 
   async insertarUsuario(nombre, apellidos, email, telefono, rol, estatus,username,passwordHash) {
 
@@ -72,23 +74,21 @@ const Usuario = {
     }
   }
 
-
-
-
   ,
   async crearUsuario(data) {
     const { nombre, apellidos, email, username, password, rol } = data;
-
-    // Cifrar la contraseña
-    const passwordHash = await bcrypt.hash(password, 10);
-
+  
+    // Generar el hash de la contraseña usando bcrypt
+    const saltRounds = 10; // Número de rondas de salt
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+  
     const query = `
       INSERT INTO usuarios (nombre, apellidos, email, username, password_hash, rol, estatus)
       VALUES ($1, $2, $3, $4, $5, $6, true)
       RETURNING *;
     `;
-    const values = [nombre, apellidos, email, username, passwordHash, rol];
-
+    const values = [nombre, apellidos, email, username, hashedPassword, rol];
+  
     try {
       const result = await pool.query(query, values);
       return result.rows[0]; // Retorna el usuario creado
@@ -96,7 +96,9 @@ const Usuario = {
       console.error('Error al crear usuario:', error.message);
       throw error;
     }
-  },
+  }
+  
+,
   // Listar todos los usuarios
   async listarUsuarios() {
     const query = `

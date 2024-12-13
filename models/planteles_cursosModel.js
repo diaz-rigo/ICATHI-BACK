@@ -1,16 +1,71 @@
-// Modelo para planteles_cursos con consultas directas a la base de datos
 const pool = require('../config/database');
 
 const PlantelesCursos = {
+  
+   async solicitaCurso (req, res)  {
+    try {
+      console.log('Datos recibidos del frontend:', req.body);
+  
+      // Extraer campos del cuerpo de la solicitud
+      const {
+        nombre,
+        clave,
+        duracion_horas,
+        descripcion,
+        area_id,
+        especialidad_id,
+        tipo_curso_id,
+        plantel_id
+      } = req.body;
+  
+      // Validar campos obligatorios
+      if (!nombre || !clave || !duracion_horas || !descripcion || !area_id || !especialidad_id || !tipo_curso_id || !plantel_id) {
+        return res.status(400).json({ error: 'Todos los campos obligatorios deben ser completados' });
+      }
+  
+      // Crear el curso en la base de datos
+      const nuevoCurso = await CursosModel.create({
+        nombre,
+        clave,
+        duracion_horas,
+        descripcion,
+        area_id,
+        especialidad_id,
+        tipo_curso_id
+      });
+  
+      // Crear la relación curso-plantel
+      const nuevaRelacionPlantelCurso = await PlantelesCursos.registrarSolicitud({
+        curso_id: nuevoCurso.id,  // Asumiendo que el ID del curso se devuelve después de la inserción
+        plantel_id
+      });
+  
+      // Confirmar operación
+      res.status(201).json({
+        mensaje: 'Curso creado con éxito y relación con el plantel registrada',
+        curso_id: nuevoCurso.id,
+        plantelcurso_id: nuevaRelacionPlantelCurso.id
+      });
+    } catch (error) {
+      console.error('Error al crear el curso o la relación:', error);
+      res.status(500).json({ error: 'Error al crear el curso o la relación con el plantel' });
+    }
+  }
+,  
+  
+  
+  
+  
+  
   async registrarSolicitud(data) {
     const {
       plantel_id,
       curso_id,
-      horario,
+      horario = '',
       cupo_maximo,
-      requisitos_extra,
-      fecha_inicio,
-      fecha_fin
+      requisitos_extra = '',
+      fecha_inicio = null,
+      fecha_fin = null
     } = data;
 
     const query = `
@@ -41,7 +96,31 @@ const PlantelesCursos = {
     const values = [estatus, observacion, id];
     const { rows } = await pool.query(query, values);
     return rows[0];
-  }
+  },
+
+  async obtenerCursosPorPlantel(plantelId) {
+    try {
+        const query = `
+            SELECT c.*, 
+                   (SELECT COUNT(*) 
+                    FROM cursos_docentes cd 
+                    WHERE cd.curso_id = c.id) AS docente_asignado
+            FROM cursos c
+            INNER JOIN planteles_cursos pc ON c.id = pc.curso_id
+            INNER JOIN planteles p ON pc.plantel_id = p.id
+            WHERE p.id = $1;
+        `;
+
+        const values = [plantelId];
+        const { rows } = await pool.query(query, values);
+        
+        return rows; // Retorna todos los cursos encontrados con la información del docente asignado
+    } catch (error) {
+        console.error('Error al obtener cursos por plantel:', error);
+        throw error; // Lanza el error para manejarlo en el nivel superior
+    }
+}
+
 };
 
 module.exports = PlantelesCursos;

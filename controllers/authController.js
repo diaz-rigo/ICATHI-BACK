@@ -1,22 +1,37 @@
 require('dotenv').config();
 const bcrypt = require('bcrypt');
-const pool = require('../config/database'); // Tu configuración del pool de PostgreSQL
+const pool = require('../config/database'); // Configuración del pool de PostgreSQL
 const { generateAuthToken } = require('../config/authUtils'); // Ajusta la ruta según tu estructura
-
-// const MAX_LOGIN_ATTEMPTS = 5;
 
 exports.signIn = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // Buscar el usuario en la base de datos
-    const query = `SELECT * FROM usuarios WHERE email = $1;`;
-    const values = [email];
-    const result = await pool.query(query, values);
+    // Buscar en la tabla usuarios
+    let query = `SELECT * FROM usuarios WHERE email = $1;`;
+    let values = [email];
+    let result = await pool.query(query, values);
 
-    const user = result.rows[0];
+    let user = result.rows[0];
+    let userType = 'usuario';
 
-    // Verificar si el usuario existe
+    // Si no se encuentra en usuarios, buscar en planteles
+    if (!user) {
+      query = `SELECT * FROM planteles WHERE email = $1;`;
+      result = await pool.query(query, values);
+      user = result.rows[0];
+      userType = 'PLANTEL';
+    }
+
+    // Si no se encuentra en planteles, buscar en docentes
+    if (!user) {
+      query = `SELECT * FROM docentes WHERE email = $1;`;
+      result = await pool.query(query, values);
+      user = result.rows[0];
+      userType ='DOCENTE';
+    }
+
+    // Si no se encuentra en ninguna tabla
     if (!user) {
       return res.status(404).json({ message: `El correo ${email} no está registrado` });
     }
@@ -27,19 +42,19 @@ exports.signIn = async (req, res) => {
     }
 
     // Comparar la contraseña
-    const passwordMatch = await bcrypt.compare(password, user.password_hash);
+    const passwordHashField = userType === 'usuario' ? 'password_hash' : 'password';
+    const passwordMatch = await bcrypt.compare(password, user[passwordHashField]);
 
     if (passwordMatch) {
       // Generar el token
-      const token = generateAuthToken(user);
+      const token = generateAuthToken({ ...user, userType });
 
-      // const token = generateAuthToken(user);
       return res.status(200).json({ 
         message: 'Inicio de sesión exitoso',
         token 
       });
     } else {
-      // Aquí podrías implementar un sistema de intentos fallidos
+      // Contraseña incorrecta
       return res.status(401).json({ message: 'Credenciales inválidas. Inténtalo de nuevo.' });
     }
   } catch (error) {

@@ -2,6 +2,27 @@
 const PlantelesCursosModel = require('../models/planteles_cursosModel');
 
 module.exports = {
+
+
+
+
+  async getByIdPlantel (req, res) {
+    try {
+      const { idPlantel } = req.params;
+  
+      // Realiza el INNER JOIN para obtener los cursos del plantel
+      const cursos = await PlantelesCursosModel.obtenerCursosPorPlantel(idPlantel);
+  
+      if (!cursos.length) {
+        return res.status(404).json({ error: 'No se encontraron cursos para este plantel' });
+      }
+  
+      res.status(200).json(cursos);
+    } catch (error) {
+      console.error('Error al obtener los cursos:', error);
+      res.status(500).json({ error: 'Error al obtener los cursos' });
+    }
+  },
   async registrarSolicitud(req, res) {
     try {
       const nuevaSolicitud = await PlantelesCursosModel.registrarSolicitud(req.body);
@@ -17,7 +38,6 @@ module.exports = {
       });
     }
   },
-
   async obtenerSolicitudes(req, res) {
     try {
       const solicitudes = await PlantelesCursosModel.obtenerSolicitudes();
@@ -30,7 +50,6 @@ module.exports = {
       });
     }
   },
-
   async actualizarEstatus(req, res) {
     try {
       const { id } = req.params;

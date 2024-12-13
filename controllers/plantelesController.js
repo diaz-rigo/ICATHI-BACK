@@ -33,6 +33,7 @@ exports.create = async (req, res) => {
 
 exports.update = async (req, res) => {
   try {
+    console.log("data=>",req.body)
     const { id } = req.params;
     const plantelActualizado = await PlantelesModel.update(id, req.body);
     if (!plantelActualizado) {
