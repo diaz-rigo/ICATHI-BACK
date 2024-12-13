@@ -23,13 +23,6 @@ module.exports = {
       res.status(500).json({ error: 'Error al obtener los cursos' });
     }
   },
-
-
-
-
-
-
-
   async registrarSolicitud(req, res) {
     try {
       const nuevaSolicitud = await PlantelesCursosModel.registrarSolicitud(req.body);
@@ -45,8 +38,6 @@ module.exports = {
       });
     }
   },
-
-  
   async obtenerSolicitudes(req, res) {
     try {
       const solicitudes = await PlantelesCursosModel.obtenerSolicitudes();
@@ -59,7 +50,6 @@ module.exports = {
       });
     }
   },
-
   async actualizarEstatus(req, res) {
     try {
       const { id } = req.params;
