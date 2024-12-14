@@ -10,6 +10,8 @@ const AreasController = {
       res.status(500).json({ error: 'Error al obtener las áreas' });
     }
   },
+
+  
 };
 
 module.exports = AreasController;

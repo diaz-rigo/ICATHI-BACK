@@ -5,4 +5,9 @@ const EspecialidadesController = require('../controllers/especialidadesControlle
 // Ruta para obtener todas las especialidades
 router.get('/', EspecialidadesController.getAll);
 
+
+// Enpoint que extrae las especialidades por el area seleccionada
+router.get('/byAreaId/:areaId', EspecialidadesController.getEspecialidadesByAreaId);
+
+
 module.exports = router;

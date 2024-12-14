@@ -14,6 +14,7 @@ const docentes = require ('./routes/docentes')
 const plantelesRouter = require ('./routes/planteles_cursosRoutes')
 const plantelesCursosRouter = require ('./routes/planteles_cursosRoutes')
 const cursosDocente = require ('./routes/cursosDocente.Router')
+const alumnosPlantelCursosRouter = require ('./routes/alumnosPlantelCursos.Router')
 
 const correoRoutes = require ('./routes/correoRouter')
 const postulacion = require ('./routes/postulacionRouter')
@@ -60,6 +61,8 @@ app.use('/planteles-curso', plantelesCursosRouter);
 app.use('/curso-docente', cursosDocente);
 app.use('/planteles', plantelesRouter);
 app.use('/aspirante', aspirante);
+app.use('/alumnosPlantelCursos', alumnosPlantelCursosRouter);
+
 // Middleware para manejar errores de rutas no encontradas
 app.use((req, res, next) => {
   const error = new Error('Recurso no encontrado');

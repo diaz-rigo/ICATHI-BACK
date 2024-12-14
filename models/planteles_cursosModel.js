@@ -1,11 +1,10 @@
-const pool = require('../config/database');
+const pool = require("../config/database");
 
 const PlantelesCursos = {
-  
-   async solicitaCurso (req, res)  {
+  async solicitaCurso(req, res) {
     try {
-      console.log('Datos recibidos del frontend:', req.body);
-  
+      console.log("Datos recibidos del frontend:", req.body);
+
       // Extraer campos del cuerpo de la solicitud
       const {
         nombre,
@@ -15,14 +14,25 @@ const PlantelesCursos = {
         area_id,
         especialidad_id,
         tipo_curso_id,
-        plantel_id
+        plantel_id,
       } = req.body;
-  
+
       // Validar campos obligatorios
-      if (!nombre || !clave || !duracion_horas || !descripcion || !area_id || !especialidad_id || !tipo_curso_id || !plantel_id) {
-        return res.status(400).json({ error: 'Todos los campos obligatorios deben ser completados' });
+      if (
+        !nombre ||
+        !clave ||
+        !duracion_horas ||
+        !descripcion ||
+        !area_id ||
+        !especialidad_id ||
+        !tipo_curso_id ||
+        !plantel_id
+      ) {
+        return res.status(400).json({
+          error: "Todos los campos obligatorios deben ser completados",
+        });
       }
-  
+
       // Crear el curso en la base de datos
       const nuevoCurso = await CursosModel.create({
         nombre,
@@ -31,56 +41,59 @@ const PlantelesCursos = {
         descripcion,
         area_id,
         especialidad_id,
-        tipo_curso_id
+        tipo_curso_id,
       });
-  
+
       // Crear la relación curso-plantel
-      const nuevaRelacionPlantelCurso = await PlantelesCursos.registrarSolicitud({
-        curso_id: nuevoCurso.id,  // Asumiendo que el ID del curso se devuelve después de la inserción
-        plantel_id
-      });
-  
+      const nuevaRelacionPlantelCurso =
+        await PlantelesCursos.registrarSolicitud({
+          curso_id: nuevoCurso.id, // Asumiendo que el ID del curso se devuelve después de la inserción
+          plantel_id,
+        });
+
       // Confirmar operación
       res.status(201).json({
-        mensaje: 'Curso creado con éxito y relación con el plantel registrada',
+        mensaje: "Curso creado con éxito y relación con el plantel registrada",
         curso_id: nuevoCurso.id,
-        plantelcurso_id: nuevaRelacionPlantelCurso.id
+        plantelcurso_id: nuevaRelacionPlantelCurso.id,
       });
     } catch (error) {
-      console.error('Error al crear el curso o la relación:', error);
-      res.status(500).json({ error: 'Error al crear el curso o la relación con el plantel' });
+      console.error("Error al crear el curso o la relación:", error);
+      res.status(500).json({
+        error: "Error al crear el curso o la relación con el plantel",
+      });
     }
-  }
-,  
-  
-  
-  
-  
-  
+  },
   async registrarSolicitud(data) {
     const {
-      plantel_id,
+      plantelId,
       curso_id,
-      horario = '',
+      horario,
       cupo_maximo,
-      requisitos_extra = '',
-      fecha_inicio = null,
-      fecha_fin = null
+      requisitos_extra,
+      fecha_inicio,
+      fecha_fin,
     } = data;
 
     const query = `
-      INSERT INTO planteles_cursos (plantel_id, curso_id, horario, cupo_maximo, requisitos_extra, fecha_inicio, fecha_fin)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING *;
+        INSERT INTO planteles_cursos (plantel_id, curso_id, horario, cupo_maximo, requisitos_extra, fecha_inicio, fecha_fin)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *;
     `;
-
-    const values = [plantel_id, curso_id, horario, cupo_maximo, requisitos_extra, fecha_inicio, fecha_fin];
+    const values = [
+      plantelId,
+      curso_id,
+      horario,
+      cupo_maximo,
+      requisitos_extra,
+      fecha_inicio,
+      fecha_fin,
+    ];
     const { rows } = await pool.query(query, values);
     return rows[0];
   },
-
   async obtenerSolicitudes() {
-    const query = 'SELECT * FROM planteles_cursos;';
+    const query = "SELECT * FROM planteles_cursos;";
     const { rows } = await pool.query(query);
     return rows;
   },
@@ -100,27 +113,75 @@ const PlantelesCursos = {
 
   async obtenerCursosPorPlantel(plantelId) {
     try {
-        const query = `
-            SELECT c.*, 
-                   (SELECT COUNT(*) 
-                    FROM cursos_docentes cd 
-                    WHERE cd.curso_id = c.id) AS docente_asignado
-            FROM cursos c
-            INNER JOIN planteles_cursos pc ON c.id = pc.curso_id
-            INNER JOIN planteles p ON pc.plantel_id = p.id
-            WHERE p.id = $1;
-        `;
+      const query = `
+  SELECT 
+    pc.*,
+    pc.estatus AS isValidado,
+    c.nombre,
+    c.duracion_horas,
+    c.*,
+    p.id AS plantel_id,
+    p.nombre AS plantel_nombre,
+    p.direccion AS plantel_direccion,
+    (SELECT COUNT(*) 
+     FROM cursos_docentes cd 
+     WHERE cd.curso_id = c.id) AS docente_asignado
+FROM planteles_cursos pc
+INNER JOIN cursos c ON pc.curso_id = c.id
+INNER JOIN planteles p ON pc.plantel_id = p.id
+WHERE p.id = $1;
 
-        const values = [plantelId];
-        const { rows } = await pool.query(query, values);
-        
-        return rows; // Retorna todos los cursos encontrados con la información del docente asignado
+`;
+
+      const values = [plantelId];
+      const { rows } = await pool.query(query, values);
+
+      return rows; // Retorna todos los cursos encontrados con la información del docente asignado
     } catch (error) {
-        console.error('Error al obtener cursos por plantel:', error);
-        throw error; // Lanza el error para manejarlo en el nivel superior
+      console.error("Error al obtener cursos por plantel:", error);
+      throw error; // Lanza el error para manejarlo en el nivel superior
     }
-}
+  },
+  // Modelo
+  async eliminarCursosPorPlantel(plantelId) {
+    try {
+      const query = `
+      DELETE FROM planteles_cursos
+      WHERE id = $1
+      RETURNING *;
+    `;
 
+      console.log("plantelId=>", plantelId);
+
+      const values = [plantelId];
+      const { rowCount, rows } = await pool.query(query, values);
+
+      // Retornar la cantidad de filas eliminadas y los registros eliminados
+      return { rowCount, rows };
+    } catch (error) {
+      console.error("Error al eliminar cursos por plantel:", error);
+      throw error; // Lanza el error para manejarlo en el nivel superior
+    }
+  },
+  // async registrarSolicitud(req, res) {
+  //   try {
+  //     const nuevaSolicitud = await PlantelesCursosModel.registrarSolicitud(
+  //       req.body
+  //     );
+  //     console.log(req.body);
+
+  //     res.status(201).json({
+  //       message: "Solicitud registrada exitosamente",
+  //       data: nuevaSolicitud,
+  //     });
+  //   } catch (error) {
+  //     console.error(error);
+  //     res.status(500).json({
+  //       message: "Error al registrar la solicitud",
+  //       error: error.message,
+  //     });
+  //   }
+  // },
 };
 
 module.exports = PlantelesCursos;

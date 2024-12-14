@@ -1,4 +1,4 @@
-const pool = require('../config/database');
+const pool = require("../config/database");
 
 const CursosModel = {
   async getAll() {
@@ -78,7 +78,7 @@ const CursosModel = {
       curso.clave,
       curso.duracion_horas,
       curso.descripcion,
-      curso.nivel || 'Básico', // Valor predeterminado
+      curso.nivel || "Básico", // Valor predeterminado
       curso.area_id,
       curso.especialidad_id,
       curso.tipo_curso_id,
@@ -126,10 +126,53 @@ const CursosModel = {
   },
 
   async delete(id) {
-    const query = 'DELETE FROM cursos WHERE id = \$1 RETURNING *'; // Consulta para eliminar el curso
+    const query = "DELETE FROM cursos WHERE id = $1 RETURNING *"; // Consulta para eliminar el curso
     const { rows } = await pool.query(query, [id]); // Ejecuta la consulta con el ID
     return rows[0]; // Devuelve el curso eliminado
-  }
+  },
+  async getCursosByAreaIdByEspecialidadId(areaId, especialidadId) {
+    //sobcunsulta para tomar el curso por area y especialidad
+    const query = `
+      SELECT 
+        c.id, 
+        c.nombre, 
+        c.clave,
+        c.duracion_horas,
+        c.descripcion,
+        c.area_id,
+        a.nombre AS area_nombre,
+        c.especialidad_id,
+        e.nombre AS especialidad_nombre,
+        c.tipo_curso_id,
+        c.estatus,
+        t.nombre AS tipo_curso_nombre,
+        c.vigencia_inicio,
+        c.fecha_publicacion,
+        c.ultima_actualizacion
+      FROM cursos c
+      JOIN areas a ON c.area_id = a.id
+      JOIN especialidades e ON c.especialidad_id = e.id
+      JOIN tipos_curso t ON c.tipo_curso_id = t.id
+      WHERE c.area_id = $1 AND c.especialidad_id = $2
+    `;
+    const { rows } = await pool.query(query, [areaId, especialidadId]);
+    return rows;
+  },
+  async getCursosByEspecialidadId(especialidadId) {
+    const query = `
+      SELECT id, nombre, descripcion, duracion_horas, nivel, costo, requisitos, estatus, created_at, updated_at, usuario_validador_id, fecha_validacion, modalidad, clave, area_id, especialidad_id, tipo_curso_id, vigencia_inicio, fecha_publicacion, ultima_actualizacion
+      FROM cursos
+      WHERE especialidad_id = $1
+    `;
+
+    try {
+      const { rows } = await pool.query(query, [especialidadId]);
+      return rows;
+    } catch (error) {
+      console.error("Error al obtener los cursos:", error);
+      throw error;
+    }
+  },
 };
 
 module.exports = CursosModel;

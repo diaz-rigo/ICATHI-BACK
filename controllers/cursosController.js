@@ -157,3 +157,33 @@ exports.getByStatus = async (req, res) => {
     res.status(500).json({ error: 'Error al obtener los cursos por estatus' });  
   }  
 };  
+
+
+exports.getCursosByAreaIdByEspecialidadId = async (req, res) => {
+  try {
+    const { areaId, especialidadId } = req.query;
+    const cursos = await CursosModel.getCursosByAreaIdByEspecialidadId(areaId, especialidadId);
+    res.status(200).json(cursos);
+  } catch (error) {
+    console.error('Error al obtener los cursos:', error);
+    res.status(500).json({ error: 'Error al obtener los cursos' });
+  }
+};
+
+
+
+
+
+
+exports.getCursosByEspecialidadId=async(req, res)=> {
+  try {
+    const especialidadId = Number(req.params.especialidadId);
+    const cursos = await CursosModel.getCursosByEspecialidadId(especialidadId);
+    res.status(200).json(cursos);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener los cursos' });
+  }
+}
+
+
+

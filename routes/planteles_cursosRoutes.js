@@ -13,5 +13,6 @@ router.get('/', PlantelesCursosController.obtenerSolicitudes);
 router.put('/:id', PlantelesCursosController.actualizarEstatus);
 
 router.get('/byIdPlantel/:idPlantel', PlantelesCursosController.getByIdPlantel); // filtra los ciuroso  por Plantel
+router.delete('/byIdPlantel/:idPlantel', PlantelesCursosController.deleteByIdPlantel); // filtra los ciuroso  por Plantel
 
 module.exports = router;
