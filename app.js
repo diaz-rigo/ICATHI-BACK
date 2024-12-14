@@ -60,6 +60,7 @@ app.use('/planteles-curso', plantelesCursosRouter);
 app.use('/curso-docente', cursosDocente);
 app.use('/planteles', plantelesRouter);
 app.use('/aspirante', aspirante);
+app.use('/plantelesCursos', plantelesCursosRouter); // Asegúrate de que la ruta
 // Middleware para manejar errores de rutas no encontradas
 app.use((req, res, next) => {
   const error = new Error('Recurso no encontrado');
