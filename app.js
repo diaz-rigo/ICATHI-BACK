@@ -61,7 +61,8 @@ app.use('/planteles-curso', plantelesCursosRouter);
 app.use('/curso-docente', cursosDocente);
 app.use('/planteles', plantelesRouter);
 app.use('/aspirante', aspirante);
-app.use('/alumnosPlantelCursos', alumnosPlantelCursosRouter);
+app.use('/PlantelCursos', alumnosPlantelCursosRouter);
+// alumnosPlantelCursosRouter = require ('./routes/alumnosPlantelCursos.Router')
 
 // Middleware para manejar errores de rutas no encontradas
 app.use((req, res, next) => {
