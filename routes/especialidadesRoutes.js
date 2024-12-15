@@ -12,7 +12,7 @@ router.get('/:docente_id', especialidadesController.obtenerEspecialidadesPorDoce
 
 
 // Enpoint que extrae las especialidades por el area seleccionada
-router.get('/byAreaId/:areaId', EspecialidadesController.getEspecialidadesByAreaId);
+router.get('/byAreaId/:areaId', especialidadesController.getEspecialidadesByAreaId);
 
 
 module.exports = router;
