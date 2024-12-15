@@ -15,8 +15,8 @@ exports.getAll = async (req, res) => {
       res.status(500).json({ error: 'Error al obtener las especialidades' });
     }
   },
-
-  async getEspecialidadesByAreaId(req,res) {
+  exports.getEspecialidadesByAreaId = async (req, res) => {
+  // async getEspecialidadesByAreaId(req,res) {
     try {
       const areaId = Number(req.params.areaId);
       const especialidades = await EspecialidadesModel.getEspecialidadesByAreaId(areaId);
@@ -27,13 +27,7 @@ exports.getAll = async (req, res) => {
   }
 
 
-};
 
-module.exports = EspecialidadesController;
-  // }
-// };
-}
-// module.exports = EspecialidadesController;
 
 
 
