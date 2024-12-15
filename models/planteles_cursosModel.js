@@ -87,40 +87,98 @@ const PlantelesCursos = {
 
   async actualizarEstatus(id, estatus, observacion = null) {
     const query = `
-      UPDATE planteles_cursos
-      SET estatus = $1, requisitos_extra = COALESCE($2, requisitos_extra), updated_at = now()
-      WHERE id = $3
-      RETURNING *;
+        UPDATE planteles_cursos
+        SET estatus = \$1, requisitos_extra = COALESCE(\$2, requisitos_extra), updated_at = now()
+        WHERE id = \$3
+        RETURNING *;
     `;
 
     const values = [estatus, observacion, id];
     const { rows } = await pool.query(query, values);
     return rows[0];
-  },
+},
 
-  async obtenerCursosPorPlantel(plantelId) {
+  async obtenerPlantelesConCursos(req, res) {
     try {
-        const query = `
-            SELECT c.*, 
-                   (SELECT COUNT(*) 
-                    FROM cursos_docentes cd 
-                    WHERE cd.curso_id = c.id) AS docente_asignado
-            FROM cursos c
-            INNER JOIN planteles_cursos pc ON c.id = pc.curso_id
-            INNER JOIN planteles p ON pc.plantel_id = p.id
-            WHERE p.id = $1;
-        `;
-
-        const values = [plantelId];
-        const { rows } = await pool.query(query, values);
-        
-        return rows; // Retorna todos los cursos encontrados con la información del docente asignado
+        const plantelesConCursos = await PlantelesCursosModel.obtenerPlantelesConCursos();
+        res.status(200).json(plantelesConCursos);
     } catch (error) {
-        console.error('Error al obtener cursos por plantel:', error);
-        throw error; // Lanza el error para manejarlo en el nivel superior
+        console.error('Error al obtener planteles con cursos:', error);
+        res.status(500).json({
+            message: 'Error al obtener planteles con cursos',
+            error: error.message
+        });
     }
-}
+},
 
-};
+async obtenerPlantelesConCursosValidados() {
+  const query = `
+      SELECT 
+          pc.id AS id,
+          p.id AS plantel_id,
+          p.nombre AS plantel_nombre,
+          c.id AS curso_id,
+          c.nombre AS curso_nombre,
+          pc.estatus AS curso_validado
+      FROM 
+          planteles_cursos pc
+      JOIN 
+          planteles p ON pc.plantel_id = p.id
+      JOIN 
+          cursos c ON pc.curso_id = c.id
+      WHERE 
+          pc.estatus = true;  -- Solo cursos validados
+  `;
+
+  const { rows } = await pool.query(query);
+  return rows;
+},
+
+async obtenerPlantelesConCursosNoValidados() {
+  const query = `
+      SELECT 
+          pc.id AS id,
+          p.id AS plantel_id,
+          p.nombre AS plantel_nombre,
+          c.id AS curso_id,
+          c.nombre AS curso_nombre,
+          pc.estatus AS curso_validado
+      FROM 
+          planteles_cursos pc
+      JOIN 
+          planteles p ON pc.plantel_id = p.id
+      JOIN 
+          cursos c ON pc.curso_id = c.id
+      WHERE 
+          pc.estatus = false;  -- Solo cursos no validados
+  `;
+
+  const { rows } = await pool.query(query);
+  return rows;
+},
+
+async obtenerCursosPorPlantel(idPlantel) {
+  const query = `
+    SELECT 
+        pc.id AS id,
+        p.id AS plantel_id,
+        p.nombre AS plantel_nombre,
+        c.id AS curso_id,
+        c.nombre AS curso_nombre,
+        pc.estatus AS curso_validado
+    FROM 
+        planteles_cursos pc
+    JOIN 
+        planteles p ON pc.plantel_id = p.id
+    JOIN 
+        cursos c ON pc.curso_id = c.id
+    WHERE 
+        p.id = \$1;  -- Filtrar por el ID del plantel
+  `;
+
+  const values = [idPlantel];
+  const { rows } = await pool.query(query, values);
+  return rows;
+}, };
 
 module.exports = PlantelesCursos;
