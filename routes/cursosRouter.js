@@ -10,4 +10,8 @@ router.post('/', CursosController.create); // Crear un nuevo curso
 router.put('/:id', CursosController.update); // Actualizar un curso existente  
 router.delete('/:id', CursosController.delete); // Eliminar un curso  
 
-module.exports = router;  
+
+
+router.get('/', CursosController.getCursosByAreaIdByEspecialidadId); // Obtener un curso por ID de area y especialida
+router.get('/byEspecialidadId/:especialidadId/', CursosController.getCursosByEspecialidadId);//obtiene cursos por especialidad seleccionada
+module.exports = router;

@@ -12,6 +12,8 @@ router.get('/', PlantelesCursosController.obtenerSolicitudes);
 // Ruta para actualizar el estatus de una solicitud
 router.put('/:id', PlantelesCursosController.actualizarEstatus);
 
+router.get('/byIdPlantel/:idPlantel', PlantelesCursosController.getByIdPlantel); // filtra los ciuroso  por Plantel
+router.delete('/byIdPlantel/:idPlantel', PlantelesCursosController.deleteByIdPlantel); // filtra los ciuroso  por Plantel
 // Ruta para obtener cursos por plantel
 router.get('/byIdPlantel/:idPlantel', PlantelesCursosController.getByIdPlantel);
 
