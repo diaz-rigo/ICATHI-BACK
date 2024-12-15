@@ -115,48 +115,35 @@ async registrarSolicitud(req, res) {
   async actualizarEstatus(req, res) {
     try {
         const { id } = req.params; // Asegúrate de que el ID se esté extrayendo correctamente
-        console.log('ID recibido para actualizar:', id); // Agrega esta línea para depurar
+        console.log('ID recibido para actualizar:', id); // Depuración
         const { estatus, observacion } = req.body;
 
-      // const solicitudActualizada = await PlantelesCursosModel.actualizarEstatus(
-      //   id,
-      //   estatus,
-      //   observacion
-      // );
+        // Llama al modelo para actualizar el estatus
         const solicitudActualizada = await PlantelesCursosModel.actualizarEstatus(id, estatus, observacion);
 
-      if (!solicitudActualizada) {
-        return res.status(404).json({
-          message: "Solicitud no encontrada",
-        });
-      }
         if (!solicitudActualizada) {
+            // Si no se encuentra la solicitud, responde con un 404
             return res.status(404).json({
-                message: 'Solicitud no encontrada'
+                message: "Solicitud no encontrada",
             });
         }
 
-      res.status(200).json({
-        message: "Estatus actualizado correctamente",
-        data: solicitudActualizada,
-      });
-        res.status(200).json({
-            message: 'Estatus actualizado correctamente',
-            data: solicitudActualizada
+        // Responde con éxito
+        return res.status(200).json({
+            message: "Estatus actualizado correctamente",
+            data: solicitudActualizada,
         });
     } catch (error) {
-      console.error(error);
-      res.status(500).json({
-        message: "Error al actualizar el estatus",
-        error: error.message,
-      });
-        console.error(error);
-        res.status(500).json({
-            message: 'Error al actualizar el estatus',
-            error: error.message
+        console.error("Error al actualizar el estatus:", error);
+
+        // Manejo de errores
+        return res.status(500).json({
+            message: "Error al actualizar el estatus",
+            error: error.message,
         });
     }
-  },
+}
+,
 
 
   

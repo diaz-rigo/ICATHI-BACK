@@ -163,25 +163,74 @@ WHERE p.id = $1;
       throw error; // Lanza el error para manejarlo en el nivel superior
     }
   },
-  // async registrarSolicitud(req, res) {
-  //   try {
-  //     const nuevaSolicitud = await PlantelesCursosModel.registrarSolicitud(
-  //       req.body
-  //     );
-  //     console.log(req.body);
-
-  //     res.status(201).json({
-  //       message: "Solicitud registrada exitosamente",
-  //       data: nuevaSolicitud,
-  //     });
-  //   } catch (error) {
-  //     console.error(error);
-  //     res.status(500).json({
-  //       message: "Error al registrar la solicitud",
-  //       error: error.message,
-  //     });
-  //   }
-  // },
-};
-
+  async obtenerPlantelesConCursosValidados() {
+    const query = `
+        SELECT 
+            pc.id AS id,
+            p.id AS plantel_id,
+            p.nombre AS plantel_nombre,
+            c.id AS curso_id,
+            c.nombre AS curso_nombre,
+            pc.estatus AS curso_validado
+        FROM 
+            planteles_cursos pc
+        JOIN 
+            planteles p ON pc.plantel_id = p.id
+        JOIN 
+            cursos c ON pc.curso_id = c.id
+        WHERE 
+            pc.estatus = true;  -- Solo cursos validados
+    `;
+  
+    const { rows } = await pool.query(query);
+    return rows;
+  },
+  
+  async obtenerPlantelesConCursosNoValidados() {
+    const query = `
+        SELECT 
+            pc.id AS id,
+            p.id AS plantel_id,
+            p.nombre AS plantel_nombre,
+            c.id AS curso_id,
+            c.nombre AS curso_nombre,
+            pc.estatus AS curso_validado
+        FROM 
+            planteles_cursos pc
+        JOIN 
+            planteles p ON pc.plantel_id = p.id
+        JOIN 
+            cursos c ON pc.curso_id = c.id
+        WHERE 
+            pc.estatus = false;  -- Solo cursos no validados
+    `;
+  
+    const { rows } = await pool.query(query);
+    return rows;
+  },
+  
+  async obtenerCursosPorPlantel(idPlantel) {
+    const query = `
+      SELECT 
+          pc.id AS id,
+          p.id AS plantel_id,
+          p.nombre AS plantel_nombre,
+          c.id AS curso_id,
+          c.nombre AS curso_nombre,
+          pc.estatus AS curso_validado
+      FROM 
+          planteles_cursos pc
+      JOIN 
+          planteles p ON pc.plantel_id = p.id
+      JOIN 
+          cursos c ON pc.curso_id = c.id
+      WHERE 
+          p.id = \$1;  -- Filtrar por el ID del plantel
+    `;
+  
+    const values = [idPlantel];
+    const { rows } = await pool.query(query, values);
+    return rows;
+  }, };
+  
 module.exports = PlantelesCursos;
