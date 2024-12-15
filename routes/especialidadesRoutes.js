@@ -1,8 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const EspecialidadesController = require('../controllers/especialidadesController');
+const especialidadesController = require('../controllers/especialidadesController');
 
 // Ruta para obtener todas las especialidades
-router.get('/', EspecialidadesController.getAll);
+router.get('/', especialidadesController.getAll);
+router.get('/:docente_id', especialidadesController.obtenerEspecialidadesPorDocente);
+
+
+// router.put('/docentes/:docenteId/especialidades/:especialidadId/validar', especialidadesController.validateEspecialidad);
+
 
 module.exports = router;

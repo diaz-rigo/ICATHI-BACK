@@ -13,6 +13,7 @@ function generateAuthToken(user) {
 
   const secretKey = process.env.JWT_KEY || 'clave_secreta'; // Define tu clave secreta en el .env
   const expiresIn = '5h'; // El tiempo de expiración del token
+  // const expiresIn = '1m'; // El tiempo de expiración del token
 
   return jwt.sign(payload, secretKey, { expiresIn });
 }
