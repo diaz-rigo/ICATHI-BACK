@@ -18,7 +18,6 @@ const DocentesModel = {
         d.documento_identificacion,
         d.num_documento_identificacion,
         d.curriculum_url,
-        d.estatus,
         d.created_at,
         d.updated_at,
         d.usuario_validador_id,
