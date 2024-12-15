@@ -4,7 +4,7 @@ const pool = require('../config/database'); // Importa la configuración del poo
 const bcrypt = require('bcrypt');
 exports.registrarAspirante = async (req, res) => {
     const { area, curp, curso, email, especialidad, name, plantel, telefono } = req.body;
-
+console.log(req.body)
     // Validar que se hayan proporcionado todos los campos requeridos
     if (!name || !curp || !email || !telefono || !curso || !plantel) {
         return res.status(400).json({ error: 'Faltan datos requeridos' });

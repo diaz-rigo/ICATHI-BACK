@@ -19,6 +19,13 @@ exports.registrarUsuarioInicial = async (req, res) => {
 
   try {
     await client.query('BEGIN');
+    // Verificar si el correo ya existe
+    const emailCheckQuery = 'SELECT COUNT(*) FROM usuarios WHERE email = $1';
+    const emailCheckResult = await client.query(emailCheckQuery, [email]);
+    if (parseInt(emailCheckResult.rows[0].count, 10) > 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ message: 'El correo electrónico ya está registrado.' });
+    }
 
     // Insertar usuario en la base de datos
     const userId = await Usuario.insertarUsuario(
