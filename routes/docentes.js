@@ -12,6 +12,9 @@ router.delete('/:id', DocentesController.delete); // Eliminar un docente
 router.get('/usuario/:userId', DocentesController.getDocentesByUserId);
 
 
+// Nueva ruta para actualizar el estatus de un docente
+router.put('/:docenteId/estatus', DocentesController.updateDocenteStatus); // Actualizar estatus de un docente
+
 
 // funciones
 router.post('/:docenteId/especialidades', especialidadesController.associateEspecialidades);
