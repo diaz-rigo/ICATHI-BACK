@@ -1,6 +1,37 @@
 
 
 const Usuario = require('../models/usuario');
+
+
+exports.manejarCambioDeEstatusYRol = async (req, res) => {
+  const { id } = req.params; // ID del usuario recibido en los parámetros de la URL
+  const { estatus, rol } = req.body; // Estatus y rol recibidos en el cuerpo de la solicitud
+
+  console.log('ID recibido:', id);
+  console.log('Estatus recibido:', estatus);
+  console.log('Rol recibido:', rol);
+
+  // Validación de entrada
+  if (!id || estatus === undefined || !rol) {
+    return res.status(400).json({ mensaje: 'ID, estatus o rol faltante' });
+  }
+
+  try {
+    // Llama al método del modelo para actualizar el estatus y el rol
+    const actualizado = await Usuario.actualizarEstatusYRol(id, estatus, rol);
+
+    if (actualizado) {
+      res.status(200).json({ mensaje: 'Estatus y rol actualizados correctamente' });
+    } else {
+      res.status(404).json({ mensaje: 'Usuario no encontrado' });
+    }
+  } catch (error) {
+    console.error('Error al actualizar estatus y rol:', error.message);
+    res.status(500).json({ mensaje: 'Error al actualizar estatus y rol', error: error.message });
+  }
+};
+
+
 exports.manejarCambioDeRol = async (req, res) => {
   const { id } = req.params;
   const { rol } = req.body;
