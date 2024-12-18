@@ -141,7 +141,7 @@ exports.validarCorreo = async (req, res) => {
 
     const userId = rows[0].usuario_id;
 
-    // Obtener el correo del usuario para incluirlo en la respuesta
+    // Obtener el correo del usuario
     const queryUsuario = `
       SELECT email, correo_validado FROM usuarios WHERE id = $1;
     `;
@@ -159,6 +159,35 @@ exports.validarCorreo = async (req, res) => {
       return res.status(400).json({ message: 'El correo ya ha sido validado.' });
     }
 
+    // Buscar al usuario en las tablas de alumnos y docentes
+    let role = null;
+
+    // Buscar en la tabla de alumnos
+    const queryAlumno = `
+      SELECT id FROM alumnos WHERE email = $1;
+    `;
+    const { rows: alumnoRows } = await client.query(queryAlumno, [userEmail]);
+
+    if (alumnoRows.length > 0) {
+      role = 'ALUMNO';
+    } else {
+      // Si no se encuentra en alumnos, buscar en docentes
+      const queryDocente = `
+        SELECT id FROM docentes WHERE email = $1;
+      `;
+      const { rows: docenteRows } = await client.query(queryDocente, [userEmail]);
+
+      if (docenteRows.length > 0) {
+        role = 'DOCENTE';
+      }
+    }
+
+    if (!role) {
+      return res.status(404).json({
+        message: 'Usuario no encontrado en el sistema.',
+      });
+    }
+
     // Activar usuario
     const queryActivarUsuario = `
       UPDATE usuarios SET estatus = false, correo_validado = true WHERE id = $1;
@@ -171,11 +200,12 @@ exports.validarCorreo = async (req, res) => {
     `;
     await client.query(queryEliminarToken, [token]);
 
-    // Responder con el mensaje, id del usuario y correo
+    // Responder con el mensaje, id del usuario, correo y rol
     res.status(200).json({
       message: 'Correo validado exitosamente.',
       userId: userId,
       userEmail: userEmail,
+      role: role,
     });
   } catch (error) {
     console.error('Error al intentar validar el correo:', error.message);

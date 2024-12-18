@@ -7,5 +7,6 @@ router.get('/:id', alumnoController.getById);
 router.post('/', alumnoController.create);
 router.put('/:id', alumnoController.update); 
 router.delete('/:id', alumnoController.delete);
+router.get('/usuario/:userId', alumnoController.getAlumnoByUserId);
 
 module.exports = router;
