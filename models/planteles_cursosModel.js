@@ -109,40 +109,41 @@ const PlantelesCursos = {
     const values = [estatus, observacion, id];
     const { rows } = await pool.query(query, values);
     return rows[0];
-},
-
-  async obtenerCursosPorPlantel(plantelId) {
-    try {
-      const query = `
-  SELECT 
-    pc.*,
-    pc.estatus AS isValidado,
-    c.nombre,
-    c.duracion_horas,
-    c.*,
-    p.id AS plantel_id,
-    p.nombre AS plantel_nombre,
-    p.direccion AS plantel_direccion,
-    (SELECT COUNT(*) 
-     FROM cursos_docentes cd 
-     WHERE cd.curso_id = c.id) AS docente_asignado
-FROM planteles_cursos pc
-INNER JOIN cursos c ON pc.curso_id = c.id
-INNER JOIN planteles p ON pc.plantel_id = p.id
-WHERE p.id = $1;
-
-`;
-
-      const values = [plantelId];
-      const { rows } = await pool.query(query, values);
-
-      return rows; // Retorna todos los cursos encontrados con la información del docente asignado
-    } catch (error) {
-      console.error("Error al obtener cursos por plantel:", error);
-      throw error; // Lanza el error para manejarlo en el nivel superior
-    }
   },
+
+  //   async obtenerCursosPorPlantel(plantelId) {
+  //     try {
+  //       const query = `
+  //   SELECT
+  //     pc.*,
+  //     pc.estatus AS isValidado,
+  //     c.nombre,
+  //     c.duracion_horas,
+  //     c.*,
+  //     p.id AS plantel_id,
+  //     p.nombre AS plantel_nombre,
+  //     p.direccion AS plantel_direccion,
+  //     (SELECT COUNT(*)
+  //      FROM cursos_docentes cd
+  //      WHERE cd.curso_id = c.id) AS docente_asignado
+  // FROM planteles_cursos pc
+  // INNER JOIN cursos c ON pc.curso_id = c.id
+  // INNER JOIN planteles p ON pc.plantel_id = p.id
+  // WHERE p.id = $1;
+
+  // `;
+
+  //       const values = [plantelId];
+  //       const { rows } = await pool.query(query, values);
+
+  //       return rows; // Retorna todos los cursos encontrados con la información del docente asignado
+  //     } catch (error) {
+  //       console.error("Error al obtener cursos por plantel:", error);
+  //       throw error; // Lanza el error para manejarlo en el nivel superior
+  //     }
+  //   },
   // Modelo
+
   async eliminarCursosPorPlantel(plantelId) {
     try {
       const query = `
@@ -181,11 +182,11 @@ WHERE p.id = $1;
         WHERE 
             pc.estatus = true;  -- Solo cursos validados
     `;
-  
+
     const { rows } = await pool.query(query);
     return rows;
   },
-  
+
   async obtenerPlantelesConCursosNoValidados() {
     const query = `
         SELECT 
@@ -204,11 +205,94 @@ WHERE p.id = $1;
         WHERE 
             pc.estatus = false;  -- Solo cursos no validados
     `;
-  
+
     const { rows } = await pool.query(query);
     return rows;
   },
+  async obtenerInfoPlantelCurso(idPlantelCurso) {
+    try {
+      const query = `
+        SELECT
+          pc.id AS plantel_curso_id,
+          p.id AS plantel_id,
+          p.nombre AS plantel_nombre,
+          c.id AS curso_id,
+          c.nombre AS curso_nombre,
+          a.id AS alumno_id,
+          a.nombre AS alumno_nombre,
+          a.apellidos AS alumno_apellidos,
+          a.email AS alumno_email,
+          a.telefono AS alumno_telefono,
+          d.id AS docente_id,
+          d.nombre AS docente_nombre,
+          d.apellidos AS docente_apellidos,
+          d.email AS docente_email,
+          d.telefono AS docente_telefono,
+          e.nombre AS especialidad
+        FROM
+          planteles_cursos pc
+          JOIN planteles p ON pc.plantel_id = p.id
+          JOIN cursos c ON pc.curso_id = c.id
+          JOIN alumnos_cursos ac ON pc.curso_id = ac.curso_id AND pc.plantel_id = ac.plantel_id
+          JOIN alumnos a ON ac.alumno_id = a.id
+          JOIN docentes_especialidades de ON c.especialidad_id = de.especialidad_id
+          JOIN docentes d ON de.docente_id = d.id
+          JOIN especialidades e ON de.especialidad_id = e.id
+        WHERE
+          pc.id = $1
+      `;
+      const values = [idPlantelCurso];
+      const { rows } = await pool.query(query, values);
   
+      const alumnosUnicos = new Set();
+      const alumnos = [];
+      const docentes = [];
+  
+      rows.forEach((row) => {
+        if (!alumnosUnicos.has(row.alumno_id)) {
+          alumnosUnicos.add(row.alumno_id);
+          alumnos.push({
+            id: row.alumno_id,
+            nombre: row.alumno_nombre,
+            apellidos: row.alumno_apellidos,
+            email: row.alumno_email,
+            telefono: row.alumno_telefono,
+          });
+        }
+  
+        // Verificar si el docente ya se ha agregado al arreglo
+        const docente = docentes.find((d) => d.id === row.docente_id);
+        if (docente) {
+          // Si el docente ya existe, agregar la especialidad a su array de especialidades
+          docente.especialidades.push(row.especialidad);
+        } else {
+          // Si el docente no existe, crear un nuevo objeto y agregarlo al arreglo
+          docentes.push({
+            id: row.docente_id,
+            nombre: row.docente_nombre,
+            apellidos: row.docente_apellidos,
+            email: row.docente_email,
+            telefono: row.docente_telefono,
+            especialidades: [row.especialidad],
+          });
+        }
+      });
+  
+      return {
+        alumnos,
+        docentes,
+      };
+    } catch (error) {
+      console.error('Error al obtener la información del plantel y curso:', error);
+      throw error;
+    }
+  }
+  
+  
+  
+  
+,  
+
   async obtenerCursosPorPlantel(idPlantel) {
     const query = `
       SELECT 
@@ -227,10 +311,11 @@ WHERE p.id = $1;
       WHERE 
           p.id = \$1;  -- Filtrar por el ID del plantel
     `;
-  
+
     const values = [idPlantel];
     const { rows } = await pool.query(query, values);
     return rows;
-  }, };
-  
+  },
+};
+
 module.exports = PlantelesCursos;

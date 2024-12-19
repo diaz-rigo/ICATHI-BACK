@@ -26,4 +26,14 @@ router.get('/plantelesConCursosValidados', PlantelesCursosController.obtenerPlan
 // Nueva ruta para obtener planteles con cursos no validados
 router.get('/plantelesConCursosNoValidados', PlantelesCursosController.obtenerPlantelesConCursosNoValidados);
 
+
+
+// ruta para obtener la informacion del curso solicitado(info curso,docentes,alumos)
+router.get('/plantelinfo/:idPlantelCurso', PlantelesCursosController.obtenerInfoPlantelCurso);
+
+
+
+
+
+
 module.exports = router;

@@ -33,8 +33,17 @@ exports.getAll = async (req, res) => {
 
 
 
-
-
+  exports.getSearchDocente = async (req, res) => {
+    const { idPlantel, cursoId, especialidadId, docenteId } = req.body;
+  
+    try {
+      const docentes = await EspecialidadesModel.getSearchDocente(idPlantel, cursoId, especialidadId, docenteId);
+      res.status(200).json(docentes);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+  
 // Asociar especialidades a un docente
 exports.associateEspecialidades = async (req, res) => {
     const { docenteId } = req.params;

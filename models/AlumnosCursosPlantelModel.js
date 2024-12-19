@@ -19,7 +19,7 @@ const AlumnosCursosPlantelModel = {
       WHERE 
         plcrs.plantel_id = $1;
     `;
-    
+
       const values = [plantelId];
       const { rows } = await pool.query(query, values);
 
@@ -65,4 +65,4 @@ INNER JOIN
     }
   },
 };
-module.exports=AlumnosCursosPlantelModel;
+module.exports = AlumnosCursosPlantelModel;
