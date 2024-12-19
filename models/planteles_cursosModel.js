@@ -228,7 +228,13 @@ const PlantelesCursos = {
           d.apellidos AS docente_apellidos,
           d.email AS docente_email,
           d.telefono AS docente_telefono,
-          e.nombre AS especialidad
+          e.nombre AS especialidad,
+          c.area_id,
+          ars.nombre AS area_nombre,   -- Selecciona todas las columnas de la tabla 'alumnos'
+pc.fecha_inicio AS fecha_inicio,  -- Selecciona todas las columnas de la tabla 'alumnos'
+    pc.fecha_fin AS fecha_fin  , -- Selecciona todas las columnas de la tabla 'alumnos'
+          c.especialidad_id,
+          e.nombre AS especialidad_nombre
         FROM
           planteles_cursos pc
           JOIN planteles p ON pc.plantel_id = p.id
@@ -238,16 +244,28 @@ const PlantelesCursos = {
           JOIN docentes_especialidades de ON c.especialidad_id = de.especialidad_id
           JOIN docentes d ON de.docente_id = d.id
           JOIN especialidades e ON de.especialidad_id = e.id
+           JOIN 
+    areas ars ON ars.id = c.area_id
         WHERE
           pc.id = $1
       `;
       const values = [idPlantelCurso];
       const { rows } = await pool.query(query, values);
-  
+
       const alumnosUnicos = new Set();
       const alumnos = [];
       const docentes = [];
-  
+      const curso = {
+        id: null,
+        nombre: null,
+        area_id: null,
+        area_nombre: null,
+        especialidad_id: null,
+        especialidad_nombre: null,
+        fecha_inicio: null,
+        fecha_fin: null,
+      };
+
       rows.forEach((row) => {
         if (!alumnosUnicos.has(row.alumno_id)) {
           alumnosUnicos.add(row.alumno_id);
@@ -259,7 +277,7 @@ const PlantelesCursos = {
             telefono: row.alumno_telefono,
           });
         }
-  
+
         // Verificar si el docente ya se ha agregado al arreglo
         const docente = docentes.find((d) => d.id === row.docente_id);
         if (docente) {
@@ -276,22 +294,31 @@ const PlantelesCursos = {
             especialidades: [row.especialidad],
           });
         }
+
+        // Actualizar la información del curso
+        curso.id = row.curso_id;
+        curso.nombre = row.curso_nombre;
+        curso.area_id = row.area_id;
+        curso.area_nombre = row.area_nombre;
+        curso.especialidad_id = row.especialidad_id;
+        curso.especialidad_nombre = row.especialidad_nombre;
+        curso.fecha_inicio = row.fecha_inicio;
+        curso.fecha_fin = row.fecha_fin;
       });
-  
+
       return {
         alumnos,
         docentes,
+        curso,
       };
     } catch (error) {
-      console.error('Error al obtener la información del plantel y curso:', error);
+      console.error(
+        "Error al obtener la información del plantel y curso:",
+        error
+      );
       throw error;
     }
-  }
-  
-  
-  
-  
-,  
+  },
 
   async obtenerCursosPorPlantel(idPlantel) {
     const query = `
