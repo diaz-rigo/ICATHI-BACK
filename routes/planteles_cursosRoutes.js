@@ -15,7 +15,6 @@ router.put('/:id', PlantelesCursosController.actualizarEstatus);
 router.get('/byIdPlantel/:idPlantel', PlantelesCursosController.getByIdPlantel); // filtra los ciuroso  por Plantel
 router.delete('/byIdPlantel/:idPlantel', PlantelesCursosController.deleteByIdPlantel); // filtra los ciuroso  por Plantel
 // Ruta para obtener cursos por plantel
-router.get('/byIdPlantel/:idPlantel', PlantelesCursosController.getByIdPlantel);
 
 // Nueva ruta para obtener planteles con sus cursos
 router.get('/plantelesConCursos', PlantelesCursosController.obtenerPlantelesConCursos);
@@ -25,5 +24,15 @@ router.get('/plantelesConCursosValidados', PlantelesCursosController.obtenerPlan
 
 // Nueva ruta para obtener planteles con cursos no validados
 router.get('/plantelesConCursosNoValidados', PlantelesCursosController.obtenerPlantelesConCursosNoValidados);
+
+
+
+// ruta para obtener la informacion del curso solicitado(info curso,docentes,alumos)
+router.get('/plantelinfo/:idPlantelCurso', PlantelesCursosController.obtenerInfoPlantelCurso);
+
+
+
+
+
 
 module.exports = router;

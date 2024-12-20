@@ -20,6 +20,26 @@ const DocentesModel = {
       console.error('Error al obtener los docentes por ID del usuario:', error);
       throw error;
     }
+  },
+  async getDocenteByIdPlantel(plantelId) {
+    try {
+      const query = `
+        SELECT 
+          d.id, d.nombre, d.apellidos, d.email, d.telefono, d.especialidad, 
+          d.certificado_profesional, d.cedula_profesional, d.documento_identificacion, 
+          d.num_documento_identificacion, d.curriculum_url, d.created_at, d.updated_at, 
+          d.usuario_validador_id, d.fecha_validacion, d.foto_url, d.rol, d.estatus_id, 
+          e.tipo AS estatus_tipo, e.valor AS estatus_valor
+        FROM docentes d
+        LEFT JOIN estatus e ON d.estatus_id = e.id
+        WHERE d.id_usuario = $1
+      `;
+      const result = await pool.query(query, [userId]);
+      return result.rows; // Retorna todos los registros asociados al ID del usuario con el estatus asociado
+    } catch (error) {
+      console.error('Error al obtener los docentes por ID del usuario:', error);
+      throw error;
+    }
   }
 ,  
 async updateStatus(docenteId, nuevoEstatusId, usuarioValidadorId) {

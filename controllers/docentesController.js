@@ -78,10 +78,22 @@ exports.getDocentesByUserId = async (req, res) => {
     return res.status(500).json({ error: 'Error al obtener docentes.' });
   }
 }
-
+// 2222222222222222222222222222222222 hacer 
 exports.getAll = async (req, res) => {
   try {
+    
     const docentes = await DocentesModel.getAll();
+    res.status(200).json(docentes);
+  } catch (error) {
+    console.error('Error al obtener los docentes:', error);
+    res.status(500).json({ error: 'Error al obtener los docentes' });
+  }
+};
+exports.getDocenteByIdPlantel = async (req, res) => {
+  try {
+    const { plantelId } = req.params;
+    
+    const docentes = await DocentesModel.getDocenteByIdPlantel(plantelId);
     res.status(200).json(docentes);
   } catch (error) {
     console.error('Error al obtener los docentes:', error);
