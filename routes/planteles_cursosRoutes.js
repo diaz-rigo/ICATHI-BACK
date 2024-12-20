@@ -1,10 +1,13 @@
 const express = require('express');
 const PlantelesCursosController = require('../controllers/PlantelesCursosController');
+const upload = require('../config/upload');
 
 const router = express.Router();
+// Ruta para registrar una nueva solicitud, que recibe un archivo 'temario'
+router.post('/', upload.single('temario'),PlantelesCursosController.registrarSolicitud); // 'temario' es el nombre del campo en el formulario
 
-// Ruta para registrar una nueva solicitud
-router.post('/', PlantelesCursosController.registrarSolicitud);
+// // Ruta para registrar una nueva solicitud
+// router.post('/', PlantelesCursosController.registrarSolicitud);
 
 // Ruta para obtener todas las solicitudes
 router.get('/', PlantelesCursosController.obtenerSolicitudes);

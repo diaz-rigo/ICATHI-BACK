@@ -73,11 +73,12 @@ const PlantelesCursos = {
       requisitos_extra,
       fecha_inicio,
       fecha_fin,
+      temario_url
     } = data;
 
     const query = `
-        INSERT INTO planteles_cursos (plantel_id, curso_id, horario, cupo_maximo, requisitos_extra, fecha_inicio, fecha_fin)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        INSERT INTO planteles_cursos (plantel_id, curso_id, horario, cupo_maximo, requisitos_extra, fecha_inicio, fecha_fin,temario_url)
+        VALUES ($1, $2, $3, $4, $5, $6, $7,$8)
         RETURNING *;
     `;
     const values = [
@@ -88,6 +89,7 @@ const PlantelesCursos = {
       requisitos_extra,
       fecha_inicio,
       fecha_fin,
+      temario_url
     ];
     const { rows } = await pool.query(query, values);
     return rows[0];
