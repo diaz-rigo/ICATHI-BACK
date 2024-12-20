@@ -111,37 +111,64 @@ const PlantelesCursos = {
     return rows[0];
 },
 
-  async obtenerCursosPorPlantel(plantelId) {
-    try {
-      const query = `
-  SELECT 
-    pc.*,
-    pc.estatus AS isValidado,
-    c.nombre,
-    c.duracion_horas,
-    c.*,
-    p.id AS plantel_id,
-    p.nombre AS plantel_nombre,
-    p.direccion AS plantel_direccion,
-    (SELECT COUNT(*) 
-     FROM cursos_docentes cd 
-     WHERE cd.curso_id = c.id) AS docente_asignado
-FROM planteles_cursos pc
-INNER JOIN cursos c ON pc.curso_id = c.id
-INNER JOIN planteles p ON pc.plantel_id = p.id
-WHERE p.id = $1;
+async obtenerCursosPorPlantel(plantelId) {
+  const query = `
+      SELECT 
+          pc.id AS id,
+          pc.plantel_id AS plantel_id,
+          pc.curso_id AS curso_id,
+          pc.horario AS horario,
+          pc.cupo_maximo AS cupo_maximo,
+          pc.requisitos_extra AS requisitos_extra,
+          pc.fecha_inicio AS fecha_inicio,
+          pc.fecha_fin AS fecha_fin,
+          pc.estatus AS estatus,
+          pc.temario_url AS temario_url,
+          p.nombre AS plantel_nombre,
+          c.nombre AS curso_nombre
+      FROM 
+          planteles_cursos pc
+      JOIN 
+          planteles p ON pc.plantel_id = p.id
+      JOIN 
+          cursos c ON pc.curso_id = c.id
+      WHERE 
+          p.id = \$1;  -- Filtrar por el ID del plantel
+  `;
 
-`;
+  const values = [plantelId];
+  const { rows } = await pool.query(query, values);
+  return rows;
+},
+async obtenerCursoPorId(cursoId) {
+  const query = `
+      SELECT 
+          pc.id AS id,
+          pc.plantel_id AS plantel_id,
+          pc.curso_id AS curso_id,
+          pc.horario AS horario,
+          pc.cupo_maximo AS cupo_maximo,
+          pc.requisitos_extra AS requisitos_extra,
+          pc.fecha_inicio AS fecha_inicio,
+          pc.fecha_fin AS fecha_fin,
+          pc.estatus AS estatus,
+          pc.temario_url AS temario_url,
+          p.nombre AS plantel_nombre,
+          c.nombre AS curso_nombre
+      FROM 
+          planteles_cursos pc
+      JOIN 
+          planteles p ON pc.plantel_id = p.id
+      JOIN 
+          cursos c ON pc.curso_id = c.id
+      WHERE 
+          pc.id = \$1;  -- Filtrar por el ID del curso
+  `;
 
-      const values = [plantelId];
-      const { rows } = await pool.query(query, values);
-
-      return rows; // Retorna todos los cursos encontrados con la información del docente asignado
-    } catch (error) {
-      console.error("Error al obtener cursos por plantel:", error);
-      throw error; // Lanza el error para manejarlo en el nivel superior
-    }
-  },
+  const values = [cursoId];
+  const { rows } = await pool.query(query, values);
+  return rows[0]; // Devuelve solo un curso
+},
   // Modelo
   async eliminarCursosPorPlantel(plantelId) {
     try {
@@ -209,7 +236,7 @@ WHERE p.id = $1;
     return rows;
   },
   
-  async obtenerCursosPorPlantel(idPlantel) {
+   /*async obtenerCursosPorPlantel(idPlantel) {
     const query = `
       SELECT 
           pc.id AS id,
@@ -231,6 +258,8 @@ WHERE p.id = $1;
     const values = [idPlantel];
     const { rows } = await pool.query(query, values);
     return rows;
-  }, };
+  },
+  /** */
+ };
   
 module.exports = PlantelesCursos;

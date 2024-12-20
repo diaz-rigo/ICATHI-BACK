@@ -10,29 +10,20 @@ module.exports = {
 
   async getByIdPlantel(req, res) {
     try {
-      const { idPlantel } = req.params;
+        const { idPlantel } = req.params;
 
+        const cursos = await PlantelesCursosModel.obtenerCursosPorPlantel(idPlantel);
 
-      // Realiza el INNER JOIN para obtener los cursos del plantel
-      // const cursos = await PlantelesCursosModel.obtenerCursosPorPlantel(
-      //   idPlantel
-      // );
+        if (!cursos.length) {
+            return res.status(404).json({ error: "No se encontraron cursos para este plantel" });
+        }
 
-      const cursos = await PlantelesCursosModel.obtenerCursosPorPlantel(idPlantel);
-
-      if (!cursos.length) {
-        return res
-          .status(404)
-          .json({ error: "No se encontraron cursos para este plantel" });
-      }
-
-
-      res.status(200).json(cursos);
+        res.status(200).json(cursos);
     } catch (error) {
-      console.error("Error al obtener los cursos:", error);
-      res.status(500).json({ error: "Error al obtener los cursos" });
+        console.error("Error al obtener los cursos:", error);
+        res.status(500).json({ error: "Error al obtener los cursos" });
     }
-  },
+},
  // Controlador
 async deleteByIdPlantel(req, res) {
   try {
@@ -144,6 +135,22 @@ async registrarSolicitud(req, res) {
     }
 }
 ,
+async obtenerCursoPorId(req, res) {
+  try {
+    const { idCurso } = req.params; // Extraer el ID del curso desde los parámetros
+
+    const curso = await PlantelesCursosModel.obtenerCursoPorId(idCurso);
+
+    if (!curso) {
+      return res.status(404).json({ error: "Curso no encontrado" });
+    }
+
+    res.status(200).json(curso);
+  } catch (error) {
+    console.error("Error al obtener el curso:", error);
+    res.status(500).json({ error: "Error al obtener el curso" });
+  }
+},
 
 
   

@@ -12,10 +12,14 @@ router.get('/', PlantelesCursosController.obtenerSolicitudes);
 // Ruta para actualizar el estatus de una solicitud
 router.put('/:id', PlantelesCursosController.actualizarEstatus);
 
-router.get('/byIdPlantel/:idPlantel', PlantelesCursosController.getByIdPlantel); // filtra los ciuroso  por Plantel
-router.delete('/byIdPlantel/:idPlantel', PlantelesCursosController.deleteByIdPlantel); // filtra los ciuroso  por Plantel
 // Ruta para obtener cursos por plantel
 router.get('/byIdPlantel/:idPlantel', PlantelesCursosController.getByIdPlantel);
+
+// Ruta para eliminar cursos por plantel
+router.delete('/byIdPlantel/:idPlantel', PlantelesCursosController.deleteByIdPlantel);
+
+// Nueva ruta para obtener un curso por su ID
+router.get('/curso/:idCurso', PlantelesCursosController.obtenerCursoPorId);
 
 // Nueva ruta para obtener planteles con sus cursos
 router.get('/plantelesConCursos', PlantelesCursosController.obtenerPlantelesConCursos);
