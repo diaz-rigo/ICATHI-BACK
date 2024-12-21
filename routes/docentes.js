@@ -15,8 +15,6 @@ router.get('/usuario/:userId', DocentesController.getDocentesByUserId);
 
 
 
-
-
 // funciones
 router.post('/:docenteId/especialidades', especialidadesController.associateEspecialidades);
 

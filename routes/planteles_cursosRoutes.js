@@ -1,4 +1,6 @@
 const express = require('express');
+const AlumnosPlantelCursosController = require('../controllers/AlumnosPlantelCursosController');
+
 const PlantelesCursosController = require('../controllers/PlantelesCursosController');
 const upload = require('../config/upload');
 
@@ -32,6 +34,10 @@ router.get('/plantelesConCursosNoValidados', PlantelesCursosController.obtenerPl
 
 // ruta para obtener la informacion del curso solicitado(info curso,docentes,alumos)
 router.get('/plantelinfo/:idPlantelCurso', PlantelesCursosController.obtenerInfoPlantelCurso);
+
+
+
+router.put('/:alumnoId/cursos/:cursoId', AlumnosPlantelCursosController.actualizarCalificacionFinal); 
 
 
 

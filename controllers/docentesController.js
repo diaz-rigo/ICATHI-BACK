@@ -42,6 +42,8 @@ exports.getAlumnosAndcursoByIdDocente = async (req, res) => {
     return res.status(500).json({ error: 'Error al obtener docentes.' });
   }
 }
+
+
 // 2222222222222222222222222222222222 hacer 
 exports.getAll = async (req, res) => {
   try {

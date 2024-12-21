@@ -45,44 +45,91 @@ const DocentesModel = {
   async getAlumnosCursoByIdDocente(id_usuario) {
     try {
       const query = `
-SELECT 
-    json_agg(
-        DISTINCT jsonb_build_object(
-            'curso_id', c.id,
-            'curso_nombre', c.nombre,
-            'curso_descripcion', c.descripcion
-        )
-    ) AS cursos,
-    json_agg(
-        jsonb_build_object(
-            'alumno_id', a.id,
-            'alumno_nombre', a.nombre,
-            'alumno_apellidos', a.apellidos,
-            'alumno_email', a.email,
-            'curso_id', c.id,
-            'calificacion', COALESCE(ac.calificacion_final, 0)
-        )
-    ) AS alumnos
-FROM 
-    docentes d 
-JOIN 
-    cursos_docentes cd ON d.id = cd.docente_id
-JOIN 
-    cursos c ON cd.curso_id = c.id
-JOIN 
-    alumnos_cursos ac ON c.id = ac.curso_id
-JOIN 
-    alumnos a ON ac.alumno_id = a.id
-WHERE 
-    d.id = (
-        SELECT id 
-        FROM docentes 
-        WHERE id_usuario = ${id_usuario}
-    );
 
+      SELECT
+          json_agg(
+            DISTINCT jsonb_build_object(
+                'curso_id', c.id,
+                'curso_nombre', c.nombre,
+                'curso_descripcion', c.descripcion,
+                'plantel_id', pc.plantel_id,
+                'plantel_nombre', p.nombre
+            )
+        ) AS cursos,
+        json_agg(
+            jsonb_build_object(
+                'alumno_id', a.id,
+                'alumno_nombre', a.nombre,
+                'alumno_apellidos', a.apellidos,
+                'alumno_email', a.email,
+                'curso_id', c.id,
+                'calificacion', COALESCE(ac.calificacion_final, 0)
+            )
+        ) FILTER (WHERE a.id IS NOT NULL) AS alumnos
+      FROM
+        docentes d
+      JOIN
+        cursos_docentes cd ON d.id = cd.docente_id
+      JOIN
+        cursos c ON cd.curso_id = c.id
+      JOIN
+        planteles_cursos pc ON c.id = pc.curso_id
+      JOIN
+        planteles p ON pc.plantel_id = p.id
+      LEFT JOIN
+        alumnos_cursos ac ON c.id = ac.curso_id
+      LEFT JOIN
+        alumnos a ON ac.alumno_id = a.id
+      WHERE
+        d.id = (
+            SELECT id
+            FROM docentes
+            WHERE id_usuario = ${id_usuario}
+        );
 
 
       `;
+
+      // SELECT
+      //     json_agg(
+      //       DISTINCT jsonb_build_object(
+      //           'curso_id', c.id,
+      //           'curso_nombre', c.nombre,
+      //           'curso_descripcion', c.descripcion,
+      //           'plantel_id', pc.plantel_id,
+      //           'plantel_nombre', p.nombre
+      //       )
+      //   ) AS cursos,
+      //   json_agg(
+      //       jsonb_build_object(
+      //           'alumno_id', a.id,
+      //           'alumno_nombre', a.nombre,
+      //           'alumno_apellidos', a.apellidos,
+      //           'alumno_email', a.email,
+      //           'curso_id', c.id,
+      //           'calificacion', COALESCE(ac.calificacion_final, 0)
+      //       )
+      //   ) FILTER (WHERE a.id IS NOT NULL) AS alumnos
+      // FROM
+      //   docentes d
+      // JOIN
+      //   cursos_docentes cd ON d.id = cd.docente_id
+      // JOIN
+      //   cursos c ON cd.curso_id = c.id
+      // JOIN
+      //   planteles_cursos pc ON c.id = pc.curso_id
+      // JOIN
+      //   planteles p ON pc.plantel_id = p.id
+      // LEFT JOIN
+      //   alumnos_cursos ac ON c.id = ac.curso_id
+      // LEFT JOIN
+      //   alumnos a ON ac.alumno_id = a.id
+      // WHERE
+      //   d.id = (
+      //       SELECT id
+      //       FROM docentes
+      //       WHERE id_usuario = ${id_usuario}
+      //   );
       const result = await pool.query(query);
       return result.rows; // Retorna todos los registros asociados al ID del usuario con el estatus asociado
     } catch (error) {
@@ -90,24 +137,6 @@ WHERE
       throw error;
     }
   },
-  // async getByUserId(userId) {
-  //   try {
-  //     const query = `
-  //       SELECT
-  //         id, nombre, apellidos, email, telefono, especialidad, certificado_profesional,
-  //         cedula_profesional, documento_identificacion, num_documento_identificacion,
-  //         curriculum_url, estatus, created_at, updated_at, usuario_validador_id,
-  //         fecha_validacion, foto_url, rol
-  //       FROM docentes
-  //       WHERE id_usuario = $1
-  //     `;
-  //     const result = await pool.query(query, [userId]);
-  //     return result.rows; // Retorna todos los registros asociados al ID del usuario
-  //   } catch (error) {
-  //     console.error('Error al obtener los docentes por ID del usuario:', error);
-  //     throw error;
-  //   }
-  // },
 
   async getAll() {
     const query = `
@@ -210,7 +239,6 @@ WHERE
     return rows[0];
   },
 
-  //   async update(id, docente) {
   //     const client = await pool.connect();
   //     try {
   //       await client.query('BEGIN');
