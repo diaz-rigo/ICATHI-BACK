@@ -109,7 +109,7 @@ const PlantelesCursos = {
     const values = [estatus, observacion, id];
     const { rows } = await pool.query(query, values);
     return rows[0];
-},
+  },
 
 async obtenerCursosPorPlantel(plantelId) {
   const query = `
@@ -170,6 +170,7 @@ async obtenerCursoPorId(cursoId) {
   return rows[0]; // Devuelve solo un curso
 },
   // Modelo
+
   async eliminarCursosPorPlantel(plantelId) {
     try {
       const query = `
@@ -208,11 +209,11 @@ async obtenerCursoPorId(cursoId) {
         WHERE 
             pc.estatus = true;  -- Solo cursos validados
     `;
-  
+
     const { rows } = await pool.query(query);
     return rows;
   },
-  
+
   async obtenerPlantelesConCursosNoValidados() {
     const query = `
         SELECT 
@@ -231,7 +232,7 @@ async obtenerCursoPorId(cursoId) {
         WHERE 
             pc.estatus = false;  -- Solo cursos no validados
     `;
-  
+
     const { rows } = await pool.query(query);
     return rows;
   },
@@ -244,17 +245,25 @@ async obtenerCursoPorId(cursoId) {
           p.nombre AS plantel_nombre,
           c.id AS curso_id,
           c.nombre AS curso_nombre,
-          pc.estatus AS curso_validado
+          pc.estatus AS curso_validado,
+          CASE 
+              WHEN cd.docente_id IS NOT NULL THEN d.nombre || ' ' || d.apellidos
+              ELSE 'Asignación pendiente'
+          END AS docente_asignado
       FROM 
           planteles_cursos pc
       JOIN 
           planteles p ON pc.plantel_id = p.id
       JOIN 
           cursos c ON pc.curso_id = c.id
+      LEFT JOIN
+          cursos_docentes cd ON pc.curso_id = cd.curso_id
+      LEFT JOIN
+          docentes d ON cd.docente_id = d.id
       WHERE 
-          p.id = \$1;  -- Filtrar por el ID del plantel
+          p.id = $1;
     `;
-  
+
     const values = [idPlantel];
     const { rows } = await pool.query(query, values);
     return rows;

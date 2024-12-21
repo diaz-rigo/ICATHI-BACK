@@ -20,30 +20,63 @@ const DocentesModel = {
       console.error('Error al obtener los docentes por ID del usuario:', error);
       throw error;
     }
+  },
+  async getDocenteByIdPlantel(plantelId) {
+    try {
+      const query = `
+        SELECT 
+          d.id, d.nombre, d.apellidos, d.email, d.telefono, d.especialidad, 
+          d.certificado_profesional, d.cedula_profesional, d.documento_identificacion, 
+          d.num_documento_identificacion, d.curriculum_url, d.created_at, d.updated_at, 
+          d.usuario_validador_id, d.fecha_validacion, d.foto_url, d.rol, d.estatus_id, 
+          e.tipo AS estatus_tipo, e.valor AS estatus_valor
+        FROM docentes d
+        LEFT JOIN estatus e ON d.estatus_id = e.id
+        WHERE d.id_usuario = $1
+      `;
+      const result = await pool.query(query, [userId]);
+      return result.rows; // Retorna todos los registros asociados al ID del usuario con el estatus asociado
+    } catch (error) {
+      console.error('Error al obtener los docentes por ID del usuario:', error);
+      throw error;
+    }
   }
 ,  
-  // async getByUserId(userId) {
-  //   try {
-  //     const query = `
-  //       SELECT 
-  //         id, nombre, apellidos, email, telefono, especialidad, certificado_profesional,
-  //         cedula_profesional, documento_identificacion, num_documento_identificacion,
-  //         curriculum_url, estatus, created_at, updated_at, usuario_validador_id,
-  //         fecha_validacion, foto_url, rol
-  //       FROM docentes
-  //       WHERE id_usuario = $1
-  //     `;
-  //     const result = await pool.query(query, [userId]);
-  //     return result.rows; // Retorna todos los registros asociados al ID del usuario
-  //   } catch (error) {
-  //     console.error('Error al obtener los docentes por ID del usuario:', error);
-  //     throw error;
-  //   }
-  // },
+async updateStatus(docenteId, nuevoEstatusId, usuarioValidadorId) {
+  try {
+    // Consulta SQL para actualizar el estatus de un docente
+    const query = `
+      UPDATE docentes
+      SET 
+        estatus_id = $1, 
+        updated_at = NOW(), 
+        usuario_validador_id = $2, 
+        fecha_validacion = NOW()
+      WHERE id = $3
+      RETURNING *; -- Devuelve el registro actualizado
+    `;
+
+    // Ejecutamos la consulta con los valores proporcionados
+    const result = await pool.query(query, [nuevoEstatusId, usuarioValidadorId, docenteId]);
+
+    // Verifica si se actualizó algún registro
+    if (result.rowCount === 0) {
+      return null; // Retornar null si no se encuentra el docente
+    }
+
+    return result.rows[0]; // Retorna el registro actualizado
+  } catch (error) {
+    // Manejo de errores
+    console.error('Error al actualizar el estatus del docente:', error);
+    throw error;
+  }
+}
+
+,
 
   async getAll() {
     const query = `
-      SELECT 
+    SELECT 
         d.id,
         d.nombre,
         d.apellidos,
@@ -56,6 +89,8 @@ const DocentesModel = {
         d.num_documento_identificacion,
         d.curriculum_url,
         d.estatus_id,
+        e.tipo AS estatus_tipo,
+        e.valor AS estatus_valor,
         d.created_at,
         d.updated_at,
         d.usuario_validador_id,
@@ -63,39 +98,43 @@ const DocentesModel = {
         d.foto_url,
         u.nombre AS validador_nombre,
         u.apellidos AS validador_apellidos
-      FROM docentes d
-      LEFT JOIN usuarios u ON d.usuario_validador_id = u.id
-    `;
+    FROM docentes d
+    LEFT JOIN usuarios u ON d.usuario_validador_id = u.id
+    LEFT JOIN estatus e ON d.estatus_id = e.id
+`
     const { rows } = await pool.query(query);
     return rows;
   },
 
   async getById(id) {
     const query = `
-      SELECT 
-        d.id,
-        d.nombre,
-        d.apellidos,
-        d.email,
-        d.telefono,
-        d.especialidad,
-        d.certificado_profesional,
-        d.cedula_profesional,
-        d.documento_identificacion,
-        d.num_documento_identificacion,
-        d.curriculum_url,
-        d.estatus,
-        d.created_at,
-        d.updated_at,
-        d.usuario_validador_id,
-        d.fecha_validacion,
-        d.foto_url,
-        u.nombre AS validador_nombre,
-        u.apellidos AS validador_apellidos
-      FROM docentes d
-      LEFT JOIN usuarios u ON d.usuario_validador_id = u.id
-      WHERE d.id = \$1
-    `;
+    SELECT 
+      d.id,
+      d.nombre,
+      d.apellidos,
+      d.email,
+      d.telefono,
+      d.especialidad,
+      d.certificado_profesional,
+      d.cedula_profesional,
+      d.documento_identificacion,
+      d.num_documento_identificacion,
+      d.curriculum_url,
+      e.tipo AS estatus_tipo,
+      e.valor AS estatus_valor,
+      d.created_at,
+      d.updated_at,
+      d.usuario_validador_id,
+      d.fecha_validacion,
+      d.foto_url,
+      u.nombre AS validador_nombre,
+      u.apellidos AS validador_apellidos
+    FROM docentes d
+    LEFT JOIN usuarios u ON d.usuario_validador_id = u.id
+    LEFT JOIN estatus e ON d.estatus_id = e.id
+    WHERE d.id = $1
+  `;
+  
     const { rows } = await pool.query(query, [id]);
     return rows[0];
   },

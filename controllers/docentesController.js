@@ -1,5 +1,62 @@
 const DocentesModel = require('../models/docentesModel');
 
+
+// exports.updateDocenteStatus = async (req, res) => {
+//   const { estatus_id } = req.body; // Obteniendo el estatus_id del cuerpo de la solicitud
+//   const docenteId = req.params.docenteId; // Obteniendo el docenteId de los parámetros de la URL
+
+//   console.log("***", req.body);
+  
+//   try {
+//     const rowCount = await DocentesModel.updateStatus(docenteId, estatus_id);
+    
+//     if (rowCount === 0) {
+//       return res.status(404).json({ message: 'Docente no encontrado' });
+//     }
+
+//     res.status(200).json({ message: 'Estatus actualizado correctamente' });
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error al actualizar el estatus', error: error.message });
+//   }
+// };
+
+exports.updateDocenteStatus = async (req, res) => {
+  const { estatus_id, usuario_validador_id } = req.body; // Obteniendo los datos del cuerpo de la solicitud
+  const docenteId = req.params.docenteId; // Obteniendo el docenteId de los parámetros de la URL
+
+  console.log("*** Request Body:", req.body);
+  console.log("*** Request Params:", req.params);
+
+  // Validación de parámetros
+  if (!docenteId || !estatus_id || !usuario_validador_id) {
+    return res.status(400).json({
+      message: 'Faltan datos requeridos: docenteId, estatus_id o usuario_validador_id',
+    });
+  }
+
+  try {
+    // Llamando al modelo para actualizar el estatus con el usuario validador
+    const resultado = await DocentesModel.updateStatus(docenteId, estatus_id, usuario_validador_id);
+
+    if (!resultado) {
+      return res.status(404).json({ message: 'Docente no encontrado' });
+    }
+
+    res.status(200).json({
+      message: 'Estatus actualizado correctamente',
+      data: resultado, // Se incluye el registro actualizado para verificar los cambios
+    });
+  } catch (error) {
+    console.error("Error al actualizar el estatus:", error);
+    res.status(500).json({
+      message: 'Error interno al actualizar el estatus',
+      error: error.message,
+    });
+  }
+};
+
+
+
 exports.getDocentesByUserId = async (req, res) => {
 // async getDocentesByUserId(req, res) {
   const { userId } = req.params;
@@ -21,10 +78,22 @@ exports.getDocentesByUserId = async (req, res) => {
     return res.status(500).json({ error: 'Error al obtener docentes.' });
   }
 }
-
+// 2222222222222222222222222222222222 hacer 
 exports.getAll = async (req, res) => {
   try {
+    
     const docentes = await DocentesModel.getAll();
+    res.status(200).json(docentes);
+  } catch (error) {
+    console.error('Error al obtener los docentes:', error);
+    res.status(500).json({ error: 'Error al obtener los docentes' });
+  }
+};
+exports.getDocenteByIdPlantel = async (req, res) => {
+  try {
+    const { plantelId } = req.params;
+    
+    const docentes = await DocentesModel.getDocenteByIdPlantel(plantelId);
     res.status(200).json(docentes);
   } catch (error) {
     console.error('Error al obtener los docentes:', error);

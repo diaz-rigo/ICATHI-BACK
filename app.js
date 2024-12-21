@@ -22,6 +22,8 @@ const alumno = require ('./routes/alumnoRouter')
 
 const aspirante= require ('./routes/registrosAspirantesRouter')
 const archivos= require ('./routes/archivos.Router')
+const especialidades_docentes= require ('./routes/docentesEspecialidadesRouter')
+const alumnos_cursos= require ('./routes/alumnosCursosRoutes')
 
 // const pool = require('./config/database'); // Importa el pool de conexión
 
@@ -62,10 +64,13 @@ app.use('/planteles-curso', plantelesCursosRouter);
 app.use('/curso-docente', cursosDocente);
 app.use('/planteles', plantelesRouter);
 app.use('/aspirante', aspirante);
-app.use('/alumnosPlantelCursos', alumnosPlantelCursosRouter);
+app.use('/PlantelCursos', alumnosPlantelCursosRouter);
+// alumnosPlantelCursosRouter = require ('./routes/alumnosPlantelCursos.Router')
 
 app.use('/plantelesCursos', plantelesCursosRouter); // Asegúrate de que la ruta
 app.use('/archivos', archivos);
+app.use('/especialidades_docentes', especialidades_docentes);
+app.use('/alumnos-cursos', alumnos_cursos);
 // Middleware para manejar errores de rutas no encontradas
 app.use((req, res, next) => {
   const error = new Error('Recurso no encontrado');
