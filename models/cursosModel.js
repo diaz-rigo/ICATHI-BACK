@@ -27,6 +27,36 @@ const CursosModel = {
     const { rows } = await pool.query(query);
     return rows;
   },
+  async getAllByIdPlantel(idPlantel) {
+    const query = `
+    SELECT 
+  c.id, 
+  c.nombre, 
+  c.clave,
+  c.duracion_horas,
+  c.descripcion,
+  c.area_id,
+  a.nombre AS area_nombre,
+  c.especialidad_id,
+  e.nombre AS especialidad_nombre,
+  c.tipo_curso_id,
+  c.estatus,
+  t.nombre AS tipo_curso_nombre,
+  c.vigencia_inicio,
+  c.fecha_publicacion,
+  c.ultima_actualizacion
+FROM planteles_cursos pc
+JOIN cursos c ON pc.curso_id = c.id
+JOIN areas a ON c.area_id = a.id
+JOIN especialidades e ON c.especialidad_id = e.id
+JOIN tipos_curso t ON c.tipo_curso_id = t.id
+WHERE pc.plantel_id = ${idPlantel} AND pc.estatus = true
+
+
+    `;
+    const { rows } = await pool.query(query);
+    return rows;
+  },
 
   async getById(id) {  
     const query = `  
@@ -167,21 +197,52 @@ const CursosModel = {
     const { rows } = await pool.query(query, [areaId, especialidadId]);
     return rows;
   },
-  async getCursosByEspecialidadId(especialidadId) {
+  async getCursosByEspecialidadId(especialidadId, plantelId) {
     const query = `
-      SELECT id, nombre, descripcion, duracion_horas, nivel, costo, requisitos, estatus, created_at, updated_at, usuario_validador_id, fecha_validacion, modalidad, clave, area_id, especialidad_id, tipo_curso_id, vigencia_inicio, fecha_publicacion, ultima_actualizacion
-      FROM cursos
-      WHERE especialidad_id = $1
+      SELECT 
+        c.id, 
+        c.nombre, 
+        c.descripcion, 
+        c.duracion_horas, 
+        c.nivel, 
+        c.costo, 
+        c.requisitos, 
+        c.estatus, 
+        c.created_at, 
+        c.updated_at, 
+        c.usuario_validador_id, 
+        c.fecha_validacion, 
+        c.modalidad, 
+        c.clave, 
+        c.area_id, 
+        c.especialidad_id, 
+        c.tipo_curso_id, 
+        c.vigencia_inicio, 
+        c.fecha_publicacion, 
+        c.ultima_actualizacion,
+        CASE 
+          WHEN pc.curso_id IS NOT NULL THEN true
+          ELSE false
+        END AS registrado
+      FROM 
+        cursos c
+      LEFT JOIN 
+        planteles_cursos pc 
+        ON c.id = pc.curso_id AND pc.plantel_id = $2
+      WHERE 
+        c.especialidad_id = $1
     `;
-
+  
     try {
-      const { rows } = await pool.query(query, [especialidadId]);
+      const { rows } = await pool.query(query, [especialidadId, plantelId]);
       return rows;
     } catch (error) {
       console.error("Error al obtener los cursos:", error);
       throw error;
     }
-  },
+  }
+  
+  
 };
 
 module.exports = CursosModel;

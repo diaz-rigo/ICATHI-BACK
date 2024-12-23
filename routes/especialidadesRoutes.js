@@ -4,6 +4,7 @@ const especialidadesController = require('../controllers/especialidadesControlle
 
 // Ruta para obtener todas las especialidades
 router.get('/', especialidadesController.getAll);
+router.get('/ByIdPlantel/:idPlantel', especialidadesController.getByIdPlantel);
 router.get('/:docente_id', especialidadesController.obtenerEspecialidadesPorDocente);
 
 

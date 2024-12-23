@@ -1,13 +1,7 @@
 const pool = require('../config/database'); // Importa la configuración del pool de conexiones
 const bcrypt = require('bcrypt');
-// <<<<<<< HEAD
-// const CryptoJS = require('crypto-js');
-// const fs = require('fs');
 
-// const publicKey = fs.readFileSync('./keys/public.pem', 'utf8');
-// =======
 const { generateAuthToken } = require('../config/authUtils'); // Importa la función para generar el token
-// >>>>>>> padilla
 
 const Usuario = {
 

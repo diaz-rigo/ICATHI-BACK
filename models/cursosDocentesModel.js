@@ -34,13 +34,17 @@ const cursosDocentesModel = {
     const query = `
         INSERT INTO cursos_docentes (curso_id, docente_id, fecha_asignacion, estatus)
         VALUES ($1, $2, $3, $4) RETURNING *`;
-    
+
     // Ejecutar la consulta con los parámetros
-    const { rows } = await pool.query(query, [cursoId, docenteId, fechaAsignacion, true]); // true para estatus
-    
+    const { rows } = await pool.query(query, [
+      cursoId,
+      docenteId,
+      fechaAsignacion,
+      true,
+    ]); // true para estatus
+
     return rows[0]; // Retornar el primer resultado
-}
-,
+  },
   async getById(id) {
     const query = `
       SELECT 
@@ -142,6 +146,24 @@ const cursosDocentesModel = {
     const query = "DELETE FROM cursos WHERE id = $1 RETURNING *"; // Consulta para eliminar el curso
     const { rows } = await pool.query(query, [id]); // Ejecuta la consulta con el ID
     return rows[0]; // Devuelve el curso eliminado
+  },
+
+  async getDocentesByCursoAndPlantel(idPlantel) {
+    const query = `
+      SELECT 
+        d.id AS docente_id,
+        d.nombre AS docente_nombre,
+        d.apellidos,
+        c.id AS curso_id,
+        c.nombre AS curso_nombre
+      FROM cursos_docentes cd
+      JOIN docentes d ON cd.docente_id = d.id
+      JOIN cursos c ON cd.curso_id = c.id
+      JOIN planteles_cursos pc ON c.id = pc.curso_id
+      WHERE pc.plantel_id = $1 AND pc.estatus = true AND cd.estatus = true;
+    `;
+    const { rows } = await pool.query(query, [idPlantel]);
+    return rows;
   },
 };
 

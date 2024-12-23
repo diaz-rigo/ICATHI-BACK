@@ -5,19 +5,21 @@ const AlumnosCursosPlantelModel = {
   async obtenerAlumonosPorPlantel(plantelId) {
     try {
       const query = `
-      SELECT  
-        al.*,  -- Nombre del alumno
-        crs.nombre AS nombreCurso  -- Nombre del curso
-      FROM 
-        alumnos_cursos ac
-      INNER JOIN 
-        alumnos al ON ac.alumno_id = al.id
-      INNER JOIN 
-        cursos crs ON ac.curso_id = crs.id
-      INNER JOIN 
-        planteles_cursos plcrs ON plcrs.curso_id = crs.id
-      WHERE 
-        plcrs.plantel_id = $1;
+   SELECT  
+    al.*,                 -- Todas las columnas de alumnos
+    crs.nombre AS nombreCurso -- Nombre del curso
+FROM 
+    alumnos_cursos ac
+INNER JOIN 
+    alumnos al ON ac.alumno_id = al.id
+INNER JOIN 
+    cursos crs ON ac.curso_id = crs.id
+LEFT JOIN 
+    planteles_cursos plcrs ON plcrs.curso_id = crs.id 
+        AND plcrs.plantel_id = $1  -- Condición para el plantel específico
+WHERE 
+    (plcrs.plantel_id = $1 OR plcrs.plantel_id IS NULL); -- Mostrar registros aunque no estén en planteles_cursos
+
       `;
 
       const values = [plantelId];

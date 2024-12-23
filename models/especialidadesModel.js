@@ -47,7 +47,27 @@ const EspecialidadesModel = {
       console.error('Error al obtener las especialidades:', error);
       throw error;
     }
+  },
+  async  obtenerEspecialidadesPorPlantel(plantelId) {
+    const query = `
+      SELECT DISTINCT e.id AS especialidad_id, 
+                      e.nombre AS especialidad_nombre, 
+                      e.descripcion AS especialidad_descripcion
+      FROM especialidades e
+      INNER JOIN cursos c ON e.id = c.especialidad_id
+      INNER JOIN planteles_cursos pc ON c.id = pc.curso_id
+      WHERE pc.plantel_id = $1;
+    `;
+  
+    try {
+      const { rows } = await pool.query(query, [plantelId]);
+      return rows;
+    } catch (error) {
+      console.error('Error obteniendo especialidades por plantel:', error);
+      throw error;
+    }
   }
+  
 
 };
 
