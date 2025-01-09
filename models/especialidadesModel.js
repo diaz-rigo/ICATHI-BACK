@@ -56,11 +56,11 @@ const EspecialidadesModel = {
       FROM especialidades e
       INNER JOIN cursos c ON e.id = c.especialidad_id
       INNER JOIN planteles_cursos pc ON c.id = pc.curso_id
-      WHERE pc.plantel_id = $1;
+      WHERE pc.plantel_id = ${plantelId};
     `;
   
     try {
-      const { rows } = await pool.query(query, [plantelId]);
+      const { rows } = await pool.query(query);
       return rows;
     } catch (error) {
       console.error('Error obteniendo especialidades por plantel:', error);

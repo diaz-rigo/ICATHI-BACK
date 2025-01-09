@@ -184,8 +184,16 @@ exports.getCursosByAreaIdByEspecialidadId = async (req, res) => {
 
 
 
-
-
+exports.getAllByIdDocente = async (req, res) => {
+  try {
+    const { idDocente } = req.params;
+    const cursos = await CursosModel.getCursosByIdDocente(idDocente);
+    res.status(200).json(cursos);
+  } catch (error) {
+    console.error(`Error al obtener los cursos del docente`, error);
+    res.status(500).json({ error: 'Error al obtener los cursos' });
+  }
+};
 
 exports.getCursosByEspecialidadId=async(req, res)=> {
   try {

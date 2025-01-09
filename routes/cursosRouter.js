@@ -12,6 +12,7 @@ router.put('/:id', CursosController.update); // Actualizar un curso existente
 router.delete('/:id', CursosController.delete); // Eliminar un curso  
 
 
+router.get('/byIdDocente/:idDocente', CursosController.getAllByIdDocente); // Obtener todos los cursos  
 
 router.get('/', CursosController.getCursosByAreaIdByEspecialidadId); // Obtener un curso por ID de area y especialida
 router.get('/byEspecialidadId/:especialidadId/plantelId/:plantelId', CursosController.getCursosByEspecialidadId);//obtiene cursos por especialidad seleccionada

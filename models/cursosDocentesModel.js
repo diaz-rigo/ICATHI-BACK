@@ -165,6 +165,30 @@ const cursosDocentesModel = {
     const { rows } = await pool.query(query, [idPlantel]);
     return rows;
   },
+  async getAlumnosByCursoId(curso_id) {
+  const query = `
+    SELECT 
+      a.id AS alumno_id,
+      a.nombre AS alumno_nombre,
+      a.apellidos AS alumno_apellidos,
+      c.id AS curso_id,
+      c.nombre AS curso_nombre,
+      cd.docente_id,
+      asis.id AS asistencia_id,
+      asis.fecha AS asistencia_fecha,
+      asis.asistencia AS asistencia
+    FROM alumnos a
+    JOIN alumnos_cursos ac ON a.id = ac.alumno_id
+    JOIN cursos c ON ac.curso_id = c.id
+    JOIN cursos_docentes cd ON c.id = cd.curso_id
+    LEFT JOIN asistencias asis ON a.id = asis.alumno_id AND c.id = asis.curso_id AND asis.fecha = CURRENT_DATE
+    WHERE c.id = $1 AND cd.estatus = true AND ac.estatus = 'Inscrito';
+  `;
+
+  const { rows } = await pool.query(query, [curso_id]);
+  return rows;
+}
+
 };
 
 module.exports = cursosDocentesModel;

@@ -1,6 +1,7 @@
 const express = require('express');
 const usuarioController = require('../controllers/usuarioController'); // Asegúrate de que la ruta al controlador sea correcta
 const router = express.Router();
+router.put('/:id/estatus-rol', usuarioController.manejarCambioDeEstatusYRol);
 
 router.put('/cambiar-rol/:id', usuarioController.manejarCambioDeRol);
 // Ruta para crear un nuevo usuario

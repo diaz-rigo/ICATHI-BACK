@@ -4,7 +4,17 @@ const bcrypt = require('bcrypt');
 const { generateAuthToken } = require('../config/authUtils'); // Importa la función para generar el token
 
 const Usuario = {
-
+  async actualizarEstatusYRol(id, estatus, rol) {
+    const query = `
+      UPDATE usuarios
+      SET estatus = $1,
+          rol = $2,
+          updated_at = now()
+      WHERE id = $3;
+    `;
+    const result = await pool.query(query, [estatus, rol, id]);
+    return result.rowCount > 0; // Retorna `true` si se actualizó alguna fila, `false` en caso contrario
+  },
   async insertarUsuario(nombre, apellidos, email, telefono, rol, estatus,username,passwordHash) {
 
     const query = `
@@ -78,7 +88,7 @@ const Usuario = {
   
     const query = `
       INSERT INTO usuarios (nombre, apellidos, email, username, password_hash, rol, estatus)
-      VALUES ($1, $2, $3, $4, $5, $6, true)
+      VALUES ($1, $2, $3, $4, $5, $6, false)
       RETURNING *;
     `;
     const values = [nombre, apellidos, email, username, hashedPassword, rol];
@@ -164,6 +174,53 @@ const Usuario = {
       throw error;
     }
   },
+  async  eliminarUsuario(id) {
+    const verificarRelaciones = `
+      SELECT
+        CASE
+          WHEN EXISTS (SELECT 1 FROM docentes WHERE id_usuario = $1) THEN 'DOCENTE'
+          WHEN EXISTS (SELECT 1 FROM alumnos WHERE id_user = $1) THEN 'ALUMNO'
+          ELSE 'NO_RELACIONADO'
+        END AS tipo_usuario
+    `;
+    const eliminarRelacionesDocente = `DELETE FROM docentes WHERE id_usuario = $1;`;
+    const eliminarRelacionesAlumno = `DELETE FROM alumnos WHERE id_user = $1;`;
+    const eliminarUsuarioQuery = `
+      DELETE FROM usuarios
+      WHERE id = $1
+      RETURNING *;
+    `;
+  
+    try {
+      // Verifica si el usuario está relacionado con otras tablas
+      const result = await pool.query(verificarRelaciones, [id]);
+      const tipoUsuario = result.rows[0]?.tipo_usuario;
+  
+      if (!tipoUsuario) {
+        throw new Error('El usuario no existe.');
+      }
+  
+      // Si es un docente, elimina los registros relacionados en la tabla "docentes"
+      if (tipoUsuario === 'DOCENTE') {
+        await pool.query(eliminarRelacionesDocente, [id]);
+      }
+  
+      // Si es un alumno, elimina los registros relacionados en la tabla "alumnos"
+      if (tipoUsuario === 'ALUMNO') {
+        await pool.query(eliminarRelacionesAlumno, [id]);
+      }
+  
+      // Finalmente, elimina al usuario
+      const usuarioEliminado = await pool.query(eliminarUsuarioQuery, [id]);
+  
+      console.log(`Usuario de tipo ${tipoUsuario} eliminado correctamente.`);
+      return usuarioEliminado.rows[0];
+    } catch (error) {
+      console.error('Error al eliminar usuario:', error.message);
+      throw error;
+    }
+  }
+,  
 };
 
 module.exports = Usuario;

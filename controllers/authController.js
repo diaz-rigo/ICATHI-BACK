@@ -5,8 +5,13 @@ const { generateAuthToken } = require('../config/authUtils'); // Ajusta la ruta 
 
 exports.signIn = async (req, res) => {
   const { email, password } = req.body;
-
+  console.log("login",req.body)
   try {
+    // Validar que la contraseña sea una cadena
+    if (typeof password !== 'string') {
+      return res.status(400).json({ message: 'La contraseña debe ser una cadena de texto' });
+    }
+
     // Buscar en la tabla usuarios
     let query = `SELECT * FROM usuarios WHERE email = $1;`;
     let values = [email];
@@ -41,9 +46,14 @@ exports.signIn = async (req, res) => {
       return res.status(403).json({ message: 'La cuenta no está activa. Por favor, contacta al administrador.' });
     }
 
-    // Comparar la contraseña
+    // Seleccionar el campo correcto de la base de datos
     const passwordHashField = userType === 'usuario' ? 'password_hash' : 'password';
-    const passwordMatch = await bcrypt.compare(password, user[passwordHashField]);
+
+    // Asegurar que la contraseña guardada en la base de datos sea una cadena
+    const passwordHash = String(user[passwordHashField]);  // Convertir a cadena si es necesario
+
+    // Comparar la contraseña
+    const passwordMatch = await bcrypt.compare(password, passwordHash);
 
     if (passwordMatch) {
       // Generar el token

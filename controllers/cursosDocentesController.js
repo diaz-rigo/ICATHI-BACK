@@ -42,8 +42,35 @@ module.exports = {
       console.error("Error al obtener docentes:", error);
       res.status(500).json({ message: "Error al obtener docentes", error: error.message });
     }
-  }
-  
+  },
+  async getAlumnosAndCursoByIdCursoId(req, res) {
+    const { cursoId } = req.params;
+
+    if (!cursoId) {
+      return res.status(400).json({ message: "El cursoId es requerido" });
+    }
+
+    try {
+      console.log("cursoId ID recibido:", cursoId);
+
+      // Llamada al modelo para obtener alumnos y cursos
+      const data = await cursosDocentesModel.getAlumnosByCursoId(cursoId);
+
+      if (!data || data.length === 0) {
+        return res.status(404).json({ message: "No se encontraron alumnos o cursos para el docente especificado" });
+      }
+
+      res.status(200).json({
+        message: "Alumnos y cursos obtenidos con éxito",
+        data,
+      });
+    } catch (error) {
+      console.error("Error al obtener alumnos y cursos:", error);
+      res.status(500).json({ message: "Error al obtener alumnos y cursos", error: error.message });
+    }
+  },
+
+
   // async getAllDocenteByIdPlantel (req, res) {
   //   // async getDocentesByUserId(req, res) {
   //     const { idPlantel } = req.params;
