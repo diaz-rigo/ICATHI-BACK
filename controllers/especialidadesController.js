@@ -101,3 +101,25 @@ exports.obtenerEspecialidadesPorDocente = async (req, res) => {
       }
   };
   
+exports.getByIdPlantel = async (req, res) => {
+  // Función para manejar la consulta de especialidades por docente
+  // const obtenerEspecialidadesPorDocente = async (req, res) => {
+      const idPlantel = req.params.idPlantel; // Obtenemos el ID del docente desde los parámetros de la URL
+  
+      try {
+          // Llamamos a la función del modelo para obtener las especialidades del docente
+          const especialidades = await EspecialidadesModel.obtenerEspecialidadesPorPlantel(idPlantel);
+          
+          // Si no se encontraron especialidades, devolvemos un 404
+          if (especialidades.length === 0) {
+              return res.status(404).json({ mensaje: 'No se encontraron especialidades para este docente.' });
+          }
+          
+          // Devolvemos las especialidades encontradas
+          res.status(200).json({ especialidades });
+      } catch (error) {
+          console.error(error); // Mostramos el error en la consola para debugging
+          res.status(500).json({ mensaje: 'Error en el servidor. No se pudieron obtener las especialidades.' });
+      }
+  };
+  

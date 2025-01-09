@@ -11,6 +11,18 @@ exports.getAll = async (req, res) => {
   }  
 };  
   
+exports.getAllByIdPlantel = async (req, res) => {  
+  try {  
+    const { idPlantel } = req.params;  
+
+    const cursos = await CursosModel.getAllByIdPlantel(idPlantel);  
+    res.status(200).json(cursos);  
+  } catch (error) {  
+    console.error('Error al obtener los cursos:', error);  
+    res.status(500).json({ error: 'Error al obtener los cursos' });  
+  }  
+};  
+  
 exports.getById = async (req, res) => {  
   try {  
     const { id } = req.params;  
@@ -172,13 +184,22 @@ exports.getCursosByAreaIdByEspecialidadId = async (req, res) => {
 
 
 
-
-
+exports.getAllByIdDocente = async (req, res) => {
+  try {
+    const { idDocente } = req.params;
+    const cursos = await CursosModel.getCursosByIdDocente(idDocente);
+    res.status(200).json(cursos);
+  } catch (error) {
+    console.error(`Error al obtener los cursos del docente`, error);
+    res.status(500).json({ error: 'Error al obtener los cursos' });
+  }
+};
 
 exports.getCursosByEspecialidadId=async(req, res)=> {
   try {
     const especialidadId = Number(req.params.especialidadId);
-    const cursos = await CursosModel.getCursosByEspecialidadId(especialidadId);
+    const plantelId = Number(req.params.plantelId);
+    const cursos = await CursosModel.getCursosByEspecialidadId(especialidadId,plantelId);
     res.status(200).json(cursos);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener los cursos' });

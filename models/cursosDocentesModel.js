@@ -34,13 +34,17 @@ const cursosDocentesModel = {
     const query = `
         INSERT INTO cursos_docentes (curso_id, docente_id, fecha_asignacion, estatus)
         VALUES ($1, $2, $3, $4) RETURNING *`;
-    
+
     // Ejecutar la consulta con los parámetros
-    const { rows } = await pool.query(query, [cursoId, docenteId, fechaAsignacion, true]); // true para estatus
-    
+    const { rows } = await pool.query(query, [
+      cursoId,
+      docenteId,
+      fechaAsignacion,
+      true,
+    ]); // true para estatus
+
     return rows[0]; // Retornar el primer resultado
-}
-,
+  },
   async getById(id) {
     const query = `
       SELECT 
@@ -143,6 +147,48 @@ const cursosDocentesModel = {
     const { rows } = await pool.query(query, [id]); // Ejecuta la consulta con el ID
     return rows[0]; // Devuelve el curso eliminado
   },
+
+  async getDocentesByCursoAndPlantel(idPlantel) {
+    const query = `
+      SELECT 
+        d.id AS docente_id,
+        d.nombre AS docente_nombre,
+        d.apellidos,
+        c.id AS curso_id,
+        c.nombre AS curso_nombre
+      FROM cursos_docentes cd
+      JOIN docentes d ON cd.docente_id = d.id
+      JOIN cursos c ON cd.curso_id = c.id
+      JOIN planteles_cursos pc ON c.id = pc.curso_id
+      WHERE pc.plantel_id = $1 AND pc.estatus = true AND cd.estatus = true;
+    `;
+    const { rows } = await pool.query(query, [idPlantel]);
+    return rows;
+  },
+  async getAlumnosByCursoId(curso_id) {
+  const query = `
+    SELECT 
+      a.id AS alumno_id,
+      a.nombre AS alumno_nombre,
+      a.apellidos AS alumno_apellidos,
+      c.id AS curso_id,
+      c.nombre AS curso_nombre,
+      cd.docente_id,
+      asis.id AS asistencia_id,
+      asis.fecha AS asistencia_fecha,
+      asis.asistencia AS asistencia
+    FROM alumnos a
+    JOIN alumnos_cursos ac ON a.id = ac.alumno_id
+    JOIN cursos c ON ac.curso_id = c.id
+    JOIN cursos_docentes cd ON c.id = cd.curso_id
+    LEFT JOIN asistencias asis ON a.id = asis.alumno_id AND c.id = asis.curso_id AND asis.fecha = CURRENT_DATE
+    WHERE c.id = $1 AND cd.estatus = true AND ac.estatus = 'Inscrito';
+  `;
+
+  const { rows } = await pool.query(query, [curso_id]);
+  return rows;
+}
+
 };
 
 module.exports = cursosDocentesModel;

@@ -4,6 +4,8 @@ const AreasController = require('../controllers/areasController');
 
 // Ruta para obtener todas las áreas
 router.get('/', AreasController.getAll);
+router.get('/deatilsById/:idArea', AreasController.getInfoById);
+router.get('/byIdPlantel/:idPlantel', AreasController.getAllBydPlantel);
 
 
 module.exports = router;

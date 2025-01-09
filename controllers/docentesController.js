@@ -78,6 +78,29 @@ exports.getDocentesByUserId = async (req, res) => {
     return res.status(500).json({ error: 'Error al obtener docentes.' });
   }
 }
+exports.getAlumnosAndcursoByIdDocente = async (req, res) => {
+// async getDocentesByUserId(req, res) {
+  const { docenteId } = req.params;
+
+  if (!docenteId) {
+    return res.status(400).json({ error: 'El ID del usuario es requerido.' });
+  }
+
+  try {
+    const docentes = await DocentesModel.getAlumnosCursoByIdDocente(docenteId);
+
+    if (docentes.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron datos de este docente.' });
+    }
+
+    return res.status(200).json(docentes);
+  } catch (error) {
+    console.error('Error en el controlador al obtener docentes:', error);
+    return res.status(500).json({ error: 'Error al obtener docentes.' });
+  }
+}
+
+
 // 2222222222222222222222222222222222 hacer 
 exports.getAll = async (req, res) => {
   try {

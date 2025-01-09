@@ -2,6 +2,8 @@
 const PlantelesCursosModel = require("../models/planteles_cursosModel");
 const pool = require("../config/database"); // Asegúrate de que la ruta sea correcta
 // const PlantelesCursosModel = require('../models/planteles_cursosModel');
+const cloudinary = require("../config/cloudinary");
+const fs = require('fs');
 
 module.exports = {
   // async getByIdPlantel(req, res) {
@@ -31,7 +33,34 @@ module.exports = {
       res.status(500).json({ error: "Error al obtener los cursos" });
     }
   },
-  // Controlador
+
+  async getAll(req, res) {
+    try {
+      // const { idPlantel } = req.params;
+
+
+      // Realiza el INNER JOIN para obtener los cursos del plantel
+      // const cursos = await PlantelesCursosModel.obtenerCursosPorPlantel(
+      //   idPlantel
+      // );
+
+      const cursos = await PlantelesCursosModel.getAll2(
+        // idPlantel
+      );
+
+      if (!cursos.length) {
+        return res
+          .status(404)
+          .json({ error: "No se encontraron cursos para este plantel" });
+      }
+
+      res.status(200).json(cursos);
+    } catch (error) {
+      console.error("Error al obtener los cursos:", error);
+      res.status(500).json({ error: "Error al obtener los cursos" });
+    }
+  },
+  // eliminia un curso solicitado
   async deleteByIdPlantel(req, res) {
     try {
       const { idPlantel } = req.params; // Extraer el ID del plantel desde los parámetros
@@ -77,31 +106,59 @@ module.exports = {
       throw error; // Lanza el error para manejarlo en el nivel superior
     }
   },
+
+
   async registrarSolicitud(req, res) {
     try {
-      // Llamar al modelo para registrar la solicitud
-      const nuevaSolicitud = await PlantelesCursosModel.registrarSolicitud(
-        req.body
-      );
-
-      // Imprimir los datos de la solicitud para depuración
-      console.log("Solicitud registrada exitosamente:", nuevaSolicitud);
-
-      // Responder con los datos registrados
+      // Verificar si req.file existe
+      // if (!req.file) {
+      //   return res.status(400).json({ message: "No se ha enviado el archivo de temario." });
+      // }
+    
+      
+      // console.log("Archivo recibido:", req.file);  // Verifica si el archivo ha sido recibido correctamente
+  
+      // const file = req.file;
+  
+      // Verificar que el archivo existe en la ruta antes de intentar subirlo
+      // if (!fs.existsSync(file.path)) {
+      //   return res.status(400).json({ message: "El archivo no existe en la ruta especificada." });
+      // }
+  
+      // Subir el archivo a Cloudinary
+      // const uploadResult = await cloudinary.uploader.upload(file.path, {
+      //   folder: "temarios_cursos", // Personaliza la carpeta en Cloudinary
+      //   resource_type: 'raw', 
+      // });
+  
+      // Eliminar el archivo temporal solo después de que haya sido subido correctamente
+      // if (fs.existsSync(file.path)) {
+      //   fs.unlinkSync(file.path);
+      // }
+  
+      // Preparar los datos de la solicitud
+      const solicitudData = {
+        ...req.body,
+        // temario_url: uploadResult.secure_url,
+      };
+  
+      // Registrar la solicitud en la base de datos
+      const nuevaSolicitud = await PlantelesCursosModel.registrarSolicitud(solicitudData);
+  
       res.status(201).json({
         message: "Solicitud registrada exitosamente",
         data: nuevaSolicitud,
       });
     } catch (error) {
       console.error("Error al registrar la solicitud:", error);
-
-      // Enviar respuesta de error
+  
       res.status(500).json({
         message: "Error al registrar la solicitud",
         error: error.message,
       });
     }
-  },
+  }
+,  
   async obtenerSolicitudes(req, res) {
     try {
       const solicitudes = await PlantelesCursosModel.obtenerSolicitudes();
@@ -216,14 +273,60 @@ module.exports = {
     try {
       const { idPlantelCurso } = req.params;
 
-      const info =
-        await PlantelesCursosModel.obtenerInfoPlantelCurso(idPlantelCurso);
+      const info = await PlantelesCursosModel.obtenerInfoPlantelCurso(
+        idPlantelCurso
+      );
       res.status(200).json(info);
     } catch (error) {
-      console.error(
-        "Error al obtener la info:",
-        error
+      console.error("Error al obtener la info:", error);
+      res.status(500).json({
+        message: "Error al obtener la info",
+        error: error.message,
+      });
+    }
+  },
+  async obtenerDetalleCursosPorPlantel(req, res) {
+    try {
+      const { idPlantelCurso } = req.params;
+
+      const info = await PlantelesCursosModel.obtenerDetalleCursosPorPlantel(
+        idPlantelCurso
       );
+      res.status(200).json(info);
+    } catch (error) {
+      console.error("Error al obtener la info:", error);
+      res.status(500).json({
+        message: "Error al obtener la info",
+        error: error.message,
+      });
+    }
+  },
+  async getCursosConEstado(req, res) {
+    try {
+      const { idPlantel } = req.params;
+
+      const info = await PlantelesCursosModel.getCursosConEstado(
+        idPlantel
+      );
+      res.status(200).json(info);
+    } catch (error) {
+      console.error("Error al obtener la info:", error);
+      res.status(500).json({
+        message: "Error al obtener la info",
+        error: error.message,
+      });
+    }
+  },
+  async getInfo(req, res) {
+    try {
+      const { idPlantel } = req.params;
+
+      const info = await PlantelesCursosModel.getInfoByPlantel(
+        idPlantel
+      );
+      res.status(200).json(info);
+    } catch (error) {
+      console.error("Error al obtener la info:", error);
       res.status(500).json({
         message: "Error al obtener la info",
         error: error.message,

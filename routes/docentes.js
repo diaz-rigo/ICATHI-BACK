@@ -4,6 +4,7 @@ const DocentesController = require('../controllers/docentesController');
 const especialidadesController = require('../controllers/especialidadesController');
 
 // Rutas CRUD
+router.get('/alumnoANDcursos/:docenteId', DocentesController.getAlumnosAndcursoByIdDocente);
 router.get('/obtieneDocentes/', especialidadesController.getSearchDocente);
 router.put('/:id', DocentesController.update); // Actualizar un docente existente
 router.get('/', DocentesController.getAll); // Obtener todos los docentes
