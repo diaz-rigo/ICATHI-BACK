@@ -137,8 +137,8 @@ const DocentesModel = {
       throw error;
     }
   },
-  }
-,  
+  
+
 async updateStatus(docenteId, nuevoEstatusId, usuarioValidadorId) {
   try {
     // Consulta SQL para actualizar el estatus de un docente
