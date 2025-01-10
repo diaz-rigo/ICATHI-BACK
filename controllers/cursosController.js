@@ -170,8 +170,15 @@ exports.getCursosByAreaIdByEspecialidadId = async (req, res) => {
   }
 };
 
-
-
+exports.getDetailedCursos = async (req, res) => {
+  try {
+    const cursos = await CursosModel.getDetailedCursos();
+    res.status(200).json(cursos);
+  } catch (error) {
+    console.error('Error al obtener los cursos detallados:', error);
+    res.status(500).json({ error: 'Error al obtener los cursos detallados' });
+  }
+};
 
 
 
@@ -182,8 +189,27 @@ exports.getCursosByEspecialidadId=async(req, res)=> {
     res.status(200).json(cursos);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener los cursos' });
+  
   }
-}
+};
+
+exports.updateStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const cursoActualizado = await CursosModel.updateStatus(id);
+    if (!cursoActualizado) {
+      return res.status(404).json({ error: 'Curso no encontrado' });
+    }
+
+    res.status(200).json(cursoActualizado);
+  } catch (error) {
+    console.error('Error al actualizar el estatus del curso:', error);
+    res.status(500).json({ error: 'Error al actualizar el estatus del curso' });
+  }
+};
+
+
 
 
 

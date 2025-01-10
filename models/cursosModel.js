@@ -182,6 +182,56 @@ const CursosModel = {
       throw error;
     }
   },
+
+  async getDetailedCursos() {
+    const query = `
+      SELECT 
+        c.id, 
+        c.estatus, 
+        c.area_id, 
+        a.nombre AS area_nombre, 
+        c.especialidad_id, 
+        e.nombre AS especialidad_nombre, 
+        c.clave, 
+        c.nombre AS curso_nombre, 
+        c.tipo_curso_id, 
+        t.nombre AS tipo_curso_nombre, 
+        c.duracion_horas AS horas, 
+        c.descripcion AS detalles
+      FROM cursos c
+      JOIN areas a ON c.area_id = a.id
+      JOIN especialidades e ON c.especialidad_id = e.id
+      JOIN tipos_curso t ON c.tipo_curso_id = t.id
+    `;
+    const { rows } = await pool.query(query);
+    return rows;
+  },
+
+  async updateStatus(id) {
+    const querySelect = `
+      SELECT estatus
+      FROM cursos
+      WHERE id = $1;
+    `;
+    const { rows: [curso] } = await pool.query(querySelect, [id]);
+  
+    if (!curso) {
+      return null; // Si el curso no existe
+    }
+  
+    const nuevoEstatus = !curso.estatus; // Invierte el valor actual
+    const queryUpdate = `
+      UPDATE cursos
+      SET estatus = $1
+      WHERE id = $2
+      RETURNING *;
+    `;
+    const values = [nuevoEstatus, id];
+    const { rows } = await pool.query(queryUpdate, values);
+    return rows[0]; // Devuelve el curso actualizado
+  },
+  
+  
 };
 
 module.exports = CursosModel;
