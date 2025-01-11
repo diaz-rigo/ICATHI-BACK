@@ -10,27 +10,18 @@ module.exports = {
 
   async getByIdPlantel(req, res) {
     try {
-      const { idPlantel } = req.params;
+        const { idPlantel } = req.params;
 
-      // Realiza el INNER JOIN para obtener los cursos del plantel
-      // const cursos = await PlantelesCursosModel.obtenerCursosPorPlantel(
-      //   idPlantel
-      // );
+        const cursos = await PlantelesCursosModel.obtenerCursosPorPlantel(idPlantel);
 
-      const cursos = await PlantelesCursosModel.obtenerCursosPorPlantel(
-        idPlantel
-      );
+        if (!cursos.length) {
+            return res.status(404).json({ error: "No se encontraron cursos para este plantel" });
+        }
 
-      if (!cursos.length) {
-        return res
-          .status(404)
-          .json({ error: "No se encontraron cursos para este plantel" });
-      }
-
-      res.status(200).json(cursos);
+        res.status(200).json(cursos);
     } catch (error) {
-      console.error("Error al obtener los cursos:", error);
-      res.status(500).json({ error: "Error al obtener los cursos" });
+        console.error("Error al obtener los cursos:", error);
+        res.status(500).json({ error: "Error al obtener los cursos" });
     }
   },
 
@@ -205,9 +196,29 @@ module.exports = {
         error: error.message,
       });
     }
-  },
-  async obtenerPlantelesConCursos(req, res) {
-    try {
+}
+,
+async obtenerCursoPorId(req, res) {
+  try {
+    const { idCurso } = req.params; // Extraer el ID del curso desde los parámetros
+
+    const curso = await PlantelesCursosModel.obtenerCursoPorId(idCurso);
+
+    if (!curso) {
+      return res.status(404).json({ error: "Curso no encontrado" });
+    }
+
+    res.status(200).json(curso);
+  } catch (error) {
+    console.error("Error al obtener el curso:", error);
+    res.status(500).json({ error: "Error al obtener el curso" });
+  }
+},
+
+
+  
+async obtenerPlantelesConCursos(req, res) {
+  try {
       const query = `
           SELECT 
               pc.id AS id,  -- ID de la relación plantel_curso

@@ -17,7 +17,7 @@
     "cloudinary": "^2.5.1",
     "crypto-js": "^4.2.0",
     "dotenv": "^16.4.5",
-    "express": "^4.21.1",
+    "express": "^4.21.2",
     "icathi-back": "file:",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",

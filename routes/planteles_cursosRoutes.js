@@ -23,6 +23,12 @@ router.get('/byIdPlantel/:idPlantel', PlantelesCursosController.getByIdPlantel);
 router.delete('/byIdPlantel/:idPlantel', PlantelesCursosController.deleteByIdPlantel); // filtra los ciuroso  por Plantel
 // Ruta para obtener cursos por plantel
 
+// Ruta para eliminar cursos por plantel
+router.delete('/byIdPlantel/:idPlantel', PlantelesCursosController.deleteByIdPlantel);
+
+// Nueva ruta para obtener un curso por su ID
+router.get('/curso/:idCurso', PlantelesCursosController.obtenerCursoPorId);
+
 // Nueva ruta para obtener planteles con sus cursos
 router.get('/plantelesConCursos', PlantelesCursosController.obtenerPlantelesConCursos);
 
