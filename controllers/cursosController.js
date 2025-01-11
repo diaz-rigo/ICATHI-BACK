@@ -11,6 +11,18 @@ exports.getAll = async (req, res) => {
   }  
 };  
   
+exports.getAllByIdPlantel = async (req, res) => {  
+  try {  
+    const { idPlantel } = req.params;  
+
+    const cursos = await CursosModel.getAllByIdPlantel(idPlantel);  
+    res.status(200).json(cursos);  
+  } catch (error) {  
+    console.error('Error al obtener los cursos:', error);  
+    res.status(500).json({ error: 'Error al obtener los cursos' });  
+  }  
+};  
+  
 exports.getById = async (req, res) => {  
   try {  
     const { id } = req.params;  
@@ -25,24 +37,151 @@ exports.getById = async (req, res) => {
   }  
 };  
   
-exports.create = async (req, res) => {  
-  try {  
-    console.log('Datos recibidos del frontend:', req.body); // Verifica los datos  
+exports.create = async (req, res) => {
+  const client = await pool.connect(); // Para manejar transacciones
+  try {
+    console.log('Datos recibidos del frontend:', req.body);
+
+    const {
+      nombre,
+      clave,
+      duracion_horas,
+      descripcion,
+      nivel,
+      area_id,
+      especialidad_id,
+      tipo_curso_id,
+      vigencia_inicio,
+      fecha_publicacion,
+      ultima_actualizacion,
+      objetivos,
+      materiales,
+      equipamiento,
+    } = req.body;
+
+    // Validación de los campos obligatorios (sin incluir materiales y equipamiento)
+    if (!nombre || !clave || !duracion_horas || !descripcion || !area_id || !especialidad_id || !tipo_curso_id) {
+      return res.status(400).json({ error: 'Los campos obligatorios deben completarse' });
+    }
+
+    await client.query('BEGIN');
+
+    // Insertar el curso
+    const cursoQuery = `
+      INSERT INTO cursos (
+        nombre, clave, duracion_horas, descripcion, nivel, area_id, especialidad_id, tipo_curso_id, vigencia_inicio, fecha_publicacion, ultima_actualizacion
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id
+    `;
+    const cursoValues = [
+      nombre,
+      clave,
+      duracion_horas,
+      descripcion,
+      nivel || 'Básico',
+      area_id,
+      especialidad_id,
+      tipo_curso_id,
+      vigencia_inicio || null,
+      fecha_publicacion || null,
+      ultima_actualizacion || null,
+    ];
+    const { rows: cursoRows } = await client.query(cursoQuery, cursoValues);
+    const cursoId = cursoRows[0].id;
+
+    // Insertar objetivos si están presentes
+    if (objetivos) {
+      const fichaQuery = `
+        INSERT INTO ficha_tecnica (
+          id_curso, objetivo, perfil_ingreso, perfil_egreso, perfil_del_docente, metodologia, bibliografia, criterios_acreditacion, reconocimiento
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `;
+      const fichaValues = [
+        cursoId,
+        objetivos.objetivo || '',
+        objetivos.perfil_ingreso || '',
+        objetivos.perfil_egreso || '',
+        objetivos.perfil_del_docente || '',
+        objetivos.metodologia || '',
+        objetivos.bibliografia || '',
+        objetivos.criterios_acreditacion || '',
+        objetivos.reconocimiento || '',
+      ];
+      await client.query(fichaQuery, fichaValues);
+    }
+
+    // Insertar materiales solo si están presentes
+    if (Array.isArray(materiales)) {
+      const materialQuery = `
+        INSERT INTO material (descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20)
+        VALUES ($1, $2, $3, $4, $5)
+      `;
+      for (const material of materiales) {
+        if (!material.descripcion || !material.unidad_de_medida) {
+          throw new Error('Materiales incompletos detectados');
+        }
+        const materialValues = [
+          material.descripcion,
+          material.unidad_de_medida,
+          material.cantidad_10 || 0,
+          material.cantidad_15 || 0,
+          material.cantidad_20 || 0,
+        ];
+        await client.query(materialQuery, materialValues);
+      }
+    }
+
+    // Insertar equipamiento solo si está presente
+    if (Array.isArray(equipamiento)) {
+      const equipamientoQuery = `
+        INSERT INTO equipamiento (descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20)
+        VALUES ($1, $2, $3, $4, $5)
+      `;
+      for (const equipo of equipamiento) {
+        if (!equipo.descripcion || !equipo.unidad_de_medida) {
+          throw new Error('Equipamiento incompleto detectado');
+        }
+        const equipamientoValues = [
+          equipo.descripcion,
+          equipo.unidad_de_medida,
+          equipo.cantidad_10 || 0,
+          equipo.cantidad_15 || 0,
+          equipo.cantidad_20 || 0,
+        ];
+        await client.query(equipamientoQuery, equipamientoValues);
+      }
+    }
+
+    await client.query('COMMIT');
+    res.status(201).json({ message: 'Curso registrado exitosamente', cursoId });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error al registrar el curso:', error);
+    res.status(500).json({ error: error.message || 'Error al registrar el curso' });
+  } finally {
+    client.release();
+  }
+};
+
+
+
+// original=>exports.create = async (req, res) => {  
+//   try {  
+//     console.log('Datos recibidos del frontend:', req.body); // Verifica los datos  
   
-    const { nombre, clave, duracion_horas, descripcion, area_id, especialidad_id, tipo_curso_id } = req.body;  
+//     const { nombre, clave, duracion_horas, descripcion, area_id, especialidad_id, tipo_curso_id } = req.body;  
   
-    // Validar campos obligatorios  
-    if (!nombre || !clave || !duracion_horas || !descripcion || !area_id || !especialidad_id || !tipo_curso_id) {  
-      return res.status(400).json({ error: 'Todos los campos obligatorios deben ser completados' });  
-    }  
+//     // Validar campos obligatorios  
+//     if (!nombre || !clave || !duracion_horas || !descripcion || !area_id || !especialidad_id || !tipo_curso_id) {  
+//       return res.status(400).json({ error: 'Todos los campos obligatorios deben ser completados' });  
+//     }  
   
-    const nuevoCurso = await CursosModel.create(req.body);  
-    res.status(201).json(nuevoCurso);  
-  } catch (error) {  
-    console.error('Error al crear el curso:', error);  
-    res.status(500).json({ error: 'Error al crear el curso' });  
-  }  
-};  
+//     const nuevoCurso = await CursosModel.create(req.body);  
+//     res.status(201).json(nuevoCurso);  
+//   } catch (error) {  
+//     console.error('Error al crear el curso:', error);  
+//     res.status(500).json({ error: 'Error al crear el curso' });  
+//   }  
+// };  
 exports.update = async (req, res) => {        
   try {        
       const { id } = req.params;        
@@ -172,17 +311,36 @@ exports.getCursosByAreaIdByEspecialidadId = async (req, res) => {
 
 
 
-
-
+exports.getAllByIdDocente = async (req, res) => {
+  try {
+    const { idDocente } = req.params;
+    const cursos = await CursosModel.getCursosByIdDocente(idDocente);
+    res.status(200).json(cursos);
+  } catch (error) {
+    console.error(`Error al obtener los cursos del docente`, error);
+    res.status(500).json({ error: 'Error al obtener los cursos' });
+  }
+};
 
 exports.getCursosByEspecialidadId=async(req, res)=> {
   try {
     const especialidadId = Number(req.params.especialidadId);
-    const cursos = await CursosModel.getCursosByEspecialidadId(especialidadId);
+    const plantelId = Number(req.params.plantelId);
+    const cursos = await CursosModel.getCursosByEspecialidadId(especialidadId,plantelId);
     res.status(200).json(cursos);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener los cursos' });
   }
+}
+
+
+
+
+
+
+exports.getDeatilsCursoInfo=async(req,res)=>{
+
+
 }
 
 

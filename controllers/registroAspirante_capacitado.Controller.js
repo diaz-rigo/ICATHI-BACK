@@ -2,6 +2,7 @@ const { enviarCorreo } = require('../config/nodemailer'); // Importa la función
 const crypto = require('crypto'); // Para generar un token aleatorio de validación
 const pool = require('../config/database'); // Importa la configuración del pool de conexiones
 const bcrypt = require('bcrypt');
+
 const Usuario = require('../models/usuario'); // Importa el modelo Usuario
 const AlumnoModel = require('../models/AlumnoModel'); // Importa el modelo Alumno
 exports.obtenerCurpPorEmail = async (req, res) => {
@@ -189,6 +190,94 @@ exports.completarDatosAlumno = async (req, res) => {
         await client.query('ROLLBACK');
         console.error('Error al completar datos del alumno:', error);
         res.status(500).json({ error: 'Error al completar datos del alumno' });
+    } finally {
+        client.release();
+    }
+};
+
+
+
+
+
+
+
+
+
+
+
+// *********************************************************************************
+// Regsitra alumnos plantel
+// *********************************************************************************
+// *********************************************************************************
+
+exports.registrarAspiranteByIdPlantel = async (req, res) => {
+    const { area, curp, curso, email, especialidad, name, plantel, telefono } = req.body;
+    console.log(req.body);
+
+    // Validar que se hayan proporcionado todos los campos requeridos
+    if (!name || !curp || !email || !telefono || !curso || !plantel) {
+        return res.status(400).json({ error: 'Faltan datos requeridos' });
+    }
+
+    const nombres = name.trim().split(' ');
+    const primerNombre = nombres.shift();
+    const apellidos = nombres.join(' ');
+
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(curp, saltRounds);
+    const client = await pool.connect();
+    const username = `${primerNombre.toLowerCase()}_${apellidos.toLowerCase()}`.substring(0, 15);
+
+    try {
+        await client.query('BEGIN');
+
+        // Paso 1: Verificar si la CURP ya existe
+        const existingAlumno = await client.query(`
+            SELECT id FROM alumnos WHERE num_documento_identificacion = $1
+        `, [curp]);
+
+        if (existingAlumno.rows.length > 0) {
+            return res.status(409).json({ error: 'Ya existe un registro con esta CURP' });
+        }
+
+        // Paso 2: Insertar en la tabla usuarios
+        const userId = await client.query(`
+            INSERT INTO usuarios (nombre, apellidos, email, telefono, username, password_hash, rol)
+            VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id
+        `, [primerNombre, apellidos, email, telefono, username, passwordHash, 'ALUMNO']);
+        const usuarioId = userId.rows[0].id;
+
+        // Paso 3: Insertar en la tabla alumnos
+        const alumnoId = await client.query(`
+            INSERT INTO alumnos (nombre, apellidos, email, telefono, documento_identificacion, num_documento_identificacion, estatus)
+            VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id
+        `, [primerNombre, apellidos, email, telefono, curp, curp, true]);
+        const alumnoIdValue = alumnoId.rows[0].id;
+
+        // Paso 4: Insertar en la tabla alumnos_cursos
+        await client.query(`
+            INSERT INTO alumnos_cursos (alumno_id, curso_id, plantel_id)
+            VALUES ($1, $2, $3)
+        `, [alumnoIdValue, curso, plantel]);
+
+        // Commit de la transacción
+        await client.query('COMMIT');
+
+        // Enviar correo con credenciales
+        const mailOptions = {
+            from: '"ICATHI" <icathi.edu@gmail.com>',
+            to: email,
+            subject: 'Confirmación de Registro',
+            text: `Gracias por registrarte. Tu inscripción ha sido exitosa. Tus credenciales son las siguientes:\n\nUsuario: ${username}\nContraseña: ${curp}\n\nPuedes iniciar sesión en el siguiente enlace: http://localhost:4200/public/login`
+        };
+
+        await enviarCorreo(mailOptions);
+
+        res.status(201).json({ message: 'Registro exitoso y correo enviado' });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error al registrar aspirante:', error);
+        res.status(500).json({ error: 'Error al registrar aspirante' });
     } finally {
         client.release();
     }
