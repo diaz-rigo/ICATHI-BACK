@@ -1,7 +1,6 @@
 const express = require('express');  
 const router = express.Router();  
 const CursosController = require('../controllers/cursosController');  
-const { actualizarCurso } = require('../controllers/cursosController');
 
 // Rutas CRUD  
 router.get('/status/:estatus', CursosController.getByStatus); // Obtener cursos por estatus  
