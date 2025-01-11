@@ -119,6 +119,40 @@ WHERE pc.plantel_id = ${idPlantel} AND pc.estatus = true
     const { rows } = await pool.query(query, values);
     return rows[0];
   },
+  //original async create(curso) {
+  //   const query = `
+  //     INSERT INTO cursos (
+  //       nombre, 
+  //       clave, 
+  //       duracion_horas, 
+  //       descripcion, 
+  //       nivel, -- Incluimos el campo nivel
+  //       area_id, 
+  //       especialidad_id, 
+  //       tipo_curso_id, 
+  //       vigencia_inicio, 
+  //       fecha_publicacion, 
+  //       ultima_actualizacion
+  //     )
+  //     VALUES (\$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$9, \$10, \$11) 
+  //     RETURNING *
+  //   `;
+  //   const values = [
+  //     curso.nombre,
+  //     curso.clave,
+  //     curso.duracion_horas,
+  //     curso.descripcion,
+  //     curso.nivel || "Básico", // Valor predeterminado
+  //     curso.area_id,
+  //     curso.especialidad_id,
+  //     curso.tipo_curso_id,
+  //     curso.vigencia_inicio || null,
+  //     curso.fecha_publicacion || null,
+  //     curso.ultima_actualizacion || null,
+  //   ];
+  //   const { rows } = await pool.query(query, values);
+  //   return rows[0];
+  // },
 
   async update(id, curso) {
     const query = `        
