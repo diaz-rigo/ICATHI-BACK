@@ -7,6 +7,7 @@ router.get('/status/:estatus', CursosController.getByStatus); // Obtener cursos 
 router.get('/', CursosController.getAll); // Obtener todos los cursos  
 router.get('/ByIdPlantel/:idPlantel', CursosController.getAllByIdPlantel); // Obtener todos los cursos  
 router.get('/:id', CursosController.getById); // Obtener un curso por ID  
+router.get('/reporte/:id', CursosController.getByIdInfoReporte); // Obtener un curso por ID  
 router.post('/', CursosController.create); // Crear un nuevo curso  
 router.put('/:id', CursosController.update); // Actualizar un curso existente  
 router.delete('/:id', CursosController.delete); // Eliminar un curso  
