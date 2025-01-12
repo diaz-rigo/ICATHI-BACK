@@ -28,6 +28,10 @@ const obtenerEspecialidadesPorDocente = async (docenteId) => {
         throw new Error('Error al obtener las especialidades del docente: ' + error.message);
     }
 };
+
+
+
+
 // Función para actualizar el estatus de una especialidad de un docente
 const actualizarEstatusEspecialidad = async (docenteId, especialidadId, nuevoEstatusId, usuarioValidadorId) => {
     try {

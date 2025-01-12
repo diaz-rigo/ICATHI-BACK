@@ -1,4 +1,5 @@
 const pool = require("../config/database");
+const { getByIdInfoReporte } = require("../controllers/cursosController");
 
 const CursosModel = {
   async getAll() {
@@ -84,6 +85,81 @@ WHERE pc.plantel_id = ${idPlantel} AND pc.estatus = true
     const { rows } = await pool.query(query, [id]);
     return rows[0];
   },
+  async getByIdInfoReporte(id) {
+    const query = `
+      SELECT 
+        c.id AS Id_Curso,
+        c.nombre AS NOMBRE,
+        c.clave AS CLAVE,
+        c.duracion_horas AS DURACION_HORAS,
+        c.descripcion AS DESCRIPCION,
+        c.area_id AS AREA_ID,
+        c.especialidad_id AS ESPECIALIDAD_ID,
+        c.vigencia_inicio AS VIGENCIA_INICIO,
+        c.fecha_publicacion AS FECHA_PUBLICACION,
+        c.usuario_validador_id AS USUARIO_VALIDADOR_ID,
+        c.fecha_validacion AS FECHA_VALIDACION,
+        c.elaborado_por AS ELABORADO_POR,
+        ft.objetivo,
+        ft.perfil_ingreso,
+        ft.perfil_egreso,
+        ft.perfil_del_docente,
+        ft.metodologia,
+        ft.bibliografia,
+        ft.criterios_acreditacion,
+        ft.reconocimiento,
+        -- Agrupando materiales en un array
+        ARRAY_AGG(
+          DISTINCT JSONB_BUILD_OBJECT(
+            'material_descripcion', m.descripcion,
+            'material_unidad_de_medida', m.unidad_de_medida,
+            'material_cantidad_10', m.cantidad_10,
+            'material_cantidad_15', m.cantidad_15,
+            'material_cantidad_20', m.cantidad_20
+          )
+        ) AS materiales,
+        -- Agrupando equipamiento en un array
+        ARRAY_AGG(
+          DISTINCT JSONB_BUILD_OBJECT(
+            'equipamiento_descripcion', e.descripcion,
+            'equipamiento_unidad_de_medida', e.unidad_de_medida,
+            'equipamiento_cantidad_10', e.cantidad_10,
+            'equipamiento_cantidad_15', e.cantidad_15,
+            'equipamiento_cantidad_20', e.cantidad_20
+          )
+        ) AS equipamiento
+      FROM 
+        cursos c
+      LEFT JOIN 
+        ficha_tecnica ft ON c.id = ft.id_curso
+      LEFT JOIN 
+        material m ON c.id = m.id_curso
+      LEFT JOIN 
+        equipamiento e ON c.id = e.id_curso
+      WHERE 
+        c.id = $1
+      GROUP BY 
+        c.id, ft.objetivo, ft.perfil_ingreso, ft.perfil_egreso, ft.perfil_del_docente, 
+        ft.metodologia, ft.bibliografia, ft.criterios_acreditacion, ft.reconocimiento;
+    `;
+    
+    const { rows } = await pool.query(query, [id]);
+    
+    // Validar si no hay resultados
+    if (!rows || rows.length === 0) {
+      return null;
+    }
+  
+    // Verificar si los materiales y equipamiento están vacíos y asignar "vacío" o "0"
+    const curso = rows[0];
+    
+    curso.materiales = curso.materiales.length > 0 ? curso.materiales : null;
+    curso.equipamiento = curso.equipamiento.length > 0 ? curso.equipamiento : null;
+  
+    return curso;
+  }
+  
+,
 
   async create(curso) {
     const query = `
@@ -122,19 +198,19 @@ WHERE pc.plantel_id = ${idPlantel} AND pc.estatus = true
   //original async create(curso) {
   //   const query = `
   //     INSERT INTO cursos (
-  //       nombre, 
-  //       clave, 
-  //       duracion_horas, 
-  //       descripcion, 
+  //       nombre,
+  //       clave,
+  //       duracion_horas,
+  //       descripcion,
   //       nivel, -- Incluimos el campo nivel
-  //       area_id, 
-  //       especialidad_id, 
-  //       tipo_curso_id, 
-  //       vigencia_inicio, 
-  //       fecha_publicacion, 
+  //       area_id,
+  //       especialidad_id,
+  //       tipo_curso_id,
+  //       vigencia_inicio,
+  //       fecha_publicacion,
   //       ultima_actualizacion
   //     )
-  //     VALUES (\$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$9, \$10, \$11) 
+  //     VALUES (\$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$9, \$10, \$11)
   //     RETURNING *
   //   `;
   //   const values = [
@@ -240,32 +316,32 @@ WHERE pc.plantel_id = ${idPlantel} AND pc.estatus = true
         c.duracion_horas, 
         c.nivel, 
         c.costo, 
-        c.requisitos, 
-        c.estatus, 
-        c.created_at, 
-        c.updated_at, 
-        c.usuario_validador_id, 
-        c.fecha_validacion, 
-        c.modalidad, 
-        c.clave, 
-        c.area_id, 
-        c.especialidad_id, 
-        c.tipo_curso_id, 
-        c.vigencia_inicio, 
-        c.fecha_publicacion, 
-        c.ultima_actualizacion,
-        CASE 
-          WHEN pc.curso_id IS NOT NULL THEN true
-          ELSE false
-        END AS registrado
-      FROM 
-        cursos c
-      LEFT JOIN 
-        planteles_cursos pc 
-        ON c.id = pc.curso_id AND pc.plantel_id = $2
-      WHERE 
-        c.especialidad_id = $1
-    `;
+          c.requisitos, 
+          c.estatus, 
+          c.created_at, 
+          c.updated_at, 
+          c.usuario_validador_id, 
+          c.fecha_validacion, 
+          c.modalidad, 
+          c.clave, 
+          c.area_id, 
+          c.especialidad_id, 
+          c.tipo_curso_id, 
+          c.vigencia_inicio, 
+          c.fecha_publicacion, 
+          c.ultima_actualizacion,
+          CASE 
+            WHEN pc.curso_id IS NOT NULL THEN true
+            ELSE false
+          END AS registrado
+        FROM 
+          cursos c
+        LEFT JOIN 
+          planteles_cursos pc 
+          ON c.id = pc.curso_id AND pc.plantel_id = $2
+        WHERE 
+          c.especialidad_id = $1
+      `;
 
     try {
       const { rows } = await pool.query(query, [especialidadId, plantelId]);
@@ -325,23 +401,24 @@ WHERE pc.plantel_id = ${idPlantel} AND pc.estatus = true
   },
   
   
- async getCursosByIdDocente(idUsuario) {
-  try {
-    // Obtener el ID del docente a partir del ID del usuario
-    const docente = await pool.query(
-      "SELECT id FROM docentes WHERE id_usuario = $1",
-      [idUsuario]
-    );
 
-    if (docente.rows.length === 0) {
-      // Si no se encuentra el docente, retornar un array vacío
-      return [];
-    }
+  async getCursosByIdDocente(idUsuario) {
+    try {
+      // Obtener el ID del docente a partir del ID del usuario
+      const docente = await pool.query(
+        "SELECT id FROM docentes WHERE id_usuario = $1",
+        [idUsuario]
+      );
 
-    const idDocente = docente.rows[0].id;
+      if (docente.rows.length === 0) {
+        // Si no se encuentra el docente, retornar un array vacío
+        return [];
+      }
 
-    // Realizar la consulta de los cursos utilizando el ID del docente
-    const query = `
+      const idDocente = docente.rows[0].id;
+
+      // Realizar la consulta de los cursos utilizando el ID del docente
+      const query = `
      SELECT 
   c.id, 
   c.nombre, 
@@ -399,14 +476,13 @@ GROUP BY
   c.id, p.nombre, pc.plantel_id, pc.horario, a.nombre, e.nombre, t.nombre, pc.fecha_inicio, pc.fecha_fin;
 `;
 
-    const { rows } = await pool.query(query, [idDocente]);
-    return rows;
-  } catch (error) {
-    console.error("Error al obtener cursos por ID de docente:", error);
-    throw error;
-  }
-}
-
+      const { rows } = await pool.query(query, [idDocente]);
+      return rows;
+    } catch (error) {
+      console.error("Error al obtener cursos por ID de docente:", error);
+      throw error;
+    }
+  },
 };
 
 module.exports = CursosModel;
