@@ -10,6 +10,8 @@ router.get('/:id', CursosController.getById); // Obtener un curso por ID
 router.post('/', CursosController.create); // Crear un nuevo curso  
 router.put('/:id', CursosController.update); // Actualizar un curso existente  
 router.delete('/:id', CursosController.delete); // Eliminar un curso  
+// Obtener los detalles de un curso por ID
+router.get('/detalles/:id', CursosController.getCourseDetails);
 
 
 router.get('/byIdDocente/:idDocente', CursosController.getAllByIdDocente); // Obtener todos los cursos  

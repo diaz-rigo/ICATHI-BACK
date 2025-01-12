@@ -359,6 +359,76 @@ exports.getAllByIdDocente =async (req, res) => {
     res.status(500).json({ error: 'Error al obtener los cursos' });
   }
 };
+exports.getCourseDetails = async (req, res) => {
+  const { id } = req.params; // ID del curso a buscar
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // Obtener datos básicos del curso
+    const cursoQuery = `
+      SELECT 
+        c.id, c.nombre, c.clave, c.duracion_horas, c.descripcion, c.nivel, 
+        c.area_id, c.especialidad_id, c.tipo_curso_id, c.vigencia_inicio, 
+        c.fecha_publicacion, c.ultima_actualizacion
+      FROM cursos c
+      WHERE c.id = $1
+    `;
+    const cursoResult = await client.query(cursoQuery, [id]);
+
+    if (cursoResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Curso no encontrado' });
+    }
+
+    const curso = cursoResult.rows[0];
+
+    // Obtener la ficha técnica del curso
+    const fichaQuery = `
+      SELECT 
+        objetivo, perfil_ingreso, perfil_egreso, perfil_del_docente, 
+        metodologia, bibliografia, criterios_acreditacion, reconocimiento
+      FROM ficha_tecnica
+      WHERE id_curso = $1
+    `;
+    const fichaResult = await client.query(fichaQuery, [id]);
+    const fichaTecnica = fichaResult.rows[0] || {};
+
+    // Obtener los materiales del curso
+    const materialesQuery = `
+      SELECT descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20
+      FROM material
+      WHERE id_curso = $1
+    `;
+    const materialesResult = await client.query(materialesQuery, [id]);
+
+    // Obtener el equipamiento del curso
+    const equipamientoQuery = `
+      SELECT descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20
+      FROM equipamiento
+      WHERE id_curso = $1
+    `;
+    const equipamientoResult = await client.query(equipamientoQuery, [id]);
+
+    // Formar la respuesta con todos los detalles del curso
+    const cursoDetalles = {
+      ...curso,
+      fichaTecnica,
+      materiales: materialesResult.rows,
+      equipamiento: equipamientoResult.rows,
+    };
+
+    await client.query('COMMIT');
+    res.status(200).json(cursoDetalles);
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error al obtener los detalles del curso:', error);
+    res.status(500).json({ error: error.message || 'Error al obtener los detalles del curso' });
+  } finally {
+    client.release();
+  }
+};
 
 
 
