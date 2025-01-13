@@ -6,7 +6,6 @@ const CursosController = require('../controllers/cursosController');
 
 // Obtener los detalles de un curso por ID
 router.get('/detalles/:id', CursosController.getCourseDetails);
-
 router.get('/status/:estatus', CursosController.getByStatus); // Obtener cursos por estatus  
 router.get('/', CursosController.getAll); // Obtener todos los cursos  
 router.get('/ByIdPlantel/:idPlantel', CursosController.getAllByIdPlantel); // Obtener todos los cursos  
