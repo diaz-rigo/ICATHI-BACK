@@ -574,4 +574,4 @@ exports.getCursosByEspecialidadId = async (req, res) => {
   }
 };
 
-exports.getDeatilsCursoInfo = async (req, res) => {};
+// exports.getDeatilsCursoInfo = async (req, res) => {};
