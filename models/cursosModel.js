@@ -74,6 +74,7 @@ WHERE pc.plantel_id = ${idPlantel} AND pc.estatus = true
         t.nombre AS tipo_curso_nombre,  
         c.vigencia_inicio,  
         c.fecha_publicacion,  
+        c.vigencia_inicio,  
         c.ultima_actualizacion  
       FROM cursos c  
       JOIN areas a ON c.area_id = a.id  
