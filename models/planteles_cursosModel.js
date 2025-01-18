@@ -558,7 +558,37 @@ WHERE p.id = ${idPlantel};
     // const { rows } = await this.pool.query(query, [idPlantel]);
 
     // return rows[0];
-  }
+  },
+  async obtenerTodosLosCursosYPlanteles() {
+    try {
+        const query = `
+            SELECT
+                p.nombre AS plantel_nombre,
+                c.nombre AS curso_nombre,
+                pc.horario,
+                pc.cupo_maximo,  -- Columna de 'planteles_cursos'
+                pc.requisitos_extra,
+                pc.fecha_inicio,
+                pc.fecha_fin,
+                pc.estatus
+            FROM
+                planteles_cursos pc
+            JOIN
+                planteles p ON pc.plantel_id = p.id
+            JOIN
+                cursos c ON pc.curso_id = c.id;
+        `;
+        
+        const { rows } = await pool.query(query);
+        return rows; // Devolver todos los registros
+    } catch (error) {
+        console.error("Error al obtener los cursos y planteles:", error);
+        throw error; // Lanza el error para que sea manejado en el controlador
+    }
+}
+
+
+
   
 };
 

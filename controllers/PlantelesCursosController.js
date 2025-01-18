@@ -215,8 +215,6 @@ async obtenerCursoPorId(req, res) {
   }
 },
 
-
-  
 async obtenerPlantelesConCursos(req, res) {
   try {
       const query = `
@@ -296,6 +294,7 @@ async obtenerPlantelesConCursos(req, res) {
       });
     }
   },
+  
   async obtenerDetalleCursosPorPlantel(req, res) {
     try {
       const { idPlantelCurso } = req.params;
@@ -344,4 +343,25 @@ async obtenerPlantelesConCursos(req, res) {
       });
     }
   },
+  async obtenerInfoPlantelCurso2(req, res) {
+    try {
+        // Obtener todos los cursos y planteles sin filtrar por id
+        const info = await PlantelesCursosModel.obtenerTodosLosCursosYPlanteles();
+
+        if (!info.length) {
+            return res.status(404).json({ error: "No se encontraron cursos o planteles" });
+        }
+
+        res.status(200).json(info);
+    } catch (error) {
+        console.error("Error al obtener la info:", error);
+        res.status(500).json({
+            message: "Error al obtener la info",
+            error: error.message,
+        });
+    }
+}
+
+
+  
 };

@@ -21,7 +21,9 @@ router.put('/:id', PlantelesCursosController.actualizarEstatus);
 router.get('/info/:idPlantel', PlantelesCursosController.getInfo); // filtra los ciuroso  por Plantel
 router.get('/byIdPlantel/:idPlantel', PlantelesCursosController.getByIdPlantel); // filtra los ciuroso  por Plantel
 router.delete('/byIdPlantel/:idPlantel', PlantelesCursosController.deleteByIdPlantel); // filtra los ciuroso  por Plantel
-// Ruta para obtener cursos por plantel
+// Ruta para obtener cursos por plantel}
+router.get('/plantelesycursos', PlantelesCursosController.obtenerInfoPlantelCurso2);
+
 
 // Ruta para eliminar cursos por plantel
 router.delete('/byIdPlantel/:idPlantel', PlantelesCursosController.deleteByIdPlantel);
@@ -38,7 +40,6 @@ router.get('/plantelesConCursosValidados', PlantelesCursosController.obtenerPlan
 // Nueva ruta para obtener planteles con cursos no validados
 router.get('/plantelesConCursosNoValidados', PlantelesCursosController.obtenerPlantelesConCursosNoValidados);
 router.get('/', PlantelesCursosController.getAll);
-
 
 
 // ruta para obtener la informacion del curso solicitado(info curso,docentes,alumos)
