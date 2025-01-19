@@ -94,7 +94,7 @@ module.exports = {
       const assignedCourses = await cursosDocentesModel.getAssignedCourses(docenteId);
 
       if (assignedCourses.length === 0) {
-        return res.status(404).json({ message: "No se encontraron cursos asignados para este docente" });
+        return res.status(405).json({data_curso:assignedCourses, message: "No se encontraron cursos asignados para este docente" });
       }
 
       res.status(200).json(assignedCourses);
