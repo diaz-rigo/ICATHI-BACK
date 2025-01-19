@@ -98,18 +98,21 @@ const PlantelesCursos = {
     return rows;
   },
 
-  async actualizarEstatus(id, estatus, observacion = null) {
+  async actualizarEstatus(id, estatus, observacion = null, sugerencia = null) {
     const query = `
         UPDATE planteles_cursos
-        SET estatus = \$1, requisitos_extra = COALESCE(\$2, requisitos_extra), updated_at = now()
-        WHERE id = \$3
+        SET estatus = $1, 
+            requisitos_extra = COALESCE($2, requisitos_extra), 
+            sugerencia = COALESCE($3, sugerencia), 
+            updated_at = now()
+        WHERE id = $4
         RETURNING *;
     `;
 
-    const values = [estatus, observacion, id];
+    const values = [estatus, observacion, sugerencia, id];
     const { rows } = await pool.query(query, values);
     return rows[0];
-  },
+},
 
 async obtenerCursosPorPlantel(plantelId) {
   const query = `
@@ -559,37 +562,83 @@ WHERE p.id = ${idPlantel};
 
     // return rows[0];
   },
-  async obtenerTodosLosCursosYPlanteles() {
-    try {
-        const query = `
-            SELECT
-                p.nombre AS plantel_nombre,
-                c.nombre AS curso_nombre,
-                pc.horario,
-                pc.cupo_maximo,  -- Columna de 'planteles_cursos'
-                pc.requisitos_extra,
-                pc.fecha_inicio,
-                pc.fecha_fin,
-                pc.estatus
-            FROM
-                planteles_cursos pc
-            JOIN
-                planteles p ON pc.plantel_id = p.id
-            JOIN
-                cursos c ON pc.curso_id = c.id;
-        `;
-        
-        const { rows } = await pool.query(query);
-        return rows; // Devolver todos los registros
-    } catch (error) {
-        console.error("Error al obtener los cursos y planteles:", error);
-        throw error; // Lanza el error para que sea manejado en el controlador
-    }
-}
+  async obtenerCursosPorPlantel(plantelId) {
+    const query = `
+        SELECT 
+            pc.id AS plantel_curso_id,
+            pc.curso_id, 
+            c.nombre AS curso_nombre, 
+            pc.estatus 
+        FROM planteles_cursos pc
+        JOIN cursos c ON pc.curso_id = c.id
+        WHERE pc.plantel_id = $1
+        ORDER BY c.nombre;
+    `;
+    const { rows } = await pool.query(query, [plantelId]);
+    return rows;
+},
+async obtenerSolicitudescompletas() {
+  const query = `
+      SELECT 
+          p.id AS plantel_id, 
+          p.nombre AS plantel_nombre,  
+          p.estatus,
+          pc.id AS plantel_curso_id
+      FROM planteles p
+      JOIN planteles_cursos pc ON p.id = pc.plantel_id
+      ORDER BY p.nombre;
+  `;
+  const { rows } = await pool.query(query);
+  return rows;
+},
+async obtenerDetalleCursocompletoPorId(idCurso) {
+  try {
+    const query = `
+      SELECT 
+          pc.id AS plantel_curso_id,
+          p.nombre AS plantel_nombre,
+          c.nombre AS curso_nombre,
+          tc.nombre AS tipo_curso_nombre,
+          pc.cupo_maximo,
+          pc.requisitos_extra,
+          pc.fecha_inicio,
+          pc.fecha_fin,
+          pc.estatus,
+          pc.temario_url,
+          pc.cant_instructores,
+          pc.horario_id,
+          pc.sector_atendido,
+          pc.rango_edad,
+          pc.cruzada_contra_hambre,
+          pc.tipo_beca,
+          pc.participantes,
+          pc.cuota_tipo,
+          pc.cuota_monto,
+          pc.pagar_final,
+          pc.convenio_numero,
+          pc.equipo_necesario,
+          pc.tipo_curso,
+          pc.horario,
+          pc.tipos_curso
+      FROM 
+          planteles_cursos pc
+      JOIN 
+          planteles p ON pc.plantel_id = p.id
+      JOIN 
+          cursos c ON pc.curso_id = c.id
+      JOIN 
+          tipos_curso tc ON pc.tipo_curso = tc.id
+      WHERE 
+          pc.id = $1;
+    `;
 
-
-
-  
+    const { rows } = await pool.query(query, [idCurso]);
+    return rows[0];
+  } catch (error) {
+    console.error("Error al obtener el detalle del curso por ID:", error);
+    throw error;
+  }
+},
 };
 
 module.exports = PlantelesCursos;
