@@ -158,10 +158,8 @@ WHERE pc.plantel_id = ${idPlantel} AND pc.estatus = true
   
     return curso;
   }
-  
-,
 
-  async create(curso) {
+,async create(curso) {
     const query = `
       INSERT INTO cursos (
         nombre, 

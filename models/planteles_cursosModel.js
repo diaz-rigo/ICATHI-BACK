@@ -64,6 +64,11 @@ const PlantelesCursos = {
       });
     }
   },
+
+  
+
+
+
   async registrarSolicitud(data) {
     const {
       plantelId,
@@ -73,27 +78,189 @@ const PlantelesCursos = {
       requisitos_extra,
       fecha_inicio,
       fecha_fin,
-      // temario_url,
+      num_instructores,
+      instructor,
+      domingo_inicio,
+      domingo_fin,
+      lunes_inicio,
+      lunes_fin,
+      martes_inicio,
+      martes_fin,
+      miercoles_inicio,
+      miercoles_fin,
+      jueves_inicio,
+      jueves_fin,
+      viernes_inicio,
+      viernes_fin,
+      sabado_inicio,
+      sabado_fin,
+      calle,
+      localidad,
+      municipio,
+      num_interior,
+      num_exterior,
+      convenio_numero,
+      cruzada_contra_hambre,
+      cuota_monto,
+      cuota_tipo,
+      pagar_final,
+      participantes,
+      rango_edad,
+      sector_atendido,
+      tipo_beca,
+      tipo_curso,
     } = data;
-
+  
+    // Verificar si el plantelId es un ID de usuario
+    const usuarioQuery = `
+      SELECT * FROM usuarios WHERE id = $1;
+    `;
+    const usuarioValues = [plantelId];
+    const { rows: usuarioRows } = await pool.query(usuarioQuery, usuarioValues);
+  
+    if (!usuarioRows.length) {
+      throw new Error(`El usuario con ID ${plantelId} no existe.`);
+    }
+  
+    // Obtener el ID del plantel asociado al usuario
+    const plantelQuery = `
+      SELECT id FROM planteles WHERE id_usuario = $1;
+    `;
+    const plantelValues = [plantelId];
+    const { rows: plantelRows } = await pool.query(plantelQuery, plantelValues);
+  
+    if (!plantelRows.length) {
+      throw new Error(`No se encontró un plantel asociado al usuario con ID ${plantelId}.`);
+    }
+  
+    const plantelIdReal = plantelRows[0].id;
+  
+    // Insertar horario en la tabla horario_semanal
+    const horarioQuery = `
+      INSERT INTO horario_semanal (
+        lunes_inicio,
+        lunes_fin,
+        martes_inicio,
+        martes_fin,
+        miercoles_inicio,
+        miercoles_fin,
+        jueves_inicio,
+        jueves_fin,
+        viernes_inicio,
+        viernes_fin,
+        sabado_inicio,
+        sabado_fin,
+        domingo_inicio,
+        domingo_fin
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      RETURNING id_horario;
+    `;
+    const horarioValues = [
+      lunes_inicio,
+      lunes_fin,
+      martes_inicio,
+      martes_fin,
+      miercoles_inicio,
+      miercoles_fin,
+      jueves_inicio,
+      jueves_fin,
+      viernes_inicio,
+      viernes_fin,
+      sabado_inicio,
+      sabado_fin,
+      domingo_inicio,
+      domingo_fin,
+    ];
+    const { rows: horarioRows } = await pool.query(horarioQuery, horarioValues);
+    const horarioId = horarioRows[0].id_horario;
+  
+    // Insertar en la tabla planteles_cursos
     const query = `
-        INSERT INTO planteles_cursos (plantel_id, curso_id, horario, cupo_maximo, requisitos_extra, fecha_inicio, fecha_fin,temario_url)
-        VALUES ($1, $2, $3, $4, $5, $6, $7,$8)
-        RETURNING *;
+      INSERT INTO planteles_cursos (
+        plantel_id,
+        curso_id,
+        horario_id,
+        horario,
+        cupo_maximo,
+        requisitos_extra,
+        fecha_inicio,
+        fecha_fin,
+        sector_atendido,
+        rango_edad,
+        tipo_beca,
+        tipo_curso,
+        convenio_numero,
+        cruzada_contra_hambre,
+        cuota_tipo,
+        cuota_monto,
+        pagar_final,
+        participantes,
+        calle,
+        localidad,
+        municipio,
+        num_interior,
+        num_exterior,
+        cant_instructores
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22,$23,$24)
+      RETURNING *;
     `;
     const values = [
-      plantelId,
+      plantelIdReal,
       curso_id,
+      horarioId,
       horario,
       cupo_maximo,
       requisitos_extra,
       fecha_inicio,
       fecha_fin,
-      temario_url,
+      sector_atendido,
+      rango_edad,
+      tipo_beca,
+      tipo_curso,
+      convenio_numero,
+      cruzada_contra_hambre,
+      cuota_tipo,
+      cuota_monto,
+      pagar_final,
+      participantes,
+      calle,
+      localidad,
+      municipio,
+      num_interior,
+      num_exterior,
+      num_instructores,
     ];
     const { rows } = await pool.query(query, values);
+    const plantelesCursosId = rows[0].id;
+  
+    // Insertar instructor en la tabla cursos_docentes
+    const instructorQuery = `
+      INSERT INTO cursos_docentes (
+        curso_id,
+        docente_id,
+        estatus
+      )
+      VALUES ($1, $2, $3)
+      RETURNING *;
+    `;
+    const instructorValues = [
+      curso_id,
+      instructor,
+      true, // Estatus por defecto
+    ];
+    await pool.query(instructorQuery, instructorValues);
+  
     return rows[0];
-  },
+  }
+  
+  ,
+  
+  
+  
+  
+  
   async obtenerSolicitudes() {
     const query = "SELECT * FROM planteles_cursos;";
     const { rows } = await pool.query(query);
@@ -115,33 +282,97 @@ const PlantelesCursos = {
 
 async obtenerCursosPorPlantel(plantelId) {
   const query = `
-      SELECT 
-          pc.id AS id,
-          pc.plantel_id AS plantel_id,
-          pc.curso_id AS curso_id,
-          pc.horario AS horario,
-          pc.cupo_maximo AS cupo_maximo,
-          pc.requisitos_extra AS requisitos_extra,
-          pc.fecha_inicio AS fecha_inicio,
-          pc.fecha_fin AS fecha_fin,
-          pc.estatus AS estatus,
-          pc.temario_url AS temario_url,
-          p.nombre AS plantel_nombre,
-          c.nombre AS curso_nombre
-      FROM 
-          planteles_cursos pc
-      JOIN 
-          planteles p ON pc.plantel_id = p.id
-      JOIN 
-          cursos c ON pc.curso_id = c.id
-      WHERE 
-          p.id = \$1;  -- Filtrar por el ID del plantel
+  SELECT 
+  pc.id AS plantel_curso_id,
+  p.id AS plantel_id,
+  p.nombre AS plantel_nombre,
+  p.calle AS plantel_calle,
+  p.localidad AS plantel_localidad,
+  p.municipio AS plantel_municipio,
+  p.num_interior AS plantel_num_interior,
+  p.num_exterior AS plantel_num_exterior,
+  c.id AS curso_id,
+  c.nombre AS curso_nombre,
+  pc.estatus AS curso_validado,
+  pc.created_at,
+  c.area_id,
+  ars.nombre AS area_nombre,
+  c.especialidad_id,
+  e.nombre AS especialidad_nombre,
+  pc.horario_id,
+  h.lunes_inicio,
+  h.lunes_fin,
+  h.martes_inicio,
+  h.martes_fin,
+  h.miercoles_inicio,
+  h.miercoles_fin,
+  h.jueves_inicio,
+  h.jueves_fin,
+  h.viernes_inicio,
+  h.viernes_fin,
+  h.sabado_inicio,
+  h.sabado_fin,
+  h.domingo_inicio,
+  h.domingo_fin,
+  pc.cupo_maximo,
+  pc.requisitos_extra,
+  pc.fecha_inicio,
+  pc.fecha_fin,
+  pc.sector_atendido,
+  pc.rango_edad,
+  pc.tipo_beca,
+  pc.tipo_curso,
+  pc.convenio_numero,
+  pc.cruzada_contra_hambre,
+  pc.cuota_tipo,
+  pc.cuota_monto,
+  pc.pagar_final,
+  pc.participantes,
+  pc.cant_instructores,
+  COALESCE(a.id, 0) AS alumno_id,
+  COALESCE(a.nombre, 'No hay alumnos inscritos en este curso') AS alumno_nombre,
+  COALESCE(a.apellidos, '') AS alumno_apellidos,
+  COALESCE(a.email, '') AS alumno_email,
+  COALESCE(a.telefono, '') AS alumno_telefono,
+  COALESCE(d.id, 0) AS docente_id,
+  COALESCE(d.nombre, 'No hay docente asignado') AS docente_nombre,
+  COALESCE(d.apellidos, '') AS docente_apellidos,
+  COALESCE(d.email, '') AS docente_email,
+  COALESCE(d.telefono, '') AS docente_telefono,
+  u.nombre AS usuario_nombre,
+  u.apellidos AS usuario_apellidos
+FROM 
+  planteles_cursos pc
+JOIN 
+  planteles p ON pc.plantel_id = p.id
+JOIN 
+  cursos c ON pc.curso_id = c.id
+JOIN 
+  especialidades e ON c.especialidad_id = e.id
+JOIN 
+  areas ars ON ars.id = c.area_id
+JOIN 
+  horario_semanal h ON pc.horario_id = h.id_horario
+LEFT JOIN
+  alumnos_cursos ac ON pc.curso_id = ac.curso_id AND pc.plantel_id = ac.plantel_id
+LEFT JOIN
+  alumnos a ON ac.alumno_id = a.id
+LEFT JOIN
+  cursos_docentes cd ON pc.curso_id = cd.curso_id
+LEFT JOIN
+  docentes d ON cd.docente_id = d.id
+JOIN 
+  usuarios u ON u.id = p.id_usuario
+WHERE 
+  pc.id = $1;
   `;
 
   const values = [plantelId];
   const { rows } = await pool.query(query, values);
   return rows;
 },
+
+
 async obtenerCursoPorId(cursoId) {
   const query = `
       SELECT 
@@ -370,35 +601,41 @@ WHERE
 
   async obtenerCursosPorPlantel(idPlantel) {
     const query = `
-      SELECT 
-          pc.id AS id,
-          p.id AS plantel_id,
-          p.nombre AS plantel_nombre,
-          c.id AS curso_id,
-          c.nombre AS curso_nombre,
-          pc.estatus AS curso_validado,
-          c.area_id,
-  ars.nombre AS area_nombre,
-  c.especialidad_id,
-  e.nombre AS especialidad_nombre,
-          CASE 
-              WHEN cd.docente_id IS NOT NULL THEN d.nombre || ' ' || d.apellidos
-              ELSE 'Asignación pendiente'
-          END AS docente_asignado
-      FROM 
-          planteles_cursos pc
-      JOIN 
-          planteles p ON pc.plantel_id = p.id
-      JOIN 
-          cursos c ON pc.curso_id = c.id
-      LEFT JOIN
-          cursos_docentes cd ON pc.curso_id = cd.curso_id
-      LEFT JOIN
-          docentes d ON cd.docente_id = d.id
-           JOIN especialidades e ON c.especialidad_id = e.id
-  JOIN areas ars ON ars.id = c.area_id
-      WHERE 
-          p.id = $1;
+    SELECT 
+    pc.id AS id,
+    p.id AS plantel_id,
+    p.nombre AS plantel_nombre,
+    c.id AS curso_id,
+    c.nombre AS curso_nombre,
+    pc.estatus AS curso_validado,
+    pc.created_at,
+    c.area_id,
+    ars.nombre AS area_nombre,
+    c.especialidad_id,
+    e.nombre AS especialidad_nombre,
+    CASE 
+        WHEN cd.docente_id IS NOT NULL THEN d.nombre || ' ' || d.apellidos
+        ELSE 'Asignación pendiente'
+    END AS docente_asignado
+FROM 
+    planteles_cursos pc
+JOIN 
+    planteles p ON pc.plantel_id = p.id
+JOIN 
+    cursos c ON pc.curso_id = c.id
+LEFT JOIN
+    cursos_docentes cd ON pc.curso_id = cd.curso_id
+LEFT JOIN
+    docentes d ON cd.docente_id = d.id
+JOIN 
+    especialidades e ON c.especialidad_id = e.id
+JOIN 
+    areas ars ON ars.id = c.area_id
+JOIN 
+    usuarios u ON u.id = p.id_usuario
+WHERE 
+    u.id = $1; -- Este $1 debe ser reemplazado por el ID del usuario.
+
     `;
 
     const values = [idPlantel];

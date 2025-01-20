@@ -259,6 +259,9 @@ exports.create = async (req, res) => {
 };
 
 
+
+
+
 // original=>exports.create = async (req, res) => {
 //   try {
 //     console.log('Datos recibidos del frontend:', req.body); // Verifica los datos
