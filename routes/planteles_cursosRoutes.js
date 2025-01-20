@@ -50,8 +50,7 @@ router.get('/cursosporplantel/:plantelId', PlantelesCursosController.obtenerCurs
 
 //ruta para obtener solicitudes de completas de todos los planteles
 router.get('/solicitudes', PlantelesCursosController.obtenerSolicitudescompletas);
-
-
+//
 
 router.get('/detalleCurso/:idCurso', PlantelesCursosController.obtenerDetalleCursocompletoPorId);
 
