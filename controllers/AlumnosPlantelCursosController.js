@@ -79,4 +79,18 @@ module.exports = {
       });
     }
   }
+
+,
+async getCursosDePlantelPorIdAlumno(req, res) {
+  try {
+    const { alumnoId } = req.params;
+    // Llama al método correcto del modelo
+    const data = await AlumnosCursosPlantelModel.getCursosDePlantelPorIdAlumno(alumnoId);
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Error en getCursosDePlantelPorIdAlumno:", error);
+    res.status(500).json({ error: "Error al obtener la información detallada del alumno y sus cursos" });
+  }
+}
+
 }
