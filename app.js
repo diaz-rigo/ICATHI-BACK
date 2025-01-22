@@ -66,8 +66,6 @@ app.use('/curso-docente', cursosDocente);
 app.use('/planteles', plantelesRouter);
 app.use('/aspirante', aspirante);
 app.use('/PlantelCursos', alumnosPlantelCursosRouter);
-// alumnosPlantelCursosRouter = require ('./routes/alumnosPlantelCursos.Router')
-
 app.use('/plantelesCursos', plantelesCursosRouter); // Asegúrate de que la ruta
 app.use('/archivos', archivos);
 app.use('/especialidades_docentes', especialidades_docentes);

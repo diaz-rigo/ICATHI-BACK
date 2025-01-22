@@ -14,12 +14,13 @@ router.post('/',PlantelesCursosController.registrarSolicitud);
 
 // Ruta para obtener todas las solicitudes
 router.get('/', PlantelesCursosController.obtenerSolicitudes);
+router.get('/alumnos/:id', PlantelesCursosController.getAlumnos);
 
 // Ruta para actualizar el estatus de una solicitud
 router.put('/:id', PlantelesCursosController.actualizarEstatus);
 
 router.get('/info/:idPlantel', PlantelesCursosController.getInfo); // filtra los ciuroso  por Plantel
-router.get('/byIdPlantel/:idPlantel', PlantelesCursosController.getByIdPlantel); // filtra los ciuroso  por Plantel
+router.get('/byIdPlantel/:idPlantel', PlantelesCursosController.getByIdPlantel); // filtra los ciuroso solicitdados por Plantel
 router.delete('/byIdPlantel/:idPlantel', PlantelesCursosController.deleteByIdPlantel); // filtra los ciuroso  por Plantel
 // Ruta para obtener cursos por plantel
 
@@ -42,6 +43,7 @@ router.get('/', PlantelesCursosController.getAll);
 
 // ruta para obtener la informacion del curso solicitado(info curso,docentes,alumos)
 router.get('/plantelinfo/:idPlantelCurso', PlantelesCursosController.obtenerInfoPlantelCurso);
+// router.get('/plantelinfo/:idPlantelCurso', PlantelesCursosController.obtenerInfoPlantelCurso);
 router.get('/plantelinfoDetalle/:idPlantelCurso', PlantelesCursosController.obtenerDetalleCursosPorPlantel);
 router.get('/cursosYestatus/:idPlantel', PlantelesCursosController.getCursosConEstado);
 router.put('/:alumnoId/cursos/:cursoId', AlumnosPlantelCursosController.actualizarCalificacionFinal); 

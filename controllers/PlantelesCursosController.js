@@ -12,7 +12,7 @@ module.exports = {
     try {
         const { idPlantel } = req.params;
 
-        const cursos = await PlantelesCursosModel.obtenerCursosPorPlantel(idPlantel);
+        const cursos = await PlantelesCursosModel.obtenerCursosPorPlantelDetalle(idPlantel);
 
         if (!cursos.length) {
             return res.status(404).json({ error: "No se encontraron cursos para este plantel" });
@@ -27,18 +27,10 @@ module.exports = {
 
   async getAll(req, res) {
     try {
-      // const { idPlantel } = req.params;
-
-
-      // Realiza el INNER JOIN para obtener los cursos del plantel
-      // const cursos = await PlantelesCursosModel.obtenerCursosPorPlantel(
-      //   idPlantel
-      // );
 
       const cursos = await PlantelesCursosModel.getAll2(
         // idPlantel
       );
-
       if (!cursos.length) {
         return res
           .status(404)
@@ -101,33 +93,7 @@ module.exports = {
 
   async registrarSolicitud(req, res) {
     try {
-      // Verificar si req.file existe
-      // if (!req.file) {
-      //   return res.status(400).json({ message: "No se ha enviado el archivo de temario." });
-      // }
-    
-      
-      // console.log("Archivo recibido:", req.file);  // Verifica si el archivo ha sido recibido correctamente
-  
-      // const file = req.file;
-  
-      // Verificar que el archivo existe en la ruta antes de intentar subirlo
-      // if (!fs.existsSync(file.path)) {
-      //   return res.status(400).json({ message: "El archivo no existe en la ruta especificada." });
-      // }
-  
-      // Subir el archivo a Cloudinary
-      // const uploadResult = await cloudinary.uploader.upload(file.path, {
-      //   folder: "temarios_cursos", // Personaliza la carpeta en Cloudinary
-      //   resource_type: 'raw', 
-      // });
-  
-      // Eliminar el archivo temporal solo después de que haya sido subido correctamente
-      // if (fs.existsSync(file.path)) {
-      //   fs.unlinkSync(file.path);
-      // }
-  
-      // Preparar los datos de la solicitud
+     // Preparar los datos de la solicitud
       const solicitudData = {
         ...req.body,
         // temario_url: uploadResult.secure_url,
@@ -162,6 +128,36 @@ module.exports = {
       });
     }
   },
+  async getAlumnos(req, res) {
+    const { id } = req.params; // Extraer el ID del plantel desde los parámetros
+  
+    // Validar que el ID sea un número
+    if (!id || isNaN(id)) {
+      return res.status(400).json({
+        message: "El ID del plantel es inválido.",
+      });
+    }
+  
+    try {
+      const solicitudes = await PlantelesCursosModel.getAlumnosByUsuarioId(id);
+  
+      // Verificar si se encontraron alumnos
+      if (!solicitudes || solicitudes.length === 0) {
+        return res.status(404).json({
+          message: "No se encontraron alumnos para el plantel especificado.",
+        });
+      }
+  
+      res.status(200).json(solicitudes);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        message: "Error al obtener los alumnos.",
+        error: error.message,
+      });
+    }
+  }
+,  
   async actualizarEstatus(req, res) {
     try {
         const { id } = req.params; // Asegúrate de que el ID se esté extrayendo correctamente
@@ -283,7 +279,7 @@ async obtenerPlantelesConCursos(req, res) {
     try {
       const { idPlantelCurso } = req.params;
 
-      const info = await PlantelesCursosModel.obtenerInfoPlantelCurso(
+      const info = await PlantelesCursosModel.obtenerInfoPlantelCursoCompleta(
         idPlantelCurso
       );
       res.status(200).json(info);
