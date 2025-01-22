@@ -161,8 +161,36 @@ WHERE
       console.error("Error ejecutando la consulta SQL:", error);
       throw error; // Lanza el error para que lo maneje la capa superior
     }
-  }
-  
+  },
+  async obtenerAlumnosPorPlantelYCurso(plantelId, cursoId) {
+    try {
+      const query = `
+        SELECT  
+          al.*,                 -- Todas las columnas de alumnos
+          crs.nombre AS nombreCurso, -- Nombre del curso
+          ac.fecha_inscripcion,
+          ac.progreso,
+          ac.calificacion_final,
+          ac.estatus
+        FROM 
+          alumnos_cursos ac
+        INNER JOIN 
+          alumnos al ON ac.alumno_id = al.id
+        INNER JOIN 
+          cursos crs ON ac.curso_id = crs.id
+        WHERE 
+          ac.plantel_id = $1 AND ac.curso_id = $2;
+      `;
+
+      const values = [plantelId, cursoId];
+      const { rows } = await pool.query(query, values);
+
+      return rows;
+    } catch (error) {
+      console.error("Error al obtener alumnos por plantel y curso:", error);
+      throw error;
+    }
+  },
   
 };
 
