@@ -12,7 +12,7 @@ module.exports = {
     try {
         const { idPlantel } = req.params;
 
-        const cursos = await PlantelesCursosModel.obtenerCursosPorPlantel(idPlantel);
+        const cursos = await PlantelesCursosModel.obtenerCursosPorPlantelDetalle(idPlantel);
 
         if (!cursos.length) {
             return res.status(404).json({ error: "No se encontraron cursos para este plantel" });
@@ -27,18 +27,10 @@ module.exports = {
 
   async getAll(req, res) {
     try {
-      // const { idPlantel } = req.params;
-
-
-      // Realiza el INNER JOIN para obtener los cursos del plantel
-      // const cursos = await PlantelesCursosModel.obtenerCursosPorPlantel(
-      //   idPlantel
-      // );
 
       const cursos = await PlantelesCursosModel.getAll2(
         // idPlantel
       );
-
       if (!cursos.length) {
         return res
           .status(404)
@@ -136,6 +128,36 @@ module.exports = {
       });
     }
   },
+  async getAlumnos(req, res) {
+    const { id } = req.params; // Extraer el ID del plantel desde los parámetros
+  
+    // Validar que el ID sea un número
+    if (!id || isNaN(id)) {
+      return res.status(400).json({
+        message: "El ID del plantel es inválido.",
+      });
+    }
+  
+    try {
+      const solicitudes = await PlantelesCursosModel.getAlumnosByUsuarioId(id);
+  
+      // Verificar si se encontraron alumnos
+      if (!solicitudes || solicitudes.length === 0) {
+        return res.status(404).json({
+          message: "No se encontraron alumnos para el plantel especificado.",
+        });
+      }
+  
+      res.status(200).json(solicitudes);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        message: "Error al obtener los alumnos.",
+        error: error.message,
+      });
+    }
+  }
+,  
   async actualizarEstatus(req, res) {
     try {
       const { id } = req.params; // Asegúrate de que el ID se esté extrayendo correctamente
@@ -258,7 +280,7 @@ async obtenerPlantelesConCursos(req, res) {
     try {
       const { idPlantelCurso } = req.params;
 
-      const info = await PlantelesCursosModel.obtenerInfoPlantelCurso(
+      const info = await PlantelesCursosModel.obtenerInfoPlantelCursoCompleta(
         idPlantelCurso
       );
       res.status(200).json(info);

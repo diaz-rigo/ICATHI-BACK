@@ -14,6 +14,7 @@ router.post('/',PlantelesCursosController.registrarSolicitud);
 
 // Ruta para obtener todas las solicitudes
 router.get('/', PlantelesCursosController.obtenerSolicitudes);
+router.get('/alumnos/:id', PlantelesCursosController.getAlumnos);
 
 // Ruta para actualizar el estatus de una solicitud
 router.put('/:id', PlantelesCursosController.actualizarEstatus);
