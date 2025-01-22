@@ -263,6 +263,7 @@ exports.create = async (req, res) => {
 //   try {
 //     console.log('Datos recibidos del frontend:', req.body); // Verifica los datos
 
+
 // original=>exports.create = async (req, res) => {
 //   try {
 //     console.log('Datos recibidos del frontend:', req.body); // Verifica los datos
@@ -281,19 +282,6 @@ exports.create = async (req, res) => {
 //     res.status(500).json({ error: 'Error al crear el curso' });
 //   }
 // };
-exports.update = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const {
-      nombre,
-      clave,
-      duracion_horas,
-      descripcion,
-      area_id,
-      especialidad_id,
-      tipo_curso_id,
-      estatus,
-    } = req.body;
 
 //     const { nombre, clave, duracion_horas, descripcion, area_id, especialidad_id, tipo_curso_id } = req.body;
 
@@ -309,6 +297,7 @@ exports.update = async (req, res) => {
 //     res.status(500).json({ error: 'Error al crear el curso' });
 //   }
 // };
+
 exports.update = async (req, res) => {
   try {
     const { id } = req.params;
@@ -322,35 +311,6 @@ exports.update = async (req, res) => {
       tipo_curso_id,
       estatus,
     } = req.body;
-
-//     const { nombre, clave, duracion_horas, descripcion, area_id, especialidad_id, tipo_curso_id } = req.body;
-
-//     // Validar campos obligatorios
-//     if (!nombre || !clave || !duracion_horas || !descripcion || !area_id || !especialidad_id || !tipo_curso_id) {
-//       return res.status(400).json({ error: 'Todos los campos obligatorios deben ser completados' });
-//     }
-
-//     const nuevoCurso = await CursosModel.create(req.body);
-//     res.status(201).json(nuevoCurso);
-//   } catch (error) {
-//     console.error('Error al crear el curso:', error);
-//     res.status(500).json({ error: 'Error al crear el curso' });
-//   }
-// };
-exports.update = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const {
-      nombre,
-      clave,
-      duracion_horas,
-      descripcion,
-      area_id,
-      especialidad_id,
-      tipo_curso_id,
-      estatus,
-    } = req.body;
-
     // Validar campos obligatorios
     if (
       !nombre ||
@@ -567,6 +527,4 @@ exports.getCursosByEspecialidadId = async (req, res) => {
   }
 };
 
-
-
-// exports.getDeatilsCursoInfo = async (req, res) => {};
+exports.getDeatilsCursoInfo = async (req, res) => {};
