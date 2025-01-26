@@ -29,9 +29,9 @@ exports.obtenerCurpPorEmail = async (req, res) => {
   };
 exports.registrarAspirante = async (req, res) => {
     const { area, curp, curso, email, especialidad, name, plantel, telefono } = req.body;
-console.log(req.body)
+    console.log(req.body)
     // Validar que se hayan proporcionado todos los campos requeridos
-    if (!name || !curp || !email || !telefono || !curso || !plantel) {
+    if (!name || !curp || !email || !telefono) {
         return res.status(400).json({ error: 'Faltan datos requeridos' });
     }
 
@@ -211,13 +211,10 @@ exports.completarDatosAlumno = async (req, res) => {
 // *********************************************************************************
 
 exports.registrarAspiranteByIdPlantel = async (req, res) => {
-    const { area, curp, curso, email, especialidad, name, plantel, telefono } = req.body;
+    const {  curp, email, name, telefono } = req.body;
     console.log(req.body);
 
-    // Validar que se hayan proporcionado todos los campos requeridos
-    if (!name || !curp || !email || !telefono || !curso || !plantel) {
-        return res.status(400).json({ error: 'Faltan datos requeridos' });
-    }
+   
 
     const nombres = name.trim().split(' ');
     const primerNombre = nombres.shift();
@@ -254,12 +251,7 @@ exports.registrarAspiranteByIdPlantel = async (req, res) => {
         `, [primerNombre, apellidos, email, telefono, curp, curp, true]);
         const alumnoIdValue = alumnoId.rows[0].id;
 
-        // Paso 4: Insertar en la tabla alumnos_cursos
-        await client.query(`
-            INSERT INTO alumnos_cursos (alumno_id, curso_id, plantel_id)
-            VALUES ($1, $2, $3)
-        `, [alumnoIdValue, curso, plantel]);
-
+        
         // Commit de la transacción
         await client.query('COMMIT');
 

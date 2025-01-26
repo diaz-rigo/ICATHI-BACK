@@ -305,7 +305,7 @@ WHERE pc.plantel_id = ${idPlantel} AND pc.estatus = true
     const { rows } = await pool.query(query, [areaId, especialidadId]);
     return rows;
   },
-  async getCursosByEspecialidadId(especialidadId, plantelId) {
+  async getCursosByEspecialidadId(especialidadId, usuarioId) {
     const query = `
       SELECT 
         c.id, 
@@ -314,41 +314,49 @@ WHERE pc.plantel_id = ${idPlantel} AND pc.estatus = true
         c.duracion_horas, 
         c.nivel, 
         c.costo, 
-          c.requisitos, 
-          c.estatus, 
-          c.created_at, 
-          c.updated_at, 
-          c.usuario_validador_id, 
-          c.fecha_validacion, 
-          c.modalidad, 
-          c.clave, 
-          c.area_id, 
-          c.especialidad_id, 
-          c.tipo_curso_id, 
-          c.vigencia_inicio, 
-          c.fecha_publicacion, 
-          c.ultima_actualizacion,
-          CASE 
-            WHEN pc.curso_id IS NOT NULL THEN true
-            ELSE false
-          END AS registrado
-        FROM 
-          cursos c
-        LEFT JOIN 
-          planteles_cursos pc 
-          ON c.id = pc.curso_id AND pc.plantel_id = $2
-        WHERE 
-          c.especialidad_id = $1
-      `;
-
+        c.requisitos, 
+        c.estatus, 
+        c.created_at, 
+        c.updated_at, 
+        c.usuario_validador_id, 
+        c.fecha_validacion, 
+        c.modalidad, 
+        c.clave, 
+        c.area_id, 
+        c.especialidad_id, 
+        c.tipo_curso_id, 
+        c.vigencia_inicio, 
+        c.fecha_publicacion, 
+        c.ultima_actualizacion,
+        CASE 
+          WHEN pc.curso_id IS NOT NULL THEN true
+          ELSE false
+        END AS registrado
+      FROM 
+        cursos c
+      LEFT JOIN 
+        planteles_cursos pc 
+        ON c.id = pc.curso_id 
+      LEFT JOIN 
+        planteles p 
+        ON pc.plantel_id = p.id
+      LEFT JOIN 
+        usuarios u 
+        ON p.id_usuario = u.id
+      WHERE 
+        c.especialidad_id = $1 
+        AND u.id = $2;
+    `;
+  
     try {
-      const { rows } = await pool.query(query, [especialidadId, plantelId]);
+      const { rows } = await pool.query(query, [especialidadId, usuarioId]);
       return rows;
     } catch (error) {
       console.error("Error al obtener los cursos:", error);
       throw error;
     }
-  },
+  }
+,  
 
   async getDetailedCursos() {
     const query = `
