@@ -14,6 +14,7 @@ router.get('/reporte/:id', CursosController.getByIdInfoReporte); // Obtener un c
 router.post('/', CursosController.create); // Crear un nuevo curso  
 router.put('/:id', CursosController.update); // Actualizar un curso existente  
 router.delete('/:id', CursosController.delete); // Eliminar un curso  
+router.put('/update/:id', CursosController.updateCourseDetails); // Actualizar un curso existente  
 
 
 router.get('/byIdDocente/:idDocente', CursosController.getAllByIdDocente); // Obtener todos los cursos  

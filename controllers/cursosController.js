@@ -54,18 +54,18 @@ exports.getByIdInfoReporte = async (req, res) => {
 
     // Construir el objeto de respuesta
     const response = {
-      Id_Curso: datosCurso.id,  
-      NOMBRE: datosCurso.nombre || 'No disponible',  
-      CLAVE: datosCurso.clave || 'No disponible',  
-      DURACION_HORAS: datosCurso.duracion_horas || 'No disponible',  
-      DESCRIPCION: datosCurso.descripcion || 'No disponible',  
-      AREA_ID: datosCurso.area_id || 'No disponible',  
-      ESPECIALIDAD_ID: datosCurso.especialidad_id || 'No disponible',  
-      VIGENCIA_INICIO: datosCurso.vigencia_inicio || 'No disponible',  
-      FECHA_PUBLICACION: datosCurso.fecha_publicacion || 'No disponible',  
-      FECHA_VALIDACION: datosCurso.fecha_validacion || 'No disponible',  
-      ELABORADO_POR: datosCurso.elaborado_por || 'No disponible',  
-      USUARIO_VALIDADOR_ID: datosCurso.usuario_validador_id || 'No disponible',  
+      Id_Curso: datosCurso.id,
+      NOMBRE: datosCurso.nombre || 'No disponible',
+      CLAVE: datosCurso.clave || 'No disponible',
+      DURACION_HORAS: datosCurso.duracion_horas || 'No disponible',
+      DESCRIPCION: datosCurso.descripcion || 'No disponible',
+      AREA_ID: datosCurso.area_id || 'No disponible',
+      ESPECIALIDAD_ID: datosCurso.especialidad_id || 'No disponible',
+      VIGENCIA_INICIO: datosCurso.vigencia_inicio || 'No disponible',
+      FECHA_PUBLICACION: datosCurso.fecha_publicacion || 'No disponible',
+      FECHA_VALIDACION: datosCurso.fecha_validacion || 'No disponible',
+      ELABORADO_POR: datosCurso.elaborado_por || 'No disponible',
+      USUARIO_VALIDADOR_ID: datosCurso.usuario_validador_id || 'No disponible',
       FICHA_TECNICA: {
         OBJETIVO: datosCurso.objetivo || 'No disponible',
         PERFIL_INGRESO: datosCurso.perfil_ingreso || 'No disponible',
@@ -79,8 +79,8 @@ exports.getByIdInfoReporte = async (req, res) => {
       MATERIALES: (() => {
         switch (true) {
           case materiales == null || materiales.every(m => m.material_cantidad_10 === 0 && m.material_cantidad_15 === 0 && m.material_cantidad_20 === 0):
-            return 0 
-           default:
+            return 0
+          default:
             return materiales.map((m) => ({
               material_descripcion: m.material_descripcion || 'No disponible',
               material_unidad_de_medida: m.material_unidad_de_medida || 'No disponible',
@@ -90,12 +90,12 @@ exports.getByIdInfoReporte = async (req, res) => {
             }));
         }
       })(),
-      
+
       EQUIPAMIENTO: (() => {
         switch (true) {
           case equipamiento == null || equipamiento.every(e => e.equipamiento_cantidad_10 === 0 && e.equipamiento_cantidad_15 === 0 && e.equipamiento_cantidad_20 === 0):
-            return 0 
-            default:
+            return 0
+          default:
             return equipamiento.map((e) => ({
               equipamiento_descripcion: e.equipamiento_descripcion || 'No disponible',
               equipamiento_unidad_de_medida: e.equipamiento_unidad_de_medida || 'No disponible',
@@ -105,7 +105,7 @@ exports.getByIdInfoReporte = async (req, res) => {
             }));
         }
       })()
-      
+
     };
 
     // Responder con los datos del curso
@@ -628,7 +628,7 @@ exports.getDetailedCursos = async (req, res) => {
 
 
 
-exports.getCursosByEspecialidadId=async(req, res)=> {
+exports.getCursosByEspecialidadId = async (req, res) => {
   try {
     const especialidadId = Number(req.params.especialidadId);
     const plantelId = Number(req.params.plantelId);
@@ -639,7 +639,7 @@ exports.getCursosByEspecialidadId=async(req, res)=> {
     res.status(200).json(cursos);
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener los cursos' });
-  
+
   }
 };
 
@@ -659,7 +659,7 @@ exports.updateStatus = async (req, res) => {
   }
 };
 
-exports.getAllByIdDocente =async (req, res) => {
+exports.getAllByIdDocente = async (req, res) => {
 
   try {
     const { idDocente } = req.params;
@@ -704,6 +704,14 @@ exports.getCourseDetails = async (req, res) => {
     `;
     const fichaResult = await client.query(fichaQuery, [id]);
     const fichaTecnica = fichaResult.rows[0] || {};
+    // Obtener el contenido programático del curso
+    const contenidoProgramaticoQuery = `
+      SELECT tema_nombre, tiempo, competencias, evaluacion, actividades
+      FROM contenido_programatico
+      WHERE id_curso = $1
+      `;
+    const contenidoProgramaticoResult = await client.query(contenidoProgramaticoQuery, [id]);
+
 
     // Obtener los materiales del curso
     const materialesQuery = `
@@ -725,8 +733,11 @@ exports.getCourseDetails = async (req, res) => {
     const cursoDetalles = {
       ...curso,
       fichaTecnica,
+      contenidoProgramatico: contenidoProgramaticoResult.rows,
       materiales: materialesResult.rows,
       equipamiento: equipamientoResult.rows,
+      contenidoProgramatico: contenidoProgramaticoResult.rows,
+
     };
 
     await client.query('COMMIT');
@@ -756,3 +767,107 @@ exports.getCursosByEspecialidadId = async (req, res) => {
 };
 
 // exports.getDeatilsCursoInfo = async (req, res) => {};
+exports.updateCourseDetails = async (req, res) => {
+  const { id } = req.params; // ID del curso a actualizar
+  const {
+    nombre, clave, duracion_horas, descripcion, nivel, area_id, especialidad_id, tipo_curso_id, vigencia_inicio, fecha_publicacion, ultima_actualizacion,
+    fichaTecnica, contenidoProgramatico, materiales, equipamiento
+  } = req.body;
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // Actualizar datos básicos del curso
+    const cursoQuery = `
+      UPDATE cursos
+      SET nombre = $1, clave = $2, duracion_horas = $3, descripcion = $4, nivel = $5, area_id = $6, especialidad_id = $7, tipo_curso_id = $8, vigencia_inicio = $9, fecha_publicacion = $10, ultima_actualizacion = $11
+      WHERE id = $12
+    `;
+    await client.query(cursoQuery, [nombre, clave, duracion_horas, descripcion, nivel, area_id, especialidad_id, tipo_curso_id, vigencia_inicio, fecha_publicacion, ultima_actualizacion, id]);
+
+    // Actualizar la ficha técnica del curso
+    const fichaQuery = `
+      UPDATE ficha_tecnica
+      SET objetivo = $1, perfil_ingreso = $2, perfil_egreso = $3, perfil_del_docente = $4, metodologia = $5, bibliografia = $6, criterios_acreditacion = $7, reconocimiento = $8
+      WHERE id_curso = $9
+    `;
+    await client.query(fichaQuery, [fichaTecnica.objetivo, fichaTecnica.perfil_ingreso, fichaTecnica.perfil_egreso, fichaTecnica.perfil_del_docente, fichaTecnica.metodologia, fichaTecnica.bibliografia, fichaTecnica.criterios_acreditacion, fichaTecnica.reconocimiento, id]);
+
+    // Eliminar el contenido programático existente
+    await client.query('DELETE FROM contenido_programatico WHERE id_curso = $1', [id]);
+
+    // Insertar el nuevo contenido programático
+    if (contenidoProgramatico && Array.isArray(contenidoProgramatico)) {
+      const contenidoQuery = `
+        INSERT INTO contenido_programatico (id_curso, tema_nombre, tiempo, competencias, evaluacion, actividades)
+        VALUES ($1, $2, $3, $4, $5, $6)
+      `;
+      for (const tema of contenidoProgramatico) {
+        const contenidoValues = [
+          id,
+          tema.tema_nombre || "N/C",
+          tema.tiempo || 0,
+          tema.competencias || null,
+          tema.evaluacion || null,
+          tema.actividades || null,
+        ];
+        await client.query(contenidoQuery, contenidoValues);
+      }
+    }
+
+    // Eliminar los materiales existentes
+    await client.query('DELETE FROM material WHERE id_curso = $1', [id]);
+
+    // Insertar los nuevos materiales
+    if (Array.isArray(materiales) && materiales.length > 0) {
+      const materialesQuery = `
+        INSERT INTO material (id_curso, descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20)
+        VALUES ($1, $2, $3, $4, $5, $6)
+      `;
+      for (const material of materiales) {
+        const materialesValues = [
+          id,
+          material.descripcion || "N/C",
+          material.unidad_de_medida || "N/C",
+          material.cantidad_10 || 0,
+          material.cantidad_15 || 0,
+          material.cantidad_20 || 0,
+        ];
+        await client.query(materialesQuery, materialesValues);
+      }
+    }
+
+    // Eliminar el equipamiento existente
+    await client.query('DELETE FROM equipamiento WHERE id_curso = $1', [id]);
+
+    // Insertar el nuevo equipamiento
+    if (Array.isArray(equipamiento) && equipamiento.length > 0) {
+      const equipamientoQuery = `
+        INSERT INTO equipamiento (id_curso, descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20)
+        VALUES ($1, $2, $3, $4, $5, $6)
+      `;
+      for (const equipo of equipamiento) {
+        const equipamientoValues = [
+          id,
+          equipo.descripcion || "N/C",
+          equipo.unidad_de_medida || "N/C",
+          equipo.cantidad_10 || 0,
+          equipo.cantidad_15 || 0,
+          equipo.cantidad_20 || 0,
+        ];
+        await client.query(equipamientoQuery, equipamientoValues);
+      }
+    }
+
+    await client.query('COMMIT');
+    res.status(200).json({ message: 'Curso actualizado correctamente' });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error al actualizar el curso:', error);
+    res.status(500).json({ error: error.message || 'Error al actualizar el curso' });
+  } finally {
+    client.release();
+  }
+};
