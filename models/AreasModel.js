@@ -6,18 +6,26 @@ const AreasModel = {
     const { rows } = await pool.query(query);
     return rows;
   },
-  async getAllByIdPlantel(idPlantel) {
-    const query = `SELECT DISTINCT a.id AS area_id, 
-                a.nombre AS area_nombre, 
-                a.descripcion AS area_descripcion
-FROM areas a
-INNER JOIN cursos c ON a.id = c.area_id
-INNER JOIN planteles_cursos pc ON c.id = pc.curso_id
-WHERE pc.plantel_id = ${idPlantel}  AND pc.estatus = true;
-`;
-    const { rows } = await pool.query(query);
+  async getAllByIdPlantel(idUsuario) {
+    const query = `
+    SELECT DISTINCT 
+        a.id AS area_id, 
+        a.nombre AS area_nombre, 
+        a.descripcion AS area_descripcion
+    FROM areas a
+    INNER JOIN cursos c ON a.id = c.area_id
+    INNER JOIN planteles_cursos pc ON c.id = pc.curso_id
+    INNER JOIN planteles p ON pc.plantel_id = p.id
+    INNER JOIN usuarios u ON u.id = p.id_usuario
+    WHERE 
+        pc.estatus = true AND 
+        u.id = $1;
+    `;
+
+    // Pasamos idUsuario como único parámetro
+    const { rows } = await pool.query(query, [idUsuario]);
     return rows;
-  },
+},
   async getAllInfoById(idArea) {
     const query = `SELECT
   a.id AS area_id,

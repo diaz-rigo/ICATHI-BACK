@@ -112,7 +112,7 @@ exports.getByIdPlantel = async (req, res) => {
           
           // Si no se encontraron especialidades, devolvemos un 404
           if (especialidades.length === 0) {
-              return res.status(404).json({ mensaje: 'No se encontraron especialidades para este docente.' });
+              return res.status(404).json({ mensaje: 'No se encontraron especialidades para este plantel.' });
           }
           
           // Devolvemos las especialidades encontradas
