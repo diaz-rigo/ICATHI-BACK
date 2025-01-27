@@ -7,5 +7,9 @@ router.get('/byIdPlantel/:idPlantel/info', AlumnosPlantelCursosController.getInf
 
 
 router.put('/:alumnoId/cursos/:cursoId', AlumnosPlantelCursosController.actualizarCalificacionFinal); 
+router.get('/:alumnoId/oferta-educativa', AlumnosPlantelCursosController.getCursosDePlantelPorIdAlumno);
+
+// Ruta para obtener alumnos por plantel y curso
+router.get("/alumnos/:plantelId/:cursoId", AlumnosPlantelCursosController.obtenerAlumnos);
 
 module.exports = router;

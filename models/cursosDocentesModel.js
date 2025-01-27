@@ -71,6 +71,36 @@ const cursosDocentesModel = {
     const { rows } = await pool.query(query, [id]);
     return rows[0];
   },
+  async getAssignedCourses(docenteId) {
+    const query = `
+      SELECT 
+        cd.id AS asignacion_id,
+        cd.fecha_asignacion,
+        cd.estatus AS asignacion_estatus,
+        c.id AS curso_id,
+        c.nombre AS curso_nombre,
+        c.clave AS curso_clave,
+        c.duracion_horas AS curso_duracion_horas,
+        c.descripcion AS curso_descripcion,
+        c.area_id,
+        a.nombre AS area_nombre,
+        c.especialidad_id,
+        e.nombre AS especialidad_nombre,
+        c.tipo_curso_id,
+        t.nombre AS tipo_curso_nombre,
+        c.vigencia_inicio,
+        c.fecha_publicacion,
+        c.ultima_actualizacion
+      FROM cursos_docentes cd
+      JOIN cursos c ON cd.curso_id = c.id
+      JOIN areas a ON c.area_id = a.id
+      JOIN especialidades e ON c.especialidad_id = e.id
+      JOIN tipos_curso t ON c.tipo_curso_id = t.id
+      WHERE cd.docente_id = $1
+    `;
+    const { rows } = await pool.query(query, [docenteId]);
+    return rows;
+  },
 
   async create(curso) {
     const query = `
@@ -166,9 +196,31 @@ const cursosDocentesModel = {
     return rows;
   },
   async getAlumnosByCursoId(curso_id) {
+  // const query = `
+  //   SELECT 
+  //     a.id AS alumno_id,
+  //   ac.calificacion_final AS calificacion_final,
+  //     a.nombre AS alumno_nombre,
+  //     a.apellidos AS alumno_apellidos,
+  //     c.id AS curso_id,
+  //     c.nombre AS curso_nombre,
+  //     cd.docente_id,
+  //     asis.id AS asistencia_id,
+  //     asis.fecha AS asistencia_fecha,
+  //     asis.id AS asistencia_id,
+  //     asis.total_asistencias AS asistencia,
+  //     asis.observaciones AS observaciones
+  //   FROM alumnos a
+  //   JOIN alumnos_cursos ac ON a.id = ac.alumno_id
+  //   JOIN cursos c ON ac.curso_id = c.id
+  //   JOIN cursos_docentes cd ON c.id = cd.curso_id
+  //   LEFT JOIN asistencias asis ON a.id = asis.alumno_id AND c.id = asis.curso_id AND asis.fecha = CURRENT_DATE
+  //   WHERE c.id = $1 AND cd.estatus = true AND ac.estatus = 'Inscrito';
+  // `;
   const query = `
     SELECT 
       a.id AS alumno_id,
+    ac.calificacion_final AS calificacion_final,
       a.nombre AS alumno_nombre,
       a.apellidos AS alumno_apellidos,
       c.id AS curso_id,
@@ -176,12 +228,14 @@ const cursosDocentesModel = {
       cd.docente_id,
       asis.id AS asistencia_id,
       asis.fecha AS asistencia_fecha,
-      asis.asistencia AS asistencia
+      asis.id AS asistencia_id,
+      asis.total_asistencias AS asistencia,
+      asis.observaciones AS observaciones
     FROM alumnos a
     JOIN alumnos_cursos ac ON a.id = ac.alumno_id
     JOIN cursos c ON ac.curso_id = c.id
     JOIN cursos_docentes cd ON c.id = cd.curso_id
-    LEFT JOIN asistencias asis ON a.id = asis.alumno_id AND c.id = asis.curso_id AND asis.fecha = CURRENT_DATE
+    LEFT JOIN asistencias asis ON a.id = asis.alumno_id AND c.id = asis.curso_id 
     WHERE c.id = $1 AND cd.estatus = true AND ac.estatus = 'Inscrito';
   `;
 

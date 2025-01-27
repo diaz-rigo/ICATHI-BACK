@@ -11,4 +11,8 @@ router.get('/byIdPlantel/:plantelId/docentes', CursosDocentesController.getAllDo
 // Ruta para obtener alumnos y curso por ID del docente
 router.get('/asistencia/:cursoId', CursosDocentesController.getAlumnosAndCursoByIdCursoId);
 
+// Ruta para obtener un cursos por ID
+router.get("/:id", CursosDocentesController.getCursoById);
+router.get("/asignados/:docenteId", CursosDocentesController.getAssignedCourses);
+
 module.exports = router;

@@ -91,6 +91,58 @@ const PlantelesModel = {
     const { rows } = await pool.query(query, [id]);
     return rows[0];
   },
+
+
+  async getPlantelDetails(plantelId) {
+    const query = `
+      SELECT 
+          p.id AS plantel_id,
+          COUNT(DISTINCT ac.curso_id) AS total_cursos,
+          COUNT(DISTINCT ac.alumno_id) AS total_alumnos
+      FROM 
+          planteles_cursos pc
+      LEFT JOIN 
+          alumnos_cursos ac ON pc.plantel_id = ac.plantel_id AND pc.curso_id = ac.curso_id
+      JOIN 
+          planteles p ON p.id = pc.plantel_id
+      WHERE 
+          p.id = $1
+      GROUP BY 
+          p.id;
+    `;
+    const { rows } = await pool.query(query, [plantelId]);
+    return rows[0]; // Retornar un solo registro, ya que es específico para un plantel.
+  },
+  async getCursosByPlantelId(plantelId) {
+    const query = `
+      SELECT 
+          c.id AS curso_id,
+          c.nombre AS curso_nombre,
+          c.descripcion AS curso_descripcion,
+          c.duracion_horas,
+          c.nivel,
+          c.costo,
+          c.requisitos,
+          pc.cupo_maximo,
+          pc.fecha_inicio,
+          pc.fecha_fin,
+          pc.horario,
+          pc.estatus
+      FROM 
+          planteles_cursos pc
+      JOIN 
+          cursos c ON pc.curso_id = c.id
+      WHERE 
+          pc.plantel_id = $1;
+    `;
+    const values = [plantelId];
+    const { rows } = await pool.query(query, values);
+    return rows;
+  },
 };
+
+
+
+
 
 module.exports = PlantelesModel;

@@ -79,4 +79,34 @@ module.exports = {
       });
     }
   }
+
+,
+async getCursosDePlantelPorIdAlumno(req, res) {
+  try {
+    const { alumnoId } = req.params;
+    // Llama al método correcto del modelo
+    const data = await AlumnosCursosPlantelModel.getCursosDePlantelPorIdAlumno(alumnoId);
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Error en getCursosDePlantelPorIdAlumno:", error);
+    res.status(500).json({ error: "Error al obtener la información detallada del alumno y sus cursos" });
+  }
+},
+async obtenerAlumnos(req, res) {
+
+// async obtenerAlumnos(req, res) {
+  const { plantelId, cursoId } = req.params;
+
+  try {
+    if (!plantelId || !cursoId) {
+      return res.status(400).json({ message: "Plantel ID y Curso ID son requeridos." });
+    }
+
+    const alumnos = await AlumnosCursosPlantelModel.obtenerAlumnosPorPlantelYCurso(plantelId, cursoId);
+    return res.status(200).json(alumnos);
+  } catch (error) {
+    console.error("Error en obtenerAlumnos:", error);
+    return res.status(500).json({ message: "Error al obtener los alumnos." });
+  }
+},
 }

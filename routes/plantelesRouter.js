@@ -10,5 +10,8 @@ router.put('/:id', plantelesController.update); // Actualizar un curso existente
 router.delete('/:id', plantelesController.delete); // Eliminar un curso
 // router.get('/:id/detalles',plantelesController.getCursoDetailsById)
 
+router.get('/datos/:id', plantelesController.getPlantelDetails);
+router.get('/:id/cursos', plantelesController.getCursosByPlantelId);
+
 // router.delete('/idPlantel/:id/info', plantelesController.delete); // Eliminar un curso
 module.exports = router;

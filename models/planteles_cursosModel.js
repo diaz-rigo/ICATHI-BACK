@@ -308,18 +308,21 @@ const PlantelesCursos = {
     return rows;
   },
 
-  async actualizarEstatus(id, estatus, observacion = null) {
+  async actualizarEstatus(id, estatus, observacion = null, sugerencia = null) {
     const query = `
         UPDATE planteles_cursos
-        SET estatus = \$1, requisitos_extra = COALESCE(\$2, requisitos_extra), updated_at = now()
-        WHERE id = \$3
+        SET estatus = $1, 
+            requisitos_extra = COALESCE($2, requisitos_extra), 
+            sugerencia = COALESCE($3, sugerencia), 
+            updated_at = now()
+        WHERE id = $4
         RETURNING *;
     `;
 
-    const values = [estatus, observacion, id];
+    const values = [estatus, observacion, sugerencia, id];
     const { rows } = await pool.query(query, values);
     return rows[0];
-  },
+},
 
   async obtenerCursosPorPlantelDetalle(plantelId) {
     const query = `
@@ -936,7 +939,154 @@ WHERE p.id = ${idPlantel};
 
     // return rows[0];
   }
+,
+
+  async updateCourse_solicitud_ById(id, data) {
+    try {
+      const updateFields = [];
+      const updateValues = [];
+      let index = 1;
   
+      const fields = {
+        plantel_id: data.plantel_id,
+        curso_id: data.curso_id,
+        cupo_maximo: data.cupo_maximo,
+        requisitos_extra: data.requisitos_extra,
+        fecha_inicio: data.fecha_inicio,
+        fecha_fin: data.fecha_fin,
+        estatus_id: data.estatus_id,
+        temario_url: data.temario_url,
+        cant_instructores: data.cant_instructores,
+        horario_id: data.horario_id,
+        sector_atendido: data.sector_atendido,
+        rango_edad: data.rango_edad,
+        cruzada_contra_hambre: data.cruzada_contra_hambre,
+        tipo_beca: data.tipo_beca,
+        participantes: data.participantes,
+        cuota_tipo: data.cuota_tipo,
+        cuota_monto: data.cuota_monto,
+        pagar_final: data.pagar_final,
+        convenio_numero: data.convenio_numero,
+        equipo_necesario: data.equipo_necesario,
+        horario: data.horario,
+        estatus: data.estatus,
+        tipos_curso: data.tipos_curso,
+        sugerencia: data.sugerencia,
+        municipio: data.municipio,
+        localidad: data.localidad,
+        calle: data.calle,
+        num_interior: data.num_interior,
+        num_exterior: data.num_exterior,
+        tipo_curso: data.tipo_curso,
+      };
+  
+      // Construir campos dinámicamente
+      for (const [key, value] of Object.entries(fields)) {
+        if (value !== undefined) {
+          updateFields.push(`${key} = $${index++}`);
+          updateValues.push(value);
+        }
+      }
+  
+      updateValues.push(id); // El ID siempre al final
+  
+      const query = `
+        UPDATE planteles_cursos
+        SET ${updateFields.join(', ')}, updated_at = NOW()
+        WHERE id = $${index}
+        RETURNING *;
+      `;
+  
+      console.log('Consulta preparada:', query);
+      console.log('Valores:', updateValues);
+  
+      const resultado = await pool.query(query, updateValues);
+      return resultado.rows[0];
+    } catch (error) {
+      console.error('Error actualizando curso:', error);
+      throw error;
+    }
+  }
+  
+  
+  ,
+  async obtenerCursosPorPlantel(plantelId) {
+    const query = `
+        SELECT 
+            pc.id AS plantel_curso_id,
+            pc.curso_id, 
+            c.nombre AS curso_nombre, 
+            pc.estatus 
+        FROM planteles_cursos pc
+        JOIN cursos c ON pc.curso_id = c.id
+        WHERE pc.plantel_id = $1
+        ORDER BY c.nombre;
+    `;
+    const { rows } = await pool.query(query, [plantelId]);
+    return rows;
+},
+async obtenerSolicitudescompletas() {
+  const query = `
+      SELECT 
+          p.id AS plantel_id, 
+          p.nombre AS plantel_nombre,  
+          p.estatus,
+          pc.id AS plantel_curso_id
+      FROM planteles p
+      JOIN planteles_cursos pc ON p.id = pc.plantel_id
+      ORDER BY p.nombre;
+  `;
+  const { rows } = await pool.query(query);
+  return rows;
+},
+async obtenerDetalleCursocompletoPorId(idCurso) {
+  try {
+    const query = `
+      SELECT 
+          pc.id AS plantel_curso_id,
+          p.nombre AS plantel_nombre,
+          c.nombre AS curso_nombre,
+          tc.nombre AS tipo_curso_nombre,
+          pc.cupo_maximo,
+          pc.requisitos_extra,
+          pc.fecha_inicio,
+          pc.fecha_fin,
+          pc.estatus,
+          pc.temario_url,
+          pc.cant_instructores,
+          pc.horario_id,
+          pc.sector_atendido,
+          pc.rango_edad,
+          pc.cruzada_contra_hambre,
+          pc.tipo_beca,
+          pc.participantes,
+          pc.cuota_tipo,
+          pc.cuota_monto,
+          pc.pagar_final,
+          pc.convenio_numero,
+          pc.equipo_necesario,
+          pc.tipo_curso,
+          pc.horario,
+          pc.tipos_curso
+      FROM 
+          planteles_cursos pc
+      JOIN 
+          planteles p ON pc.plantel_id = p.id
+      JOIN 
+          cursos c ON pc.curso_id = c.id
+      JOIN 
+          tipos_curso tc ON pc.tipo_curso = tc.id
+      WHERE 
+          pc.id = $1;
+    `;
+
+    const { rows } = await pool.query(query, [idCurso]);
+    return rows[0];
+  } catch (error) {
+    console.error("Error al obtener el detalle del curso por ID:", error);
+    throw error;
+  }
+},
 };
 
 module.exports = PlantelesCursos;

@@ -41,19 +41,22 @@ router.get('/plantelesConCursosNoValidados', PlantelesCursosController.obtenerPl
 router.get('/', PlantelesCursosController.getAll);
 
 
-
 // ruta para obtener la informacion del curso solicitado(info curso,docentes,alumos)
 router.get('/plantelinfo/:idPlantelCurso', PlantelesCursosController.obtenerInfoPlantelCurso);
 // router.get('/plantelinfo/:idPlantelCurso', PlantelesCursosController.obtenerInfoPlantelCurso);
 router.get('/plantelinfoDetalle/:idPlantelCurso', PlantelesCursosController.obtenerDetalleCursosPorPlantel);
 router.get('/cursosYestatus/:idPlantel', PlantelesCursosController.getCursosConEstado);
-
-
-
 router.put('/:alumnoId/cursos/:cursoId', AlumnosPlantelCursosController.actualizarCalificacionFinal); 
+//ruta para obtener los cursos por plantel
+router.get('/cursosporplantel/:plantelId', PlantelesCursosController.obtenerCursosPorPlantel);
 
+//ruta para obtener solicitudes de completas de todos los planteles
+router.get('/solicitudes', PlantelesCursosController.obtenerSolicitudescompletas);
+//
 
-
+// Ruta para actualizar la solicitud   por ID
+router.put("/solicitud/:id", PlantelesCursosController.updateCourse_solicitud_ById);
+router.get('/detalleCurso/:idCurso', PlantelesCursosController.obtenerDetalleCursocompletoPorId);
 
 
 

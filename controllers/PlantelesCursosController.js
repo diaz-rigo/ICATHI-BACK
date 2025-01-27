@@ -160,37 +160,38 @@ module.exports = {
 ,  
   async actualizarEstatus(req, res) {
     try {
-      const { id } = req.params; // Asegúrate de que el ID se esté extrayendo correctamente
-      console.log("ID recibido para actualizar:", id); // Depuración
-      const { estatus, observacion } = req.body;
+        const { id } = req.params; // Asegúrate de que el ID se esté extrayendo correctamente
+        console.log("ID recibido para actualizar:", id); // Depuración
+        const { estatus, observacion, sugerencia } = req.body;
 
-      // Llama al modelo para actualizar el estatus
-      const solicitudActualizada = await PlantelesCursosModel.actualizarEstatus(
-        id,
-        estatus,
-        observacion
-      );
+        // Llama al modelo para actualizar el estatus
+        const solicitudActualizada = await PlantelesCursosModel.actualizarEstatus(
+            id,
+            estatus,
+            observacion,
+            sugerencia
+        );
 
-      if (!solicitudActualizada) {
-        // Si no se encuentra la solicitud, responde con un 404
-        return res.status(404).json({
-          message: "Solicitud no encontrada",
+        if (!solicitudActualizada) {
+            // Si no se encuentra la solicitud, responde con un 404
+            return res.status(404).json({
+                message: "Solicitud no encontrada",
+            });
+        }
+
+        // Responde con éxito
+        return res.status(200).json({
+            message: "Estatus actualizado correctamente",
+            data: solicitudActualizada,
         });
-      }
-
-      // Responde con éxito
-      return res.status(200).json({
-        message: "Estatus actualizado correctamente",
-        data: solicitudActualizada,
-      });
     } catch (error) {
-      console.error("Error al actualizar el estatus:", error);
+        console.error("Error al actualizar el estatus:", error);
 
-      // Manejo de errores
-      return res.status(500).json({
-        message: "Error al actualizar el estatus",
-        error: error.message,
-      });
+        // Manejo de errores
+        return res.status(500).json({
+            message: "Error al actualizar el estatus",
+            error: error.message,
+        });
     }
 }
 ,
@@ -211,8 +212,6 @@ async obtenerCursoPorId(req, res) {
   }
 },
 
-
-  
 async obtenerPlantelesConCursos(req, res) {
   try {
       const query = `
@@ -292,6 +291,7 @@ async obtenerPlantelesConCursos(req, res) {
       });
     }
   },
+  
   async obtenerDetalleCursosPorPlantel(req, res) {
     try {
       const { idPlantelCurso } = req.params;
@@ -340,4 +340,110 @@ async obtenerPlantelesConCursos(req, res) {
       });
     }
   },
+
+  async updateCourse_solicitud_ById(req, res) {
+    try {
+      const { id } = req.params;
+      const data = req.body;
+
+      // Validar que el ID sea numérico
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "El ID del curso debe ser un número válido." });
+      }
+      console.log("*********actualizar solicitud ---__",req.body)
+      // Llamar al modelo para actualizar el curso
+      const cursoActualizado = await PlantelesCursosModel.updateCourse_solicitud_ById(id, data);
+
+      if (!cursoActualizado) {
+        return res.status(404).json({ error: "No se encontró el curso para actualizar." });
+      }
+
+      res.status(200).json({
+        message: "Curso actualizado con éxito",
+        curso: cursoActualizado,
+      });
+    } catch (error) {
+      console.error("Error al actualizar el curso:", error);
+      res.status(500).json({ error: "Error al actualizar el curso" });
+    }
+  },
+
+  async obtenerInfoPlantelCurso2(req, res) {
+    try {
+        // Obtener todos los cursos y planteles sin filtrar por id
+        const info = await PlantelesCursosModel.obtenerTodosLosCursosYPlanteles();
+
+        if (!info.length) {
+            return res.status(404).json({ error: "No se encontraron cursos o planteles" });
+        }
+
+        res.status(200).json(info);
+    } catch (error) {
+        console.error("Error al obtener la info:", error);
+        res.status(500).json({
+            message: "Error al obtener la info",
+            error: error.message,
+        });
+    }
+},
+ async obtenerSolicitudescompletas(req, res) {
+  try {
+    // Obtener todos los cursos y planteles sin filtrar por id
+    const info = await PlantelesCursosModel.obtenerSolicitudescompletas();
+
+    if (!info.length) {
+        return res.status(404).json({ error: "No se encontraron cursos o planteles" });
+    }
+
+    res.status(200).json(info);
+} catch (error) {
+    console.error("Error al obtener la info:", error);
+    res.status(500).json({
+        message: "Error al obtener la info",
+        error: error.message,
+    });
+}
+
+},
+
+async obtenerCursosPorPlantel(req, res) {
+  try {
+    // Obtener el ID del plantel desde los parámetros de la solicitud
+    const { plantelId } = req.params;
+
+    // Obtener los cursos asociados al plantel
+    const info = await PlantelesCursosModel.obtenerCursosPorPlantel(plantelId);
+
+    if (!info.length) {
+      return res.status(404).json({ error: "No se encontraron cursos para el plantel especificado" });
+    }
+
+    res.status(200).json(info);
+  } catch (error) {
+    console.error("Error al obtener los cursos por plantel:", error);
+    res.status(500).json({
+      message: "Error al obtener los cursos por plantel",
+      error: error.message,
+    });
+  }
+},
+async  obtenerDetalleCursocompletoPorId(req, res) {
+  try {
+    const { idCurso } = req.params;
+
+    const detalleCurso = await PlantelesCursosModel.obtenerDetalleCursocompletoPorId(idCurso);
+
+    if (!detalleCurso) {
+      return res.status(404).json({ error: "Curso no encontrado" });
+    }
+
+    res.status(200).json(detalleCurso);
+  } catch (error) {
+    console.error("Error al obtener el detalle del curso por ID:", error);
+    res.status(500).json({
+      message: "Error al obtener el detalle del curso por ID",
+      error: error.message,
+    });
+  }
+}
 };

@@ -70,6 +70,39 @@ module.exports = {
     }
   },
 
+  async getCursoById(req, res) {
+    const { id } = req.params; // Obtener el ID de los parámetros de la ruta
+    try {
+      // Llamar al modelo para obtener el curso por ID
+      const curso = await cursosDocentesModel.getById(id);
+
+      // Verificar si se encontró el curso
+      if (!curso) {
+        return res.status(404).json({ message: "Curso no encontrado" });
+      }
+
+      // Devolver el curso en la respuesta
+      res.status(200).json(curso);
+    } catch (error) {
+      console.error("Error al obtener curso por ID:", error);
+      res.status(500).json({ message: "Error al obtener el curso", error });
+    }
+  },
+  async getAssignedCourses(req, res) {
+    const { docenteId } = req.params; // Obtener el ID del docente desde los parámetros de la ruta
+    try {
+      const assignedCourses = await cursosDocentesModel.getAssignedCourses(docenteId);
+
+      if (assignedCourses.length === 0) {
+        return res.status(405).json({data_curso:assignedCourses, message: "No se encontraron cursos asignados para este docente" });
+      }
+
+      res.status(200).json(assignedCourses);
+    } catch (error) {
+      console.error("Error al obtener cursos asignados:", error);
+      res.status(500).json({ message: "Error al obtener cursos asignados", error });
+    }
+  },
 
   // async getAllDocenteByIdPlantel (req, res) {
   //   // async getDocentesByUserId(req, res) {
