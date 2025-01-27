@@ -1009,7 +1009,7 @@ WHERE p.id = ${idPlantel};
   }
   
   
-  },
+  ,
   async obtenerCursosPorPlantel(plantelId) {
     const query = `
         SELECT 
