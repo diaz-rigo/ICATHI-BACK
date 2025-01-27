@@ -1,6 +1,10 @@
 const CursosModel = require("../models/cursosModel");
 const pool = require("../config/database");
 
+const cloudinary = require("../config/cloudinary");
+const fs = require('fs');
+
+
 exports.getAll = async (req, res) => {
   try {
     const cursos = await CursosModel.getAll();
@@ -119,8 +123,32 @@ exports.getByIdInfoReporte = async (req, res) => {
 
 exports.create = async (req, res) => {
   const client = await pool.connect(); // Para manejar transacciones
-  try {
-    console.log("Datos recibidos del frontend:", req.body);
+    try {
+      console.log("Datos recibidos del frontend:", req.body);
+      console.log("Archivo recibido:", req.file); // Verifica si el archivo ha sido recibido correctamente
+  
+      // Verificar si se ha enviado un archivo
+      if (!req.file) {
+        return res.status(400).json({ error: "No se ha enviado el archivo de temario." });
+      }
+  
+      const file = req.file;
+  
+      // Verificar que el archivo existe en la ruta antes de intentar subirlo
+      if (!fs.existsSync(file.path)) {
+        return res.status(400).json({ error: "El archivo no existe en la ruta especificada." });
+      }
+  
+      // Subir el archivo a Cloudinary
+      const uploadResult = await cloudinary.uploader.upload(file.path, {
+        folder: "temarios_cursos", // Personaliza la carpeta en Cloudinary
+        resource_type: 'raw', 
+      });
+  
+      // Eliminar el archivo temporal solo después de que haya sido subido correctamente
+      if (fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
 
     const {
       nombre,
@@ -135,6 +163,10 @@ exports.create = async (req, res) => {
       vigencia_inicio,
       fecha_publicacion,
       ultima_actualizacion,
+      revisado_por,
+autorizado_por,
+elaborado_por,
+
       objetivos,
       materiales,
       equipamiento,
@@ -160,7 +192,7 @@ exports.create = async (req, res) => {
     const cursoQuery = `
       INSERT INTO cursos (
         nombre, clave, duracion_horas, descripcion, nivel, costo, area_id, especialidad_id, tipo_curso_id, vigencia_inicio, fecha_publicacion, ultima_actualizacion
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id
+      ,revisado_por,autorizado_por,elaborado_por,archivo_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,$13,$14,$15,$16) RETURNING id
     `;
     const cursoValues = [
       nombre,
@@ -175,6 +207,10 @@ exports.create = async (req, res) => {
       vigencia_inicio || null,
       fecha_publicacion || null,
       ultima_actualizacion || null,
+      revisado_por,
+autorizado_por,
+elaborado_por,
+      uploadResult.secure_url, // Usar la URL segura de Cloudinary
     ];
     const { rows: cursoRows } = await client.query(cursoQuery, cursoValues);
     const id_curso = cursoRows[0].id;
@@ -275,186 +311,6 @@ exports.create = async (req, res) => {
     client.release();
   }
 };
-
-
-// exports.create = async (req, res) => {
-//   const client = await pool.connect(); // Para manejar transacciones
-//   try {
-//     console.log("Datos recibidos del frontend:", req.body);
-
-//     const {
-//       nombre,
-//       clave,
-//       duracion_horas,
-//       descripcion,
-//       costo,
-//       nivel,
-//       area_id,
-//       especialidad_id,
-//       tipo_curso_id,
-//       vigencia_inicio,
-//       fecha_publicacion,
-//       ultima_actualizacion,
-//       objetivos,
-//       materiales,
-//       equipamiento,
-//     } = req.body;
-
-//     // Validación de los campos obligatorios (sin incluir materiales y equipamiento)
-//     if (
-//       !nombre ||
-//       !clave ||
-//       !duracion_horas ||
-//       !descripcion ||
-//       !tipo_curso_id
-//     ) {
-//       return res
-//         .status(400)
-//         .json({ error: "Los campos obligatorios deben completarse" });
-//     }
-
-//     await client.query("BEGIN");
-
-//     // Insertar el curso
-//     const cursoQuery = `
-//       INSERT INTO cursos (
-//         nombre, clave, duracion_horas, descripcion, nivel, costo, area_id, especialidad_id, tipo_curso_id, vigencia_inicio, fecha_publicacion, ultima_actualizacion
-//       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id
-//     `;
-//     const cursoValues = [
-//       nombre,
-//       clave,
-//       duracion_horas,
-//       descripcion,
-//       nivel || "Básico",
-//       costo,
-//       area_id || null,
-//       especialidad_id || null,
-//       tipo_curso_id,
-//       vigencia_inicio || null,
-//       fecha_publicacion || null,
-//       ultima_actualizacion || null,
-//     ];
-//     const { rows: cursoRows } = await client.query(cursoQuery, cursoValues);
-//     const id_curso = cursoRows[0].id;
-
-//     // Insertar objetivos si están presentes
-//     if (objetivos) {
-//       const fichaQuery = `
-//         INSERT INTO ficha_tecnica (
-//           id_curso, objetivo, perfil_ingreso, perfil_egreso, perfil_del_docente, metodologia, bibliografia, criterios_acreditacion, reconocimiento
-//         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-//       `;
-//       const fichaValues = [
-//         id_curso,
-//         objetivos.objetivo || "N/C",
-//         objetivos.perfil_ingreso || "N/C",
-//         objetivos.perfil_egreso || "N/C",
-//         objetivos.perfil_del_docente || "N/C",
-//         objetivos.metodologia || "N/C",
-//         objetivos.bibliografia || "N/C",
-//         objetivos.criterios_acreditacion || "N/C",
-//         objetivos.reconocimiento || "N/C",
-//       ];
-//       await client.query(fichaQuery, fichaValues);
-//     }
-
-//     // Insertar materiales solo si están presentes
-//     if (Array.isArray(materiales) && materiales.length > 0) {
-//       const materialQuery = `
-//         INSERT INTO material (id_curso, descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20)
-//         VALUES ($1, $2, $3, $4, $5, $6)
-//       `;
-//       for (const material of materiales) {
-//         if (!material.descripcion || !material.unidad_de_medida) {
-//           throw new Error("Materiales incompletos detectados");
-//         }
-//         const materialValues = [
-//           id_curso,
-//           material.descripcion || "N/C",
-//           material.unidad_de_medida || "N/C",
-//           material.cantidad_10 || 0,
-//           material.cantidad_15 || 0,
-//           material.cantidad_20 || 0,
-//         ];
-//         await client.query(materialQuery, materialValues);
-//       }
-//     }
-
-//     // Insertar equipamiento solo si está presente
-//     if (Array.isArray(equipamiento) && equipamiento.length > 0) {
-//       const equipamientoQuery = `
-//         INSERT INTO equipamiento (id_curso, descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20)
-//         VALUES ($1, $2, $3, $4, $5, $6)
-//       `;
-//       for (const equipo of equipamiento) {
-//         if (!equipo.descripcion || !equipo.unidad_de_medida) {
-//           throw new Error("Equipamiento incompleto detectado");
-//         }
-//         const equipamientoValues = [
-//           id_curso,
-//           equipo.descripcion || "N/C",
-//           equipo.unidad_de_medida || "N/C",
-//           equipo.cantidad_10 || 0,
-//           equipo.cantidad_15 || 0,
-//           equipo.cantidad_20 || 0,
-//         ];
-//         await client.query(equipamientoQuery, equipamientoValues);
-//       }
-//     }
-
-//     await client.query("COMMIT");
-//     res.status(201).json({ message: "Curso registrado exitosamente", id_curso });
-//   } catch (error) {
-//     await client.query("ROLLBACK");
-//     console.error("Error al registrar el curso:", error);
-//     res
-//       .status(500)
-//       .json({ error: error.message || "Error al registrar el curso" });
-//   } finally {
-//     client.release();
-//   }
-// };
-
-
-// original=>exports.create = async (req, res) => {
-//   try {
-//     console.log('Datos recibidos del frontend:', req.body); // Verifica los datos
-
-
-// original=>exports.create = async (req, res) => {
-//   try {
-//     console.log('Datos recibidos del frontend:', req.body); // Verifica los datos
-
-//     const { nombre, clave, duracion_horas, descripcion, area_id, especialidad_id, tipo_curso_id } = req.body;
-
-//     // Validar campos obligatorios
-//     if (!nombre || !clave || !duracion_horas || !descripcion || !area_id || !especialidad_id || !tipo_curso_id) {
-//       return res.status(400).json({ error: 'Todos los campos obligatorios deben ser completados' });
-//     }
-
-//     const nuevoCurso = await CursosModel.create(req.body);
-//     res.status(201).json(nuevoCurso);
-//   } catch (error) {
-//     console.error('Error al crear el curso:', error);
-//     res.status(500).json({ error: 'Error al crear el curso' });
-//   }
-// };
-
-//     const { nombre, clave, duracion_horas, descripcion, area_id, especialidad_id, tipo_curso_id } = req.body;
-
-//     // Validar campos obligatorios
-//     if (!nombre || !clave || !duracion_horas || !descripcion || !area_id || !especialidad_id || !tipo_curso_id) {
-//       return res.status(400).json({ error: 'Todos los campos obligatorios deben ser completados' });
-//     }
-
-//     const nuevoCurso = await CursosModel.create(req.body);
-//     res.status(201).json(nuevoCurso);
-//   } catch (error) {
-//     console.error('Error al crear el curso:', error);
-//     res.status(500).json({ error: 'Error al crear el curso' });
-//   }
-// };
 
 exports.update = async (req, res) => {
   try {

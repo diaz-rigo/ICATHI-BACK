@@ -938,7 +938,78 @@ WHERE p.id = ${idPlantel};
     // const { rows } = await this.pool.query(query, [idPlantel]);
 
     // return rows[0];
-  },
+  }
+,
+
+  async updateCourse_solicitud_ById(id, data) {
+    try {
+      const updateFields = [];
+      const updateValues = [];
+      let index = 1;
+  
+      const fields = {
+        plantel_id: data.plantel_id,
+        curso_id: data.curso_id,
+        cupo_maximo: data.cupo_maximo,
+        requisitos_extra: data.requisitos_extra,
+        fecha_inicio: data.fecha_inicio,
+        fecha_fin: data.fecha_fin,
+        estatus_id: data.estatus_id,
+        temario_url: data.temario_url,
+        cant_instructores: data.cant_instructores,
+        horario_id: data.horario_id,
+        sector_atendido: data.sector_atendido,
+        rango_edad: data.rango_edad,
+        cruzada_contra_hambre: data.cruzada_contra_hambre,
+        tipo_beca: data.tipo_beca,
+        participantes: data.participantes,
+        cuota_tipo: data.cuota_tipo,
+        cuota_monto: data.cuota_monto,
+        pagar_final: data.pagar_final,
+        convenio_numero: data.convenio_numero,
+        equipo_necesario: data.equipo_necesario,
+        horario: data.horario,
+        estatus: data.estatus,
+        tipos_curso: data.tipos_curso,
+        sugerencia: data.sugerencia,
+        municipio: data.municipio,
+        localidad: data.localidad,
+        calle: data.calle,
+        num_interior: data.num_interior,
+        num_exterior: data.num_exterior,
+        tipo_curso: data.tipo_curso,
+      };
+  
+      // Construir campos dinámicamente
+      for (const [key, value] of Object.entries(fields)) {
+        if (value !== undefined) {
+          updateFields.push(`${key} = $${index++}`);
+          updateValues.push(value);
+        }
+      }
+  
+      updateValues.push(id); // El ID siempre al final
+  
+      const query = `
+        UPDATE planteles_cursos
+        SET ${updateFields.join(', ')}, updated_at = NOW()
+        WHERE id = $${index}
+        RETURNING *;
+      `;
+  
+      console.log('Consulta preparada:', query);
+      console.log('Valores:', updateValues);
+  
+      const resultado = await pool.query(query, updateValues);
+      return resultado.rows[0];
+    } catch (error) {
+      console.error('Error actualizando curso:', error);
+      throw error;
+    }
+  }
+  
+  
+  ,
   async obtenerCursosPorPlantel(plantelId) {
     const query = `
         SELECT 

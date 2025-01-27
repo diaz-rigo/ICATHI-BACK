@@ -54,6 +54,8 @@ router.get('/cursosporplantel/:plantelId', PlantelesCursosController.obtenerCurs
 router.get('/solicitudes', PlantelesCursosController.obtenerSolicitudescompletas);
 //
 
+// Ruta para actualizar la solicitud   por ID
+router.put("/solicitud/:id", PlantelesCursosController.updateCourse_solicitud_ById);
 router.get('/detalleCurso/:idCurso', PlantelesCursosController.obtenerDetalleCursocompletoPorId);
 
 
