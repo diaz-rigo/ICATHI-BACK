@@ -164,8 +164,8 @@ exports.create = async (req, res) => {
       fecha_publicacion,
       ultima_actualizacion,
       revisado_por,
-autorizado_por,
-elaborado_por,
+      autorizado_por,
+      elaborado_por,
 
       objetivos,
       materiales,
@@ -538,7 +538,7 @@ exports.getCourseDetails = async (req, res) => {
       SELECT 
         c.id, c.nombre, c.clave, c.duracion_horas, c.descripcion, c.nivel, 
         c.area_id, c.especialidad_id, c.tipo_curso_id, c.vigencia_inicio, 
-        c.fecha_publicacion, c.ultima_actualizacion , c.archivo_url
+        c.fecha_publicacion, c.ultima_actualizacion , c.archivo_url , ela.nombre as elaborado_por, rev.nombre as revisado_por, aut.nombre as autorizado_por , 
       FROM cursos c
       WHERE c.id = $1
     `;
@@ -627,7 +627,7 @@ exports.updateCourseDetails = async (req, res) => {
   const { id } = req.params; // ID del curso a actualizar
   const {
     nombre, clave, duracion_horas, descripcion, nivel, area_id, especialidad_id, tipo_curso_id, vigencia_inicio, fecha_publicacion, ultima_actualizacion,
-    fichaTecnica, contenidoProgramatico, materiales, equipamiento
+    fichaTecnica, contenidoProgramatico, materiales, equipamiento , archivo_url,elaborado_por,revisado_por, autorizado_por // Nuevo campo
   } = req.body;
   const client = await pool.connect();
 
@@ -637,8 +637,8 @@ exports.updateCourseDetails = async (req, res) => {
     // Actualizar datos básicos del curso
     const cursoQuery = `
       UPDATE cursos
-      SET nombre = $1, clave = $2, duracion_horas = $3, descripcion = $4, nivel = $5, area_id = $6, especialidad_id = $7, tipo_curso_id = $8, vigencia_inicio = $9, fecha_publicacion = $10, ultima_actualizacion = $11
-      WHERE id = $12
+      SET nombre = $1, clave = $2, duracion_horas = $3, descripcion = $4, nivel = $5, area_id = $6, especialidad_id = $7, tipo_curso_id = $8, vigencia_inicio = $9, fecha_publicacion = $10, ultima_actualizacion = $11, archivo_url = $12, elaborado_por = $13, revisado_por = $14, autorizado_por = $15
+      WHERE id = $16
     `;
     await client.query(cursoQuery, [nombre, clave, duracion_horas, descripcion, nivel, area_id, especialidad_id, tipo_curso_id, vigencia_inicio, fecha_publicacion, ultima_actualizacion, id]);
 
