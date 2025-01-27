@@ -682,7 +682,7 @@ exports.getCourseDetails = async (req, res) => {
       SELECT 
         c.id, c.nombre, c.clave, c.duracion_horas, c.descripcion, c.nivel, 
         c.area_id, c.especialidad_id, c.tipo_curso_id, c.vigencia_inicio, 
-        c.fecha_publicacion, c.ultima_actualizacion
+        c.fecha_publicacion, c.ultima_actualizacion , c.archivo_url
       FROM cursos c
       WHERE c.id = $1
     `;
