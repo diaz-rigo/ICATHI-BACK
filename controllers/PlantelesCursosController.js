@@ -340,4 +340,32 @@ async obtenerPlantelesConCursos(req, res) {
       });
     }
   },
+
+  async updateCourse_solicitud_ById(req, res) {
+    try {
+      const { id } = req.params;
+      const data = req.body;
+
+      // Validar que el ID sea numérico
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "El ID del curso debe ser un número válido." });
+      }
+      console.log("*********actualizar solicitud ---__",req.body)
+      // Llamar al modelo para actualizar el curso
+      const cursoActualizado = await PlantelesCursosModel.updateCourse_solicitud_ById(id, data);
+
+      if (!cursoActualizado) {
+        return res.status(404).json({ error: "No se encontró el curso para actualizar." });
+      }
+
+      res.status(200).json({
+        message: "Curso actualizado con éxito",
+        curso: cursoActualizado,
+      });
+    } catch (error) {
+      console.error("Error al actualizar el curso:", error);
+      res.status(500).json({ error: "Error al actualizar el curso" });
+    }
+  },
+
 };

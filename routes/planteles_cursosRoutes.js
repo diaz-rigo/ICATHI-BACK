@@ -53,7 +53,8 @@ router.get('/cursosYestatus/:idPlantel', PlantelesCursosController.getCursosConE
 router.put('/:alumnoId/cursos/:cursoId', AlumnosPlantelCursosController.actualizarCalificacionFinal); 
 
 
-
+// Ruta para actualizar la solicitud   por ID
+router.put("/solicitud/:id", PlantelesCursosController.updateCourse_solicitud_ById);
 
 
 
