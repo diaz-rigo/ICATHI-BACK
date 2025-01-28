@@ -538,7 +538,7 @@ exports.getCourseDetails = async (req, res) => {
       SELECT 
         c.id, c.nombre, c.clave, c.duracion_horas, c.descripcion, c.nivel, 
         c.area_id, c.especialidad_id, c.tipo_curso_id, c.vigencia_inicio, 
-        c.fecha_publicacion, c.ultima_actualizacion
+        c.fecha_publicacion, c.ultima_actualizacion ,c.archivo_url,c.elaborado_por,c.revisado_por,c.autorizado_por
       FROM cursos c
       WHERE c.id = $1
     `;
@@ -624,45 +624,130 @@ exports.getCursosByEspecialidadId = async (req, res) => {
 
 // exports.getDeatilsCursoInfo = async (req, res) => {};
 exports.updateCourseDetails = async (req, res) => {
-  const { id } = req.params; // ID del curso a actualizar
-  const {
-    nombre, clave, duracion_horas, descripcion, nivel, area_id, especialidad_id, tipo_curso_id, vigencia_inicio, fecha_publicacion, ultima_actualizacion,
-    fichaTecnica, contenidoProgramatico, materiales, equipamiento , archivo_url,elaborado_por,revisado_por, autorizado_por // Nuevo campo
-  } = req.body;
-  const client = await pool.connect();
-
+  const client = await pool.connect(); // Para manejar transacciones
   try {
-    await client.query('BEGIN');
+    console.log("Datos recibidos del frontend:", req.body);
+    console.log("Archivo recibido:", req.file); // Verifica si el archivo ha sido recibido correctamente
 
-    // Actualizar datos básicos del curso
-    const cursoQuery = `
+    const { id } = req.params; // ID del curso a actualizar
+    const {
+      nombre,
+      clave,
+      duracion_horas,
+      descripcion,
+      costo,
+      nivel,
+      area_id,
+      especialidad_id,
+      tipo_curso_id,
+      vigencia_inicio,
+      fecha_publicacion,
+      ultima_actualizacion,
+      revisado_por,
+      autorizado_por,
+      elaborado_por,
+      objetivos,
+      materiales,
+      equipamiento,
+      contenidoProgramatico,
+    } = req.body;
+
+    // Verificar si el curso existe
+    const cursoQuery = "SELECT id FROM cursos WHERE id = $1";
+    const { rows: cursoRows } = await client.query(cursoQuery, [id]);
+
+    if (cursoRows.length === 0) {
+      return res.status(404).json({ error: "Curso no encontrado" });
+    }
+
+    await client.query("BEGIN");
+
+    // Si se ha enviado un archivo (temario), subirlo a Cloudinary
+    let uploadResult;
+    if (req.file) {
+      const file = req.file;
+
+      // Verificar que el archivo existe en la ruta antes de intentar subirlo
+      if (!fs.existsSync(file.path)) {
+        return res.status(400).json({ error: "El archivo no existe en la ruta especificada." });
+      }
+
+      // Subir el archivo a Cloudinary
+      uploadResult = await cloudinary.uploader.upload(file.path, {
+        folder: "temarios_cursos", // Personaliza la carpeta en Cloudinary
+        resource_type: 'raw',
+      });
+
+      // Eliminar el archivo temporal solo después de que haya sido subido correctamente
+      if (fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
+    }
+
+    // Actualizar el curso
+    const cursoUpdateQuery = `
       UPDATE cursos
-      SET nombre = $1, clave = $2, duracion_horas = $3, descripcion = $4, nivel = $5, area_id = $6, especialidad_id = $7, tipo_curso_id = $8, vigencia_inicio = $9, fecha_publicacion = $10, ultima_actualizacion = $11, archivo_url = $12, elaborado_por = $13, revisado_por = $14, autorizado_por = $15
-      WHERE id = $16
+      SET nombre = $1, clave = $2, duracion_horas = $3, descripcion = $4, nivel = $5, costo = $6, area_id = $7, especialidad_id = $8,
+          tipo_curso_id = $9, vigencia_inicio = $10, fecha_publicacion = $11, ultima_actualizacion = $12, revisado_por = $13,
+          autorizado_por = $14, elaborado_por = $15, archivo_url = $16
+      WHERE id = $17
     `;
-    await client.query(cursoQuery, [nombre, clave, duracion_horas, descripcion, nivel, area_id, especialidad_id, tipo_curso_id, vigencia_inicio, fecha_publicacion, ultima_actualizacion, id]);
+    const cursoUpdateValues = [
+      nombre,
+      clave,
+      duracion_horas,
+      descripcion,
+      nivel || "Básico",
+      costo,
+      area_id || null,
+      especialidad_id || null,
+      tipo_curso_id,
+      vigencia_inicio || null,
+      fecha_publicacion || null,
+      ultima_actualizacion || null,
+      revisado_por,
+      autorizado_por,
+      elaborado_por,
+      uploadResult ? uploadResult.secure_url : null, // Usar la URL segura de Cloudinary si se ha subido un archivo
+      id,
+    ];
+    await client.query(cursoUpdateQuery, cursoUpdateValues);
 
-    // Actualizar la ficha técnica del curso
-    const fichaQuery = `
-      UPDATE ficha_tecnica
-      SET objetivo = $1, perfil_ingreso = $2, perfil_egreso = $3, perfil_del_docente = $4, metodologia = $5, bibliografia = $6, criterios_acreditacion = $7, reconocimiento = $8
-      WHERE id_curso = $9
-    `;
-    await client.query(fichaQuery, [fichaTecnica.objetivo, fichaTecnica.perfil_ingreso, fichaTecnica.perfil_egreso, fichaTecnica.perfil_del_docente, fichaTecnica.metodologia, fichaTecnica.bibliografia, fichaTecnica.criterios_acreditacion, fichaTecnica.reconocimiento, id]);
+    // Actualizar los objetivos si están presentes
+    if (objetivos) {
+      const fichaUpdateQuery = `
+        UPDATE ficha_tecnica
+        SET objetivo = $2, perfil_ingreso = $3, perfil_egreso = $4, perfil_del_docente = $5, metodologia = $6, 
+            bibliografia = $7, criterios_acreditacion = $8, reconocimiento = $9
+        WHERE id_curso = $1
+      `;
+      const fichaUpdateValues = [
+        id,
+        objetivos.objetivo || "N/C",
+        objetivos.perfil_ingreso || "N/C",
+        objetivos.perfil_egreso || "N/C",
+        objetivos.perfil_del_docente || "N/C",
+        objetivos.metodologia || "N/C",
+        objetivos.bibliografia || "N/C",
+        objetivos.criterios_acreditacion || "N/C",
+        objetivos.reconocimiento || "N/C",
+      ];
+      await client.query(fichaUpdateQuery, fichaUpdateValues);
+    }
 
-    // Eliminar el contenido programático existente
-    await client.query('DELETE FROM contenido_programatico WHERE id_curso = $1', [id]);
+    // Actualizar el contenido programático si está presente
+    if (contenidoProgramatico && Array.isArray(contenidoProgramatico.temas)) {
+      // Eliminar los contenidos existentes para este curso
+      await client.query("DELETE FROM contenido_programatico WHERE id_curso = $1", [id]);
 
-    // Insertar el nuevo contenido programático
-    if (contenidoProgramatico && Array.isArray(contenidoProgramatico)) {
       const contenidoQuery = `
         INSERT INTO contenido_programatico (id_curso, tema_nombre, tiempo, competencias, evaluacion, actividades)
         VALUES ($1, $2, $3, $4, $5, $6)
       `;
-      for (const tema of contenidoProgramatico) {
+      for (const tema of contenidoProgramatico.temas) {
         const contenidoValues = [
           id,
-          tema.tema_nombre || "N/C",
+          tema.nombre || "N/C",
           tema.tiempo || 0,
           tema.competencias || null,
           tema.evaluacion || null,
@@ -672,17 +757,20 @@ exports.updateCourseDetails = async (req, res) => {
       }
     }
 
-    // Eliminar los materiales existentes
-    await client.query('DELETE FROM material WHERE id_curso = $1', [id]);
-
-    // Insertar los nuevos materiales
+    // Actualizar los materiales si están presentes
     if (Array.isArray(materiales) && materiales.length > 0) {
-      const materialesQuery = `
+      // Eliminar los materiales existentes para este curso
+      await client.query("DELETE FROM material WHERE id_curso = $1", [id]);
+
+      const materialQuery = `
         INSERT INTO material (id_curso, descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20)
         VALUES ($1, $2, $3, $4, $5, $6)
       `;
       for (const material of materiales) {
-        const materialesValues = [
+        if (!material.descripcion || !material.unidad_de_medida) {
+          throw new Error("Materiales incompletos detectados");
+        }
+        const materialValues = [
           id,
           material.descripcion || "N/C",
           material.unidad_de_medida || "N/C",
@@ -690,20 +778,23 @@ exports.updateCourseDetails = async (req, res) => {
           material.cantidad_15 || 0,
           material.cantidad_20 || 0,
         ];
-        await client.query(materialesQuery, materialesValues);
+        await client.query(materialQuery, materialValues);
       }
     }
 
-    // Eliminar el equipamiento existente
-    await client.query('DELETE FROM equipamiento WHERE id_curso = $1', [id]);
-
-    // Insertar el nuevo equipamiento
+    // Actualizar el equipamiento si está presente
     if (Array.isArray(equipamiento) && equipamiento.length > 0) {
+      // Eliminar el equipamiento existente para este curso
+      await client.query("DELETE FROM equipamiento WHERE id_curso = $1", [id]);
+
       const equipamientoQuery = `
         INSERT INTO equipamiento (id_curso, descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20)
         VALUES ($1, $2, $3, $4, $5, $6)
       `;
       for (const equipo of equipamiento) {
+        if (!equipo.descripcion || !equipo.unidad_de_medida) {
+          throw new Error("Equipamiento incompleto detectado");
+        }
         const equipamientoValues = [
           id,
           equipo.descripcion || "N/C",
@@ -716,13 +807,12 @@ exports.updateCourseDetails = async (req, res) => {
       }
     }
 
-    await client.query('COMMIT');
-    res.status(200).json({ message: 'Curso actualizado correctamente' });
-
+    await client.query("COMMIT");
+    res.status(200).json({ message: "Curso actualizado exitosamente" });
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Error al actualizar el curso:', error);
-    res.status(500).json({ error: error.message || 'Error al actualizar el curso' });
+    await client.query("ROLLBACK");
+    console.error("Error al actualizar el curso:", error);
+    res.status(500).json({ error: error.message || "Error al actualizar el curso" });
   } finally {
     client.release();
   }
