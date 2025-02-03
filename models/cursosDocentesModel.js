@@ -27,24 +27,150 @@ const cursosDocentesModel = {
     const { rows } = await pool.query(query);
     return rows;
   },
-  async asignarCursoDocente(cursoId, docenteId) {
-    // Formatear la fecha de asignación
-    const fechaAsignacion = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+  // async asignarCursoDocente(cursoId, docenteId) {
+  //   // Formatear la fecha de asignación
+  //   const fechaAsignacion = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
 
-    const query = `
-        INSERT INTO cursos_docentes (curso_id, docente_id, fecha_asignacion, estatus)
-        VALUES ($1, $2, $3, $4) RETURNING *`;
+  //   const query = `
+  //       INSERT INTO cursos_docentes (curso_id, docente_id, fecha_asignacion, estatus)
+  //       VALUES ($1, $2, $3, $4) RETURNING *`;
 
-    // Ejecutar la consulta con los parámetros
-    const { rows } = await pool.query(query, [
-      cursoId,
-      docenteId,
-      fechaAsignacion,
-      true,
-    ]); // true para estatus
+  //   // Ejecutar la consulta con los parámetros
+  //   const { rows } = await pool.query(query, [
+  //     cursoId,
+  //     docenteId,
+  //     fechaAsignacion,
+  //     true,
+  //   ]); // true para estatus
 
-    return rows[0]; // Retornar el primer resultado
-  },
+  //   return rows[0]; // Retornar el primer resultado
+  // },
+  // async asignarODesasignarCursoDocente(cursoId, docenteId, action) { 
+  //   const fechaAsignacion = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+  //   let query;
+  //   let params;
+  
+  //   if (action === 'asignar') {
+  //     // Verificar si ya está asignado un docente al curso y su estatus es true
+  //     const checkQuery = `
+  //       SELECT * FROM cursos_docentes 
+  //       WHERE curso_id = $1 AND docente_id = $2
+  //     `;
+  //     const { rows } = await pool.query(checkQuery, [cursoId, docenteId]);
+  
+  //     if (rows.length > 0) {
+  //       // Si ya existe y está asignado, actualizamos la fecha de asignación y el estatus
+  //       if (rows[0].estatus === true) {
+  //         console.log('El docente ya está asignado al curso, actualizando fecha...');
+  //         query = `
+  //           UPDATE cursos_docentes
+  //           SET updated_at = now(), fecha_asignacion = $1
+  //           WHERE curso_id = $2 AND docente_id = $3 AND estatus = true
+  //           RETURNING *`;
+  //         params = [fechaAsignacion, cursoId, docenteId];
+  //       } else {
+  //         // Si el docente fue desasignado (estatus = false), se actualiza su estatus
+  //         console.log('El docente estaba desasignado, reasignando...');
+  //         query = `
+  //           UPDATE cursos_docentes
+  //           SET estatus = true, updated_at = now(), fecha_asignacion = $1
+  //           WHERE curso_id = $2 AND docente_id = $3 AND estatus = false
+  //           RETURNING *`;
+  //         params = [fechaAsignacion, cursoId, docenteId];
+  //       }
+  //     } else {
+  //       // Si no está asignado en la tabla, realizamos la inserción
+  //       console.log('Asignando docente al curso...');
+  //       query = `
+  //         INSERT INTO cursos_docentes (curso_id, docente_id, fecha_asignacion, estatus)
+  //         VALUES ($1, $2, $3, $4) RETURNING *`;
+  //       params = [cursoId, docenteId, fechaAsignacion, true]; // true para asignar
+  //     }
+  //   } else if (action === 'desasignar') {
+  //     // Lógica para desasignar (cambiar el estatus a false)
+  //     console.log('Desasignando docente del curso...');
+  //     query = `
+  //       UPDATE cursos_docentes
+  //       SET estatus = $1, updated_at = now()
+  //       WHERE curso_id = $2 AND docente_id = $3 AND estatus = true
+  //       RETURNING *`;
+  //     params = [false, cursoId, docenteId]; // false para desasignar
+  //   }
+  
+  //   // Ejecutamos la consulta con los parámetros
+  //   const result = await pool.query(query, params);
+  
+  //   if (result.rows.length > 0) {
+  //     console.log(`Acción completada: ${action} en el curso ID ${cursoId} para el docente ID ${docenteId}`);
+  //     return result.rows[0]; // Retorna el primer resultado
+  //   } else {
+  //     console.log('No se encontró ningún registro para actualizar o insertar.');
+  //     return { message: 'No se pudo realizar la acción. Verifique los datos proporcionados.' };
+  //   }
+  // }
+  
+  
+  async asignarODesasignarCursoDocente(cursoId, docentesIds) {
+    const results = [];
+  
+    for (const docenteId of docentesIds) {
+      const fechaAsignacion = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+      let query;
+      let params;
+  
+      // Verificar si el docente ya está asignado al curso
+      const checkQuery = `
+        SELECT * FROM cursos_docentes 
+        WHERE curso_id = $1 AND docente_id = $2
+      `;
+      const { rows } = await pool.query(checkQuery, [cursoId, docenteId]);
+  
+      if (rows.length > 0) {
+        // Si ya está asignado, desasignarlo
+        if (rows[0].estatus === true) {
+          console.log('Desasignando docente del curso...');
+          query = `
+            UPDATE cursos_docentes
+            SET estatus = $1, updated_at = now()
+            WHERE curso_id = $2 AND docente_id = $3 AND estatus = true
+            RETURNING *`;
+          params = [false, cursoId, docenteId]; // false para desasignar
+        } else {
+          // Si está desasignado, asignarlo
+          console.log('Asignando docente al curso...');
+          query = `
+            UPDATE cursos_docentes
+            SET estatus = $1, updated_at = now(), fecha_asignacion = $2
+            WHERE curso_id = $3 AND docente_id = $4 AND estatus = false
+            RETURNING *`;
+          params = [true, fechaAsignacion, cursoId, docenteId]; // true para asignar
+        }
+      } else {
+        // Si no está en la tabla, asignarlo
+        console.log('Asignando docente al curso...');
+        query = `
+          INSERT INTO cursos_docentes (curso_id, docente_id, fecha_asignacion, estatus)
+          VALUES ($1, $2, $3, $4) RETURNING *`;
+        params = [cursoId, docenteId, fechaAsignacion, true]; // true para asignar
+      }
+  
+      // Ejecutar la consulta
+      const result = await pool.query(query, params);
+  
+      if (result.rows.length > 0) {
+        console.log(`Acción completada para el docente ID ${docenteId}`);
+        results.push(result.rows[0]); // Agregar el resultado a la lista
+      } else {
+        console.log('No se encontró ningún registro para actualizar o insertar.');
+        results.push({ message: 'No se pudo realizar la acción. Verifique los datos proporcionados.' });
+      }
+    }
+  
+    return results; // Retornar todos los resultados
+  }
+  
+  
+,  
   async getById(id) {
     const query = `
       SELECT 
@@ -176,10 +302,43 @@ const cursosDocentesModel = {
     const query = "DELETE FROM cursos WHERE id = $1 RETURNING *"; // Consulta para eliminar el curso
     const { rows } = await pool.query(query, [id]); // Ejecuta la consulta con el ID
     return rows[0]; // Devuelve el curso eliminado
-  },
+  }
 
-  async getDocentesByCursoAndPlantel(idPlantel) {
-    const query = `
+  // async getDocentesByCursoAndPlantel(idPlantel) {
+  //   const query = `
+  //     SELECT 
+  //       d.id AS docente_id,
+  //       d.nombre AS docente_nombre,
+  //       d.apellidos,
+  //       c.id AS curso_id,
+  //       c.nombre AS curso_nombre
+  //     FROM cursos_docentes cd
+  //     JOIN docentes d ON cd.docente_id = d.id
+  //     JOIN cursos c ON cd.curso_id = c.id
+  //     JOIN planteles_cursos pc ON c.id = pc.curso_id
+  //     WHERE pc.plantel_id = $1 AND pc.estatus = true AND cd.estatus = true;
+  //   `;
+  //   const { rows } = await pool.query(query, [idPlantel]);
+  //   return rows;
+  // },
+  ,
+  async  getDocentesByCursoAndPlantel(idUsuario) {
+    // Primero obtenemos el id del plantel asociado al usuario
+    const plantelQuery = `
+      SELECT id AS plantel_id
+      FROM planteles
+      WHERE id_usuario = $1 AND estatus = true;
+    `;
+    const { rows: plantelRows } = await pool.query(plantelQuery, [idUsuario]);
+  
+    if (plantelRows.length === 0) {
+      throw new Error('No se encontró ningún plantel asociado a este usuario.');
+    }
+  
+    const idPlantel = plantelRows[0].plantel_id;
+    console.log("idPlantel",idPlantel)
+    // Ahora obtenemos los docentes y cursos del plantel
+    const docentesQuery = `
       SELECT 
         d.id AS docente_id,
         d.nombre AS docente_nombre,
@@ -190,11 +349,13 @@ const cursosDocentesModel = {
       JOIN docentes d ON cd.docente_id = d.id
       JOIN cursos c ON cd.curso_id = c.id
       JOIN planteles_cursos pc ON c.id = pc.curso_id
-      WHERE pc.plantel_id = $1 AND pc.estatus = true AND cd.estatus = true;
+      WHERE pc.plantel_id = $1 AND cd.estatus = true;
     `;
-    const { rows } = await pool.query(query, [idPlantel]);
-    return rows;
-  },
+    const { rows: docentesRows } = await pool.query(docentesQuery, [idPlantel]);
+  
+    return docentesRows;
+  }
+,  
   async getAlumnosByCursoId(curso_id) {
   // const query = `
   //   SELECT 
@@ -241,6 +402,92 @@ const cursosDocentesModel = {
 
   const { rows } = await pool.query(query, [curso_id]);
   return rows;
+}, // Nueva función para obtener los docentes de un curso específico
+async getDocent_asignadosByCursoId(cursoId) {
+    // const query = `
+  //   SELECT 
+  //     d.id AS docente_id,
+  //     d.nombre,
+  //     d.apellidos,
+  //     d.email,
+  //     d.telefono,
+  //     d.especialidad,
+  //     d.certificado_profesional,
+  //     d.cedula_profesional
+  //   FROM 
+  //     cursos_docentes cd
+  //   INNER JOIN 
+  //     docentes d ON cd.docente_id = d.id
+  //   WHERE 
+  //     cd.curso_id = $1 
+  //     AND cd.estatus = true; 
+  // `;
+},
+async getDocentesByCursoId(cursoId) {
+// obtine a los docentes q
+  const query = `
+WITH curso_especialidad AS (
+  SELECT 
+    especialidad_id
+  FROM 
+    cursos
+  WHERE 
+    id = $1 -- Aquí se pasa el id del curso como parámetro
+),
+docentes_especialidad AS (
+  SELECT 
+    d.id AS docente_id,
+    d.nombre,
+    d.apellidos,
+    d.email,
+    d.telefono,
+    d.especialidad,
+    d.certificado_profesional,
+    d.cedula_profesional
+  FROM 
+    docentes_especialidades de
+  INNER JOIN 
+    docentes d ON de.docente_id = d.id
+  WHERE 
+    de.especialidad_id = (SELECT especialidad_id FROM curso_especialidad) 
+    AND d.estatus_id = 4 -- Opcional: si tienes un campo de estatus en docentes
+)
+SELECT 
+  docentes_curso.* 
+FROM (
+  -- Obtenemos los docentes asociados directamente al curso
+  SELECT 
+    d.id AS docente_id,
+    d.nombre,
+    d.apellidos,
+    d.email,
+    d.telefono,
+    d.especialidad,
+    d.certificado_profesional,
+    d.cedula_profesional
+  FROM 
+    cursos_docentes cd
+  INNER JOIN 
+    docentes d ON cd.docente_id = d.id
+  WHERE 
+    cd.curso_id = $1 
+    
+  UNION
+  -- Obtenemos los docentes con la misma especialidad
+  SELECT 
+    *
+  FROM 
+    docentes_especialidad
+) AS docentes_curso;
+
+  `;
+  try {
+    const { rows } = await pool.query(query, [cursoId]); // Paso de parámetros seguros
+    return rows;
+  } catch (error) {
+    console.error("Error al obtener docentes por curso ID:", error);
+    throw error;
+  }
 }
 
 };
