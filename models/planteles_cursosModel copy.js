@@ -70,7 +70,6 @@ const PlantelesCursos = {
 
 
   async registrarSolicitud(data) {
-    console.log("-------",data)
     const {
       plantelId,
       curso_id,
@@ -325,137 +324,66 @@ const PlantelesCursos = {
     return rows[0];
 },
 
-
-
   async obtenerCursosPorPlantelDetalle(plantelId) {
-    // const query = `
-    // SELECT 
-    //   pc.id AS plantel_curso_id,
-    //   p.id AS plantel_id,
-    //   p.nombre AS plantel_nombre,
-    //   pc.calle AS plantel_calle,
-    //   pc.localidad AS plantel_localidad,
-    //   pc.municipio AS plantel_municipio,
-    //   pc.num_interior AS plantel_num_interior,
-    //   pc.num_exterior AS plantel_num_exterior,
-    //   c.id AS curso_id,
-    //   c.nombre AS curso_nombre,
-    //   pc.estatus AS curso_validado,
-    //   pc.estatus_id,
-    //   pc.created_at,
-    //   c.area_id,
-    //   ars.nombre AS area_nombre,
-    //   c.especialidad_id,
-    //   e.nombre AS especialidad_nombre,
-    //   pc.cupo_maximo,
-    //   pc.requisitos_extra,
-    //   pc.fecha_inicio,
-    //   pc.fecha_fin,
-    //   pc.sector_atendido,
-    //   pc.rango_edad,
-    //   pc.tipo_beca,
-    //   pc.tipo_curso,
-    //   pc.convenio_numero,
-    //   pc.cruzada_contra_hambre,
-    //   pc.cuota_tipo,
-    //   pc.cuota_monto,
-    //   pc.pagar_final,
-    //   pc.participantes,
-    //   pc.cant_instructores,
-    //   COALESCE(d.id, 0) AS docente_id,
-    //   COALESCE(d.nombre, 'No hay docente asignado') AS docente_nombre,
-    //   COALESCE(d.apellidos, '') AS docente_apellidos,
-    //   COALESCE(d.email, '') AS docente_email,
-    //   COALESCE(d.telefono, '') AS docente_telefono,
-    //   u.nombre AS usuario_nombre,
-    //   u.apellidos AS usuario_apellidos
-    // FROM 
-    //   planteles_cursos pc
-    // JOIN 
-    //   planteles p ON pc.plantel_id = p.id
-    // JOIN 
-    //   cursos c ON pc.curso_id = c.id
-    // JOIN 
-    //   especialidades e ON c.especialidad_id = e.id
-    // JOIN 
-    //   areas ars ON ars.id = c.area_id
-    // LEFT JOIN
-    //   cursos_docentes cd ON pc.curso_id = cd.curso_id
-    // LEFT JOIN
-    //   docentes d ON cd.docente_id = d.id
-    // JOIN 
-    //   usuarios u ON u.id = p.id_usuario
-    // WHERE 
-    //   u.id = $1;
-    // `;
     const query = `
-       
-
-SELECT 
-    pc.id AS plantel_curso_id,
-    p.id AS plantel_id,
-    p.nombre AS plantel_nombre,
-    pc.calle AS plantel_calle,
-    pc.localidad AS plantel_localidad,
-    pc.municipio AS plantel_municipio,
-    pc.num_interior AS plantel_num_interior,
-    pc.num_exterior AS plantel_num_exterior,
-    c.id AS curso_id,
-    c.nombre AS curso_nombre,
-    pc.estatus AS curso_validado,
-    pc.estatus_id,
-    pc.created_at,
-    c.area_id,
-    ars.nombre AS area_nombre,
-    c.especialidad_id,
-    e.nombre AS especialidad_nombre,
-    pc.cupo_maximo,
-    pc.requisitos_extra,
-    pc.fecha_inicio,
-    pc.fecha_fin,
-    pc.sector_atendido,
-    pc.rango_edad,
-    pc.tipo_beca,
-    pc.tipo_curso,
-    pc.convenio_numero,
-    pc.cruzada_contra_hambre,
-    pc.cuota_tipo,
-    pc.cuota_monto,
-    pc.pagar_final,
-    pc.participantes,
-    pc.cant_instructores,
-    COALESCE(STRING_AGG(d.nombre, ', '), 'No hay docente asignado') AS docente_nombre,
-    COALESCE(STRING_AGG(d.apellidos, ', '), '') AS docente_apellidos,
-    COALESCE(STRING_AGG(d.email, ', '), '') AS docente_email,
-    COALESCE(STRING_AGG(d.telefono, ', '), '') AS docente_telefono,
-    u.nombre AS usuario_nombre,
-    u.apellidos AS usuario_apellidos
-FROM 
-    planteles_cursos pc
-JOIN 
-    planteles p ON pc.plantel_id = p.id
-JOIN 
-    cursos c ON pc.curso_id = c.id
-JOIN 
-    especialidades e ON c.especialidad_id = e.id
-JOIN 
-    areas ars ON ars.id = c.area_id
-LEFT JOIN
-    cursos_docentes cd ON pc.curso_id = cd.curso_id
-LEFT JOIN
-    docentes d ON cd.docente_id = d.id
-JOIN 
-    usuarios u ON u.id = p.id_usuario
-WHERE 
-    u.id = $1
-GROUP BY 
-    pc.id, p.id, p.nombre, pc.calle, pc.localidad, pc.municipio, pc.num_interior, pc.num_exterior,
-    c.id, c.nombre, pc.estatus, pc.estatus_id, pc.created_at, c.area_id, ars.nombre, c.especialidad_id,
-    e.nombre, pc.cupo_maximo, pc.requisitos_extra, pc.fecha_inicio, pc.fecha_fin, pc.sector_atendido,
-    pc.rango_edad, pc.tipo_beca, pc.tipo_curso, pc.convenio_numero, pc.cruzada_contra_hambre,
-    pc.cuota_tipo, pc.cuota_monto, pc.pagar_final, pc.participantes, pc.cant_instructores,
-    u.nombre, u.apellidos;
-
+    SELECT 
+      pc.id AS plantel_curso_id,
+      p.id AS plantel_id,
+      p.nombre AS plantel_nombre,
+      pc.calle AS plantel_calle,
+      pc.localidad AS plantel_localidad,
+      pc.municipio AS plantel_municipio,
+      pc.num_interior AS plantel_num_interior,
+      pc.num_exterior AS plantel_num_exterior,
+      c.id AS curso_id,
+      c.nombre AS curso_nombre,
+      pc.estatus AS curso_validado,
+      pc.estatus_id,
+      pc.created_at,
+      c.area_id,
+      ars.nombre AS area_nombre,
+      c.especialidad_id,
+      e.nombre AS especialidad_nombre,
+      pc.cupo_maximo,
+      pc.requisitos_extra,
+      pc.fecha_inicio,
+      pc.fecha_fin,
+      pc.sector_atendido,
+      pc.rango_edad,
+      pc.tipo_beca,
+      pc.tipo_curso,
+      pc.convenio_numero,
+      pc.cruzada_contra_hambre,
+      pc.cuota_tipo,
+      pc.cuota_monto,
+      pc.pagar_final,
+      pc.participantes,
+      pc.cant_instructores,
+      COALESCE(d.id, 0) AS docente_id,
+      COALESCE(d.nombre, 'No hay docente asignado') AS docente_nombre,
+      COALESCE(d.apellidos, '') AS docente_apellidos,
+      COALESCE(d.email, '') AS docente_email,
+      COALESCE(d.telefono, '') AS docente_telefono,
+      u.nombre AS usuario_nombre,
+      u.apellidos AS usuario_apellidos
+    FROM 
+      planteles_cursos pc
+    JOIN 
+      planteles p ON pc.plantel_id = p.id
+    JOIN 
+      cursos c ON pc.curso_id = c.id
+    JOIN 
+      especialidades e ON c.especialidad_id = e.id
+    JOIN 
+      areas ars ON ars.id = c.area_id
+    LEFT JOIN
+      cursos_docentes cd ON pc.curso_id = cd.curso_id
+    LEFT JOIN
+      docentes d ON cd.docente_id = d.id
+    JOIN 
+      usuarios u ON u.id = p.id_usuario
+    WHERE 
+      u.id = $1;
     `;
   
     const values = [plantelId];
@@ -580,10 +508,10 @@ async obtenerCursoPorId(cursoId) {
     return rows;
   },
 
-  async obtenerInfoPlantelCursoCompleta(idPlantelCurso) {
-    try {
-      // Consulta del curso, plantel y horario
-      const queryCurso = `SELECT 
+async  obtenerInfoPlantelCursoCompleta(idPlantelCurso) {
+  try {
+    const query = `
+      SELECT 
     pc.id AS plantel_curso_id,
     p.id AS plantel_id,
     p.nombre AS plantel_nombre,
@@ -630,7 +558,19 @@ async obtenerCursoPorId(cursoId) {
     pc.cuota_monto,
     pc.pagar_final,
     pc.participantes,
-    pc.cant_instructores
+    pc.cant_instructores,
+    a.id AS alumno_id,
+    COALESCE(a.nombre, 'No hay alumnos inscritos en este curso') AS alumno_nombre,
+    COALESCE(a.apellidos, '') AS alumno_apellidos,
+    COALESCE(a.email, '') AS alumno_email,
+    COALESCE(a.telefono, '') AS alumno_telefono,
+    COALESCE(d.id, 0) AS docente_id,
+    COALESCE(d.nombre, 'No hay docente asignado') AS docente_nombre,
+    COALESCE(d.apellidos, '') AS docente_apellidos,
+    COALESCE(d.email, '') AS docente_email,
+    COALESCE(d.telefono, '') AS docente_telefono,
+    u.nombre AS usuario_nombre,
+    u.apellidos AS usuario_apellidos
 FROM 
     planteles_cursos pc
 JOIN 
@@ -643,89 +583,162 @@ JOIN
     areas ars ON ars.id = c.area_id
 JOIN 
     horario_semanal h ON pc.horario_id = h.id_horario
-WHERE 
-    pc.id = $1;
-`;
-      const valuesCurso = [idPlantelCurso];
-      const { rows: cursoData } = await pool.query(queryCurso, valuesCurso);
-  
-      // Obtener el curso y plantel
-      const curso = {
-        // Extrae los valores de cursoData, que tendrá solo la información básica
-        ...cursoData[0],  // Asumiendo que solo hay un curso con ese id
-        plantel: { /* ... */ },
-        horario: { /* ... */ },
-      };
-  // console.log("[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[.",curso)
-      // Obtener alumnos
-      const queryAlumnos = `SELECT
-    a.id AS alumno_id,
-    a.nombre AS alumno_nombre,
-    a.apellidos AS alumno_apellidos,
-    a.email AS alumno_email,
-    a.telefono AS alumno_telefono
-FROM 
-    alumnos_cursos ac
-JOIN 
+LEFT JOIN
+    alumnos_cursos ac ON pc.curso_id = ac.curso_id AND pc.plantel_id = ac.plantel_id
+LEFT JOIN
     alumnos a ON ac.alumno_id = a.id
-WHERE 
-    ac.curso_id = $1 AND ac.plantel_id = $2;
-`;
-      const valuesAlumnos = [cursoData[0].curso_id, cursoData[0].plantel_id];
-      // console.log("*************************************",cursoData[0].curso_id, cursoData[0].plantel_id);  // Asegúrate que estos valores sean correctos
-
-      const { rows: alumnosData } = await pool.query(queryAlumnos, valuesAlumnos);
-      
-      // Organizar los alumnos
-      const alumnos = alumnosData.map(row => ({
-        id: row.alumno_id,
-        nombre: row.alumno_nombre,
-        apellidos: row.alumno_apellidos,
-        email: row.alumno_email,
-        telefono: row.alumno_telefono,
-      }));
-  
-      // Obtener docentes
-      const queryDocentes = `SELECT
-    d.id AS docente_id,
-    d.nombre AS docente_nombre,
-    d.apellidos AS docente_apellidos,
-    d.email AS docente_email,
-    d.telefono AS docente_telefono
-FROM 
-    cursos_docentes cd
-JOIN 
+LEFT JOIN
+    cursos_docentes cd ON pc.curso_id = cd.curso_id
+LEFT JOIN
     docentes d ON cd.docente_id = d.id
+JOIN 
+    usuarios u ON u.id = p.id_usuario
 WHERE 
-    cd.curso_id = $1
-        AND cd.estatus = TRUE;
+    pc.id = $1;  -- Reemplaza $1 con el ID del plantel curso correspondiente
 
-`;
-      const valuesDocentes = [cursoData[0].curso_id];
-      const { rows: docentesData } = await pool.query(queryDocentes, valuesDocentes);
-  
-      // Organizar los docentes
-      const docentes = docentesData.map(row => ({
-        id: row.docente_id,
-        nombre: row.docente_nombre,
-        apellidos: row.docente_apellidos,
-        email: row.docente_email,
-        telefono: row.docente_telefono,
-      }));
-  
-      // Devolver todo junto
-      return {
-        curso,
-        alumnos,
-        docentes,
-      };
-  
-    } catch (error) {
-      console.error("Error al obtener la información del plantel y curso:", error);
-      throw error;
-    }
+    `;
+
+    const values = [idPlantelCurso];
+    const { rows } = await pool.query(query, values);
+
+    // Procesar los resultados para obtener información organizada
+    const alumnosUnicos = new Set();
+    const alumnos = [];
+    const docentes = [];
+    const curso = {
+      id: null,
+      nombre: null,
+      area_id: null,
+      area_nombre: null,
+      especialidad_id: null,
+      especialidad_nombre: null,
+      fecha_inicio: null,
+      fecha_fin: null,
+      plantel: {
+        id: null,
+        nombre: null,
+        calle: null,
+        localidad: null,
+        municipio: null,
+        num_interior: null,
+        num_exterior: null,
+      },
+      horario: {
+        lunes_inicio: null,
+        lunes_fin: null,
+        martes_inicio: null,
+        martes_fin: null,
+        miercoles_inicio: null,
+        miercoles_fin: null,
+        jueves_inicio: null,
+        jueves_fin: null,
+        viernes_inicio: null,
+        viernes_fin: null,
+        sabado_inicio: null,
+        sabado_fin: null,
+        domingo_inicio: null,
+        domingo_fin: null,
+      },
+      cupo_maximo: null,
+      requisitos_extra: null,
+      sector_atendido: null,
+      rango_edad: null,
+      tipo_beca: null,
+      tipo_curso: null,
+      convenio_numero: null,
+      cruzada_contra_hambre: null,
+      cuota_tipo: null,
+      cuota_monto: null,
+      pagar_final: null,
+      participantes: null,
+      cant_instructores: null,
+    };
+
+    rows.forEach((row) => {
+      if (!alumnosUnicos.has(row.alumno_id)) {
+        alumnosUnicos.add(row.alumno_id);
+        alumnos.push({
+          id: row.alumno_id,
+          nombre: row.alumno_nombre,
+          apellidos: row.alumno_apellidos,
+          email: row.alumno_email,
+          telefono: row.alumno_telefono,
+        });
+      }
+
+      // Verificar si el docente ya se ha agregado al arreglo
+      const docente = docentes.find((d) => d.id === row.docente_id);
+      if (docente) {
+        // Si el docente ya existe, no se agrega nada porque no hay especialidades en esta consulta
+      } else {
+        // Si el docente no existe, crear un nuevo objeto y agregarlo al arreglo
+        docentes.push({
+          id: row.docente_id,
+          nombre: row.docente_nombre,
+          apellidos: row.docente_apellidos,
+          email: row.docente_email,
+          telefono: row.docente_telefono,
+        });
+      }
+
+      // Actualizar la información del curso
+      curso.id = row.curso_id;
+      curso.nombre = row.curso_nombre;
+      curso.area_id = row.area_id;
+      curso.area_nombre = row.area_nombre;
+      curso.especialidad_id = row.especialidad_id;
+      curso.especialidad_nombre = row.especialidad_nombre;
+      curso.fecha_inicio = row.fecha_inicio;
+      curso.fecha_fin = row.fecha_fin;
+
+      curso.plantel.id = row.plantel_id;
+      curso.plantel.nombre = row.plantel_nombre;
+      curso.plantel.calle = row.plantel_calle;
+      curso.plantel.localidad = row.plantel_localidad;
+      curso.plantel.municipio = row.plantel_municipio;
+      curso.plantel.num_interior = row.plantel_num_interior;
+      curso.plantel.num_exterior = row.plantel_num_exterior;
+
+      curso.horario.lunes_inicio = row.lunes_inicio;
+      curso.horario.lunes_fin = row.lunes_fin;
+      curso.horario.martes_inicio = row.martes_inicio;
+      curso.horario.martes_fin = row.martes_fin;
+      curso.horario.miercoles_inicio = row.miercoles_inicio;
+      curso.horario.miercoles_fin = row.miercoles_fin;
+      curso.horario.jueves_inicio = row.jueves_inicio;
+      curso.horario.jueves_fin = row.jueves_fin;
+      curso.horario.viernes_inicio = row.viernes_inicio;
+      curso.horario.viernes_fin = row.viernes_fin;
+      curso.horario.sabado_inicio = row.sabado_inicio;
+      curso.horario.sabado_fin = row.sabado_fin;
+      curso.horario.domingo_inicio = row.domingo_inicio;
+      curso.horario.domingo_fin = row.domingo_fin;
+
+      curso.cupo_maximo = row.cupo_maximo;
+      curso.requisitos_extra = row.requisitos_extra;
+      curso.sector_atendido = row.sector_atendido;
+      curso.rango_edad = row.rango_edad;
+      curso.tipo_beca = row.tipo_beca;
+      curso.tipo_curso = row.tipo_curso;
+      curso.convenio_numero = row.convenio_numero;
+      curso.cruzada_contra_hambre = row.cruzada_contra_hambre;
+      curso.cuota_tipo = row.cuota_tipo;
+      curso.cuota_monto = row.cuota_monto;
+      curso.pagar_final = row.pagar_final;
+      curso.participantes = row.participantes;
+      curso.cant_instructores = row.cant_instructores;
+    });
+
+    return {
+      alumnos,
+      docentes,
+      curso,
+    };
+  } catch (error) {
+    console.error("Error al obtener la información del plantel y curso:", error);
+    throw error;
   }
-  
+}
 ,
   async obtenerCursosPorPlantel(idPlantel) {
     const query = `

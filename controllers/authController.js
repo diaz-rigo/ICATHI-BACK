@@ -5,18 +5,26 @@ const { generateAuthToken } = require('../config/authUtils'); // Ajusta la ruta 
 
 exports.signIn = async (req, res) => {
   const { email, password } = req.body;
-  console.log("login",req.body)
+  console.log("login", req.body);
+
   try {
     // Validar que la contraseña sea una cadena
     if (typeof password !== 'string') {
       return res.status(400).json({ message: 'La contraseña debe ser una cadena de texto' });
     }
 
-    // Buscar en la tabla usuarios
-    let query = `SELECT * FROM usuarios WHERE email = $1;`;
+    // Determinar si el input es un correo o un nombre de usuario
+    const isEmail = /\S+@\S+\.\S+/.test(email); // Expresión regular para validar email
+    let query;
     let values = [email];
-    let result = await pool.query(query, values);
 
+    if (isEmail) {
+      query = `SELECT * FROM usuarios WHERE email = $1;`;
+    } else {
+      query = `SELECT * FROM usuarios WHERE username = $1;`;
+    }
+
+    let result = await pool.query(query, values);
     let user = result.rows[0];
     let userType = 'usuario';
 
@@ -33,12 +41,12 @@ exports.signIn = async (req, res) => {
       query = `SELECT * FROM docentes WHERE email = $1;`;
       result = await pool.query(query, values);
       user = result.rows[0];
-      userType ='DOCENTE';
+      userType = 'DOCENTE';
     }
 
     // Si no se encuentra en ninguna tabla
     if (!user) {
-      return res.status(404).json({ message: `El correo ${email} no está registrado` });
+      return res.status(404).json({ message: `El usuario o correo ${email} no está registrado` });
     }
 
     // Verificar si el usuario está activo
@@ -58,7 +66,7 @@ exports.signIn = async (req, res) => {
     if (passwordMatch) {
       // Generar el token
       const token = generateAuthToken({ ...user, userType });
-
+      console.log("++++++",token)
       return res.status(200).json({ 
         message: 'Inicio de sesión exitoso',
         token 

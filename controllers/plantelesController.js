@@ -23,6 +23,10 @@ exports.getById = async (req, res) => {
 };
 
 exports.create = async (req, res) => {
+  console.log("*********************++")
+  console.log("*********************++")
+  console.log("*********************++",req.body)
+  console.log("*********************++")
   try {
     const nuevoPlantel = await PlantelesModel.create(req.body);
     res.status(201).json(nuevoPlantel);

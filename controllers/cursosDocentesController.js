@@ -104,6 +104,20 @@ module.exports = {
     }
   },
 
+  async getDocentesDeCurso(req, res) {
+
+  // const getDocentesDeCurso = async (req, res) => {
+    const { cursoId } = req.params; // Supongamos que el ID del curso viene en los parámetros
+
+    // console.log("*****",req.body)
+    try {
+      const docentes = await cursosDocentesModel.getDocentesByCursoId(cursoId);
+      res.json(docentes);
+    } catch (error) {
+      res.status(500).json({ error: "Error al obtener los docentes del curso." });
+    }
+  }
+  
   // async getAllDocenteByIdPlantel (req, res) {
   //   // async getDocentesByUserId(req, res) {
   //     const { idPlantel } = req.params;
@@ -125,5 +139,43 @@ module.exports = {
   //       return res.status(500).json({ error: 'Error al obtener docentes.' });
   //     }
   //   }
+
+,
+  async asignarODesasignarCursoDocente(req, res) {
+    // const { docenteId, cursoId, action } = req.body;
+
+    // if (!docenteId || !cursoId || !action) {
+    //   return res.status(400).json({ message: "Faltan datos requeridos" });
+    // }
+
+    // try {
+    //   const result = await cursosDocentesModel.asignarODesasignarCursoDocente(
+    //     cursoId,
+    //     docenteId,
+    //     action
+    //   );
+
+    //   const message =
+    //     action === "asignar"
+    //       ? "Docente asignado con éxito"
+    //       : "Docente desasignado con éxito";
+
+    //   res.status(200).json({ message, result });
+    const { cursoId, docentesIds } = req.body;
+
+    console.log("-----------------------------------------------")
+    console.log("-----------------------------------------------")
+    console.log("-----------------------------------------------",req.body)
+    console.log("-----------------------------------------------")
+    console.log("-----------------------------------------------")
+
+  try {
+    const results = await cursosDocentesModel.asignarODesasignarCursoDocente(cursoId, docentesIds);
+      res.status(200).json({  results });
+    } catch (error) {
+      console.error("Error en la operación:", error);
+      res.status(500).json({ message: "Error en la operación", error });
+    }
+  },
 };
 

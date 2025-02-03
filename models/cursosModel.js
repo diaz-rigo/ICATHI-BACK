@@ -307,56 +307,115 @@ WHERE pc.plantel_id = ${idPlantel} AND pc.estatus = true
     return rows;
   },
   async getCursosByEspecialidadId(especialidadId, usuarioId) {
-    const query = `
-      SELECT 
-        c.id, 
-        c.nombre, 
-        c.descripcion, 
-        c.duracion_horas, 
-        c.nivel, 
-        c.costo, 
-        c.requisitos, 
-        c.estatus, 
-        c.created_at, 
-        c.updated_at, 
-        c.usuario_validador_id, 
-        c.fecha_validacion, 
-        c.modalidad, 
-        c.clave, 
-        c.area_id, 
-        c.especialidad_id, 
-        c.tipo_curso_id, 
-        c.vigencia_inicio, 
-        c.fecha_publicacion, 
-        c.ultima_actualizacion,
-        CASE 
-          WHEN pc.curso_id IS NOT NULL THEN true
-          ELSE false
-        END AS registrado
-      FROM 
-        cursos c
-      LEFT JOIN 
-        planteles_cursos pc 
-        ON c.id = pc.curso_id 
-      LEFT JOIN 
-        planteles p 
-        ON pc.plantel_id = p.id
-      LEFT JOIN 
-        usuarios u 
-        ON p.id_usuario = u.id
-      WHERE 
-        c.especialidad_id = $1 
-        AND u.id = $2;
-    `;
-  
     try {
-      const { rows } = await pool.query(query, [especialidadId, usuarioId]);
-      return rows;
+      // 1️⃣ Obtener el ID del plantel del usuario
+      // const plantelQuery = `
+      //   SELECT id FROM planteles WHERE id_usuario = $1 LIMIT 1
+      // `;
+      // const plantelResult = await pool.query(plantelQuery, [usuarioId]);
+  
+      // if (plantelResult.rows.length === 0) {
+      //   throw new Error("No se encontró un plantel asociado al usuario.");
+      // }
+  
+      // const plantelId = plantelResult.rows[0].id;
+      const plantelId = usuarioId;
+  
+      // 2️⃣ Consultar los cursos con la validación de "registrado"
+      const cursosQuery = `
+        SELECT 
+          c.id, 
+          c.nombre, 
+          c.descripcion, 
+          c.duracion_horas, 
+          c.nivel, 
+          c.costo, 
+          c.requisitos, 
+          c.estatus, 
+          c.created_at, 
+          c.updated_at, 
+          c.usuario_validador_id, 
+          c.fecha_validacion, 
+          c.modalidad, 
+          c.clave, 
+          c.area_id, 
+          c.especialidad_id, 
+          c.tipo_curso_id, 
+          c.vigencia_inicio, 
+          c.fecha_publicacion, 
+          c.ultima_actualizacion,
+          CASE 
+            WHEN pc.curso_id IS NOT NULL THEN true
+            ELSE false
+          END AS registrado
+        FROM 
+          cursos c
+        LEFT JOIN 
+          planteles_cursos pc 
+          ON c.id = pc.curso_id AND pc.plantel_id = $2
+        WHERE 
+          c.especialidad_id = $1
+      `;
+  
+      const cursosResult = await pool.query(cursosQuery, [especialidadId, plantelId]);
+  
+      return cursosResult.rows;
     } catch (error) {
       console.error("Error al obtener los cursos:", error);
       throw error;
     }
   }
+  
+//   async getCursosByEspecialidadId(especialidadId, usuarioId) {
+//     const query = `
+//   SELECT 
+//     c.id, 
+//     c.nombre, 
+//     c.descripcion, 
+//     c.duracion_horas, 
+//     c.nivel, 
+//     c.costo, 
+//     c.requisitos, 
+//     c.estatus, 
+//     c.created_at, 
+//     c.updated_at, 
+//     c.usuario_validador_id, 
+//     c.fecha_validacion, 
+//     c.modalidad, 
+//     c.clave, 
+//     c.area_id, 
+//     c.especialidad_id, 
+//     c.tipo_curso_id, 
+//     c.vigencia_inicio, 
+//     c.fecha_publicacion, 
+//     c.ultima_actualizacion,
+//     CASE 
+//       WHEN pc.curso_id IS NOT NULL THEN true
+//       ELSE false
+//     END AS registrado
+//   FROM 
+//     cursos c
+//   LEFT JOIN 
+//     planteles_cursos pc 
+//     ON c.id = pc.curso_id 
+//   LEFT JOIN 
+//     planteles p 
+//     ON pc.plantel_id = p.id
+//   LEFT JOIN 
+//     usuarios u 
+//     ON p.id_usuario = u.id
+//   WHERE 
+//     c.especialidad_id = $1`; 
+
+// try {
+//   const { rows } = await pool.query(query, [especialidadId]);
+//   return rows;
+// } catch (error) {
+//   console.error("Error al obtener los cursos:", error);
+//   throw error;
+// }
+
+//   }
 ,  
 
   async getDetailedCursos() {
