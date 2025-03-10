@@ -1,12 +1,13 @@
 const { Pool } = require('pg');
 
-// Configuración del pool de conexiones
+// // Configuración del pool de conexiones
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://icathi:Cz6YjxCSPnPVDXWxfbOE4XBqRv71StU6@dpg-ct4eqi5umphs73e5ohi0-a.oregon-postgres.render.com/icathi',
+  connectionString: process.env.DATABASE_URL || 'postgresql://iicathi:IukFwhv3roNxG7uwUMgPQawmWNEaBpIc@dpg-cupv77lumphs73ebghs0-a.oregon-postgres.render.com/iicathi',
   ssl: {
     rejectUnauthorized: false, // Para conexiones SSL a servicios en la nube como Render
   },
 });
+
 
 // Verificar conexión al inicializar
 pool.connect()

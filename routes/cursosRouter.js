@@ -6,6 +6,7 @@ const upload = require('../config/upload');
 // Rutas CRUD  
 
 // Obtener los detalles de un curso por ID
+router.put('/:id', upload.single('temario'), CursosController.updateCourseDetails); // Actualizar un curso existente
 router.get('/detalles/:id', CursosController.getCourseDetails);
 router.get('/status/:estatus', CursosController.getByStatus); // Obtener cursos por estatus  
 router.get('/', CursosController.getAll); // Obtener todos los cursos  
@@ -16,7 +17,6 @@ router.post('/',upload.single('temario'), CursosController.create); // Crear un 
 
 router.put('/:id', CursosController.update); // Actualizar un curso existente  
 router.delete('/:id', CursosController.delete); // Eliminar un curso  
-router.post('/cursos/:id', upload.single('temario'), CursosController.updateCourseDetails); // Actualizar un curso existente
 
 
 router.get('/byIdDocente/:idDocente', CursosController.getAllByIdDocente); // Obtener todos los cursos  
