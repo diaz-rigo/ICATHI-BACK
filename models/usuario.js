@@ -81,26 +81,41 @@ const Usuario = {
   ,
   async crearUsuario(data) {
     const { nombre, apellidos, email, username, password, rol } = data;
-  
-    // Generar el hash de la contraseña usando bcrypt
-    const saltRounds = 10; // Número de rondas de salt
+
+    const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-  
+
     const query = `
       INSERT INTO usuarios (nombre, apellidos, email, username, password_hash, rol, estatus)
       VALUES ($1, $2, $3, $4, $5, $6, false)
       RETURNING *;
     `;
+
     const values = [nombre, apellidos, email, username, hashedPassword, rol];
-  
+
     try {
-      const result = await pool.query(query, values);
-      return result.rows[0]; // Retorna el usuario creado
+        const result = await pool.query(query, values);
+        return result.rows[0]; 
     } catch (error) {
-      console.error('Error al crear usuario:', error.message);
-      throw error;
+        console.error('Error al crear usuario:', error.message);
+
+        if (error.code === '23505') {
+            // Verificamos si la restricción violada es por el email o el username
+            if (error.constraint === 'usuarios_email_key') {
+                throw new Error("El correo electrónico ya está registrado.");
+            } else if (error.constraint === 'usuarios_username_key') {
+                throw new Error("El nombre de usuario ya está en uso.");
+            }
+        } else if (error.code === '23502') {
+            throw new Error("Todos los campos son obligatorios.");
+        } else if (error.code === '08003') {
+            throw new Error("Error de conexión con la base de datos. Intenta más tarde.");
+        } else {
+            throw new Error("Ocurrió un error inesperado. Intenta más tarde.");
+        }
     }
-  }
+}
+
   
 ,
   // Listar todos los usuarios

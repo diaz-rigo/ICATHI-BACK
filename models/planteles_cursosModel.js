@@ -175,7 +175,9 @@ const PlantelesCursos = {
     ];
     const { rows: horarioRows } = await pool.query(horarioQuery, horarioValues);
     const horarioId = horarioRows[0].id_horario;
-  
+    console.log("-----")
+    console.log(horarioId)
+    console.log("-----")
     // Insertar en la tabla planteles_cursos
     const query = `
       INSERT INTO planteles_cursos (
@@ -237,21 +239,20 @@ const PlantelesCursos = {
     const plantelesCursosId = rows[0].id;
   
     // Insertar instructor en la tabla cursos_docentes
-    const instructorQuery = `
-      INSERT INTO cursos_docentes (
-        curso_id,
-        docente_id,
-        estatus
-      )
-      VALUES ($1, $2, $3)
-      RETURNING *;
-    `;
-    const instructorValues = [
+// Insertar cada instructor en cursos_docentes
+for (const docenteId of instructor) {
+  const instructorQuery = `
+    INSERT INTO cursos_docentes (
       curso_id,
-      instructor,
-      true, // Estatus por defecto
-    ];
-    await pool.query(instructorQuery, instructorValues);
+      docente_id,
+      estatus,id_plantel
+    ) VALUES ($1, $2, $3, $4)
+    RETURNING *;
+  `;
+  const instructorValues = [curso_id, docenteId, true,plantelIdReal];
+  await pool.query(instructorQuery, instructorValues);
+}
+
   
     return rows[0];
   }
