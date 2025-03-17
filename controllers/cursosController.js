@@ -39,11 +39,13 @@ exports.getById = async (req, res) => {
     res.status(500).json({ error: "Error al obtener el curso" });
   }
 };
+
+
 exports.getByIdInfoReporte = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Obtener datos del curso
+    // Obtener datos del curso (incluyendo el nombre del tipo de curso)
     const datosCurso = await CursosModel.getByIdInfoReporte(id);
 
     // Validar si no se encontró el curso
@@ -60,6 +62,29 @@ exports.getByIdInfoReporte = async (req, res) => {
       datosCurso.equipamiento === "vacío o 0"
         ? "vacío o 0"
         : datosCurso.equipamiento;
+        
+   
+   
+     // Obtener detalles de las firmas (elaborado_por, revisado_por, autorizado_por)
+    const firmasQuery = `
+      SELECT id, nombre, cargo, tipo_firma
+      FROM firmas
+      WHERE id IN ($1, $2, $3)
+    `;
+    const firmasResult = await pool.query(firmasQuery, [
+      datosCurso.elaborado_por,
+      datosCurso.revisado_por,
+      datosCurso.autorizado_por,
+    ]);
+
+    // Organizar las firmas por tipo
+    const firmas = firmasResult.rows.reduce((acc, firma) => {
+      acc[firma.tipo_firma.toLowerCase()] = {
+        nombre: firma.nombre,
+        cargo: firma.cargo,
+      };
+      return acc;
+    }, {});
 
     // Construir el objeto de respuesta
     const response = {
@@ -70,10 +95,13 @@ exports.getByIdInfoReporte = async (req, res) => {
       DESCRIPCION: datosCurso.descripcion || "No disponible",
       AREA_ID: datosCurso.area_id || "No disponible",
       ESPECIALIDAD_ID: datosCurso.especialidad_id || "No disponible",
+      TIPO_CURSO: datosCurso.tipo_curso, // Nombre del tipo de curso
       VIGENCIA_INICIO: datosCurso.vigencia_inicio || "No disponible",
       FECHA_PUBLICACION: datosCurso.fecha_publicacion || "No disponible",
       FECHA_VALIDACION: datosCurso.fecha_validacion || "No disponible",
-      ELABORADO_POR: datosCurso.elaborado_por || "No disponible",
+      ELABORADO_POR: firmas.elaborado || { nombre: "No disponible", cargo: "No disponible" },
+      REVISADO_POR: firmas.revisado || { nombre: "No disponible", cargo: "No disponible" },
+      AUTORIZADO_POR: firmas.autorizado || { nombre: "No disponible", cargo: "No disponible" },
       USUARIO_VALIDADOR_ID: datosCurso.usuario_validador_id || "No disponible",
       FICHA_TECNICA: {
         OBJETIVO: datosCurso.objetivo || "No disponible",
@@ -139,44 +167,32 @@ exports.getByIdInfoReporte = async (req, res) => {
     res.status(500).json({ error: "Error al obtener el curso" });
   }
 };
- 
+
 exports.create = async (req, res) => {
-  const client = await pool.connect(); // Para manejar transacciones
+  const client = await pool.connect();
   try {
     console.log("Datos recibidos del frontend:", req.body);
-    console.log("Archivo recibido:", req.file); // Verifica si el archivo ha sido recibido correctamente
-
-    // Verificar si se ha enviado un archivo (si es obligatorio)
-    if (!req.file) {
-      return res
-        .status(400)
-        .json({ error: "No se ha enviado el archivo de temario." });
-    }
+    console.log("Archivo recibido:", req.file);
 
     const file = req.file;
-
-    // Verificar que el archivo existe en la ruta antes de intentar subirlo
-    if (!fs.existsSync(file.path)) {
+    if (file && !fs.existsSync(file.path)) {
       return res
         .status(400)
         .json({ error: "El archivo no existe en la ruta especificada." });
     }
 
-    // Subir el archivo a Cloudinary
     let uploadResult;
     try {
       uploadResult = await cloudinary.uploader.upload(file.path, {
-        folder: "temarios_cursos", // Personaliza la carpeta en Cloudinary
+        folder: "temarios_cursos",
         resource_type: "raw",
       });
     } catch (cloudinaryError) {
       console.error("Error al subir el archivo a Cloudinary:", cloudinaryError);
-      return res.status(500).json({
-        error: "Error al subir el archivo a Cloudinary",
-        details: cloudinaryError.message, // Incluye el mensaje de error de Cloudinary
-      });
+      return res
+        .status(500)
+        .json({ error: "Error al subir el archivo a Cloudinary" });
     } finally {
-      // Eliminar el archivo temporal después de intentar subirlo
       if (fs.existsSync(file.path)) {
         fs.unlinkSync(file.path);
       }
@@ -196,15 +212,27 @@ exports.create = async (req, res) => {
       fecha_publicacion,
       ultima_actualizacion,
       revisado_por,
+      cargo_revisado_por,
       autorizado_por,
+      cargo_autorizado_por,
       elaborado_por,
+      cargo_elaborado_por,
       objetivos,
       materiales,
       equipamiento,
       contenidoProgramatico,
     } = req.body;
 
-    // Validación de los campos obligatorios
+    // Función para parsear JSON si es necesario
+    const parseJSON = (data) =>
+      typeof data === "string" ? JSON.parse(data) : data;
+    const parsedObjetivos = parseJSON(objetivos) || {};
+    const parsedContenidoProgramatico = parseJSON(contenidoProgramatico) || {
+      temas: [],
+    };
+    const parsedMateriales = parseJSON(materiales) || [];
+    const parsedEquipamiento = parseJSON(equipamiento) || [];
+
     if (
       !nombre ||
       !clave ||
@@ -219,12 +247,36 @@ exports.create = async (req, res) => {
 
     await client.query("BEGIN");
 
-    // Insertar el curso
+    // Array de firmas para insertar
+    const firmas = [
+      { nombre: revisado_por, cargo: cargo_revisado_por, tipo: "Revisado" },
+      {
+        nombre: autorizado_por,
+        cargo: cargo_autorizado_por,
+        tipo: "Autorizado",
+      },
+      { nombre: elaborado_por, cargo: cargo_elaborado_por, tipo: "Elaborado" },
+    ];
+
+    const firmaIds = {}; // Almacenará los IDs de las firmas insertadas
+
+    // Insertar firmas usando un bucle for
+    for (const firma of firmas) {
+      const { rows } = await client.query(
+        `INSERT INTO firmas (nombre, cargo, tipo_firma) VALUES ($1, $2, $3) RETURNING id`,
+        [firma.nombre, firma.cargo, firma.tipo]
+      );
+      firmaIds[firma.tipo.toLowerCase()] = rows[0].id; // Guardar el ID en el objeto firmaIds
+    }
+
+    // Inserta curso
     const cursoQuery = `
       INSERT INTO cursos (
-        nombre, clave, duracion_horas, descripcion, nivel, costo, area_id, especialidad_id, tipo_curso_id, vigencia_inicio, fecha_publicacion, ultima_actualizacion, revisado_por, autorizado_por, elaborado_por, archivo_url
+        nombre, clave, duracion_horas, descripcion, nivel, costo, area_id, especialidad_id, tipo_curso_id, 
+        vigencia_inicio, fecha_publicacion, ultima_actualizacion, revisado_por, autorizado_por, elaborado_por, archivo_url
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id
     `;
+
     const cursoValues = [
       nombre,
       clave,
@@ -238,116 +290,91 @@ exports.create = async (req, res) => {
       vigencia_inicio || null,
       fecha_publicacion || null,
       ultima_actualizacion || null,
-      revisado_por,
-      autorizado_por,
-      elaborado_por,
-      uploadResult.secure_url, // Usar la URL segura de Cloudinary
+      firmaIds.revisado, // Usar el ID de la firma "Revisado"
+      firmaIds.autorizado, // Usar el ID de la firma "Autorizado"
+      firmaIds.elaborado, // Usar el ID de la firma "Elaborado"
+      uploadResult.secure_url,
     ];
+
     const { rows: cursoRows } = await client.query(cursoQuery, cursoValues);
     const id_curso = cursoRows[0].id;
 
-    // Insertar objetivos si están presentes
-    if (objetivos) {
-      try {
-        const fichaQuery = `
-          INSERT INTO ficha_tecnica (
-            id_curso, objetivo, perfil_ingreso, perfil_egreso, perfil_del_docente, metodologia, bibliografia, criterios_acreditacion, reconocimiento
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        `;
-        const fichaValues = [
-          id_curso,
-          objetivos.objetivo || "N/C",
-          objetivos.perfil_ingreso || "N/C",
-          objetivos.perfil_egreso || "N/C",
-          objetivos.perfil_del_docente || "N/C",
-          objetivos.metodologia || "N/C",
-          objetivos.bibliografia || "N/C",
-          objetivos.criterios_acreditacion || "N/C",
-          objetivos.reconocimiento || "N/C",
-        ];
-        await client.query(fichaQuery, fichaValues);
-      } catch (error) {
-        console.error("Error al insertar objetivos:", error);
-        throw error;
-      }
+    // Inserta ficha técnica
+    const fichaTecnicaParams = {
+      id_curso,
+      objetivo: parsedObjetivos.objetivo || "N/C",
+      perfil_ingreso: parsedObjetivos.perfil_ingreso || "N/C",
+      perfil_egreso: parsedObjetivos.perfil_egreso || "N/C",
+      perfil_del_docente: parsedObjetivos.perfil_del_docente || "N/C",
+      metodologia: parsedObjetivos.metodologia || "N/C",
+      bibliografia: parsedObjetivos.bibliografia || "N/C",
+      criterios_acreditacion: parsedObjetivos.criteriosAcreditacion || "N/C",
+      reconocimiento: parsedObjetivos.reconocimiento || "N/C",
+    };
+
+    await client.query(
+      `INSERT INTO ficha_tecnica 
+       (id_curso, objetivo, perfil_ingreso, perfil_egreso, perfil_del_docente, metodologia,
+        bibliografia, criterios_acreditacion, reconocimiento) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      Object.values(fichaTecnicaParams)
+    );
+
+    // Inserta materiales
+    for (const material of parsedMateriales) {
+      const materialParams = {
+        id_curso,
+        descripcion: material.descripcion || "N/C",
+        unidad_de_medida: material.unidad_de_medida || "N/C",
+        cantidad_10: material.cantidad10 || 0,
+        cantidad_15: material.cantidad15 || 0,
+        cantidad_20: material.cantidad20 || 0,
+      };
+
+      await client.query(
+        `INSERT INTO material 
+         (id_curso, descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20) 
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        Object.values(materialParams)
+      );
     }
 
-    // Insertar contenidos programáticos si están presentes
-    if (contenidoProgramatico && Array.isArray(contenidoProgramatico.temas)) {
-      try {
-        const contenidoQuery = `
-          INSERT INTO contenido_programatico (id_curso, tema_nombre, tiempo, competencias, evaluacion, actividades)
-          VALUES ($1, $2, $3, $4, $5, $6)
-        `;
-        for (const tema of contenidoProgramatico.temas) {
-          const contenidoValues = [
-            id_curso,
-            tema.nombre || "N/C",
-            tema.tiempo || 0,
-            tema.competencias || null,
-            tema.evaluacion || null,
-            tema.actividades || null,
-          ];
-          await client.query(contenidoQuery, contenidoValues);
-        }
-      } catch (error) {
-        console.error("Error al insertar contenido programático:", error);
-        throw error;
-      }
+    // Inserta equipamiento
+    for (const equipo of parsedEquipamiento) {
+      const equipamientoParams = {
+        id_curso,
+        descripcion: equipo.descripcion || "N/C",
+        unidad_de_medida: equipo.unidad_de_medida || "OTRO",
+        cantidad_10: equipo.cantidad10 || 0,
+        cantidad_15: equipo.cantidad15 || 0,
+        cantidad_20: equipo.cantidad20 || 0,
+      };
+
+      await client.query(
+        `INSERT INTO equipamiento 
+         (id_curso, descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20) 
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        Object.values(equipamientoParams)
+      );
     }
 
-    // Insertar materiales solo si están presentes
-    if (Array.isArray(materiales) && materiales.length > 0) {
-      try {
-        const materialQuery = `
-          INSERT INTO material (id_curso, descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20)
-          VALUES ($1, $2, $3, $4, $5, $6)
-        `;
-        for (const material of materiales) {
-          if (!material.descripcion || !material.unidad_de_medida) {
-            throw new Error("Materiales incompletos detectados");
-          }
-          const materialValues = [
-            id_curso,
-            material.descripcion || "N/C",
-            material.unidad_de_medida || "N/C",
-            material.cantidad_10 || 0,
-            material.cantidad_15 || 0,
-            material.cantidad_20 || 0,
-          ];
-          await client.query(materialQuery, materialValues);
-        }
-      } catch (error) {
-        console.error("Error al insertar materiales:", error);
-        throw error;
-      }
-    }
+    // Inserta contenido programático
+    for (const tema of parsedContenidoProgramatico.temas) {
+      const contenidoParams = {
+        id_curso,
+        tema_nombre: tema.tema_nombre || "N/C",
+        tiempo: tema.tiempo || 0,
+        competencias: tema.competencias || null,
+        evaluacion: tema.evaluacion || null,
+        actividades: tema.actividades || null,
+      };
 
-    // Insertar equipamiento solo si está presente
-    if (Array.isArray(equipamiento) && equipamiento.length > 0) {
-      try {
-        const equipamientoQuery = `
-          INSERT INTO equipamiento (id_curso, descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20)
-          VALUES ($1, $2, $3, $4, $5, $6)
-        `;
-        for (const equipo of equipamiento) {
-          if (!equipo.descripcion || !equipo.unidad_de_medida) {
-            throw new Error("Equipamiento incompleto detectado");
-          }
-          const equipamientoValues = [
-            id_curso,
-            equipo.descripcion || "N/C",
-            equipo.unidad_de_medida || "N/C",
-            equipo.cantidad_10 || 0,
-            equipo.cantidad_15 || 0,
-            equipo.cantidad_20 || 0,
-          ];
-          await client.query(equipamientoQuery, equipamientoValues);
-        }
-      } catch (error) {
-        console.error("Error al insertar equipamiento:", error);
-        throw error;
-      }
+      await client.query(
+        `INSERT INTO contenido_programatico 
+         (id_curso, tema_nombre, tiempo, competencias, evaluacion, actividades) 
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        Object.values(contenidoParams)
+      );
     }
 
     await client.query("COMMIT");
@@ -357,13 +384,9 @@ exports.create = async (req, res) => {
   } catch (error) {
     await client.query("ROLLBACK");
     console.error("Error al registrar el curso:", error);
-
-    // Respuesta con detalles del error
-    res.status(500).json({
-      error: "Error al registrar el curso",
-      details: error.message, // Incluye el mensaje de error
-      stack: process.env.NODE_ENV === "development" ? error.stack : undefined, // Solo en desarrollo
-    });
+    res
+      .status(500)
+      .json({ error: "Error al registrar el curso", details: error.message });
   } finally {
     client.release();
   }
@@ -636,15 +659,39 @@ exports.getCourseDetails = async (req, res) => {
       WHERE id_curso = $1
     `;
     const equipamientoResult = await client.query(equipamientoQuery, [id]);
+    // Obtener detalles de las firmas (elaborado_por, revisado_por, autorizado_por)
+    const firmasQuery = `
+ SELECT 
+   id, nombre, cargo, tipo_firma
+ FROM firmas
+ WHERE id IN ($1, $2, $3)
+`;
+    const firmasResult = await client.query(firmasQuery, [
+      curso.elaborado_por,
+      curso.revisado_por,
+      curso.autorizado_por,
+    ]);
+
+    // Organizar las firmas por tipo
+    const firmas = firmasResult.rows.reduce((acc, firma) => {
+      acc[firma.tipo_firma.toLowerCase()] = firma;
+      return acc;
+    }, {});
 
     // Formar la respuesta con todos los detalles del curso
     const cursoDetalles = {
       ...curso,
+       firmas: {
+        elaborado_por: firmas.elaborado || null,
+        revisado_por: firmas.revisado || null,
+        autorizado_por: firmas.autorizado || null,
+      },
       fichaTecnica,
       contenidoProgramatico: contenidoProgramaticoResult.rows,
       materiales: materialesResult.rows,
       equipamiento: equipamientoResult.rows,
       contenidoProgramatico: contenidoProgramaticoResult.rows,
+     
     };
 
     await client.query("COMMIT");
@@ -652,11 +699,9 @@ exports.getCourseDetails = async (req, res) => {
   } catch (error) {
     await client.query("ROLLBACK");
     console.error("Error al obtener los detalles del curso:", error);
-    res
-      .status(500)
-      .json({
-        error: error.message || "Error al obtener los detalles del curso",
-      });
+    res.status(500).json({
+      error: error.message || "Error al obtener los detalles del curso",
+    });
   } finally {
     client.release();
   }
@@ -698,6 +743,7 @@ exports.updateCourseDetails = async (req, res) => {
       revisado_por,
       autorizado_por,
       elaborado_por,
+
       objetivos,
       materiales,
       equipamiento,
@@ -705,7 +751,8 @@ exports.updateCourseDetails = async (req, res) => {
     } = req.body;
 
     // Función para parsear JSON si es necesario
-    const parseJSON = (data) => (typeof data === "string" ? JSON.parse(data) : data);
+    const parseJSON = (data) =>
+      typeof data === "string" ? JSON.parse(data) : data;
     objetivos = parseJSON(objetivos) || {};
     contenidoProgramatico = parseJSON(contenidoProgramatico) || { temas: [] };
     materiales = parseJSON(materiales) || [];
@@ -822,7 +869,9 @@ exports.updateCourseDetails = async (req, res) => {
 
       if (equipamientoExists.rowCount > 0) {
         console.log("El equipamiento para el curso con ID", id, "ya existe.");
-        await client.query("DELETE FROM equipamiento WHERE id_curso = $1", [id]);
+        await client.query("DELETE FROM equipamiento WHERE id_curso = $1", [
+          id,
+        ]);
       }
 
       for (const equipo of equipamiento) {
@@ -848,15 +897,26 @@ exports.updateCourseDetails = async (req, res) => {
     }
 
     // **Contenido Programático**
-    if (contenidoProgramatico && contenidoProgramatico.temas && contenidoProgramatico.temas.length > 0) {
+    if (
+      contenidoProgramatico &&
+      contenidoProgramatico.temas &&
+      contenidoProgramatico.temas.length > 0
+    ) {
       const contenidoExists = await client.query(
         "SELECT 1 FROM contenido_programatico WHERE id_curso = $1",
         [id]
       );
 
       if (contenidoExists.rowCount > 0) {
-        console.log("El contenido programático para el curso con ID", id, "ya existe.");
-        await client.query("DELETE FROM contenido_programatico WHERE id_curso = $1", [id]);
+        console.log(
+          "El contenido programático para el curso con ID",
+          id,
+          "ya existe."
+        );
+        await client.query(
+          "DELETE FROM contenido_programatico WHERE id_curso = $1",
+          [id]
+        );
       }
 
       for (const tema of contenidoProgramatico.temas) {
@@ -878,7 +938,10 @@ exports.updateCourseDetails = async (req, res) => {
         await client.query(query, Object.values(contenidoParams));
       }
     } else {
-      console.log("No se proporcionó contenido programático para el curso con ID", id);
+      console.log(
+        "No se proporcionó contenido programático para el curso con ID",
+        id
+      );
     }
 
     await client.query("COMMIT");
@@ -886,7 +949,9 @@ exports.updateCourseDetails = async (req, res) => {
   } catch (error) {
     await client.query("ROLLBACK");
     console.error("Error al actualizar el curso:", error.stack);
-    res.status(500).json({ error: error.message || "Error al actualizar el curso" });
+    res
+      .status(500)
+      .json({ error: error.message || "Error al actualizar el curso" });
   } finally {
     client.release();
   }
