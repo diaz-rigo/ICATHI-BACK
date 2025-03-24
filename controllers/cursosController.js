@@ -62,10 +62,8 @@ exports.getByIdInfoReporte = async (req, res) => {
       datosCurso.equipamiento === "vacío o 0"
         ? "vacío o 0"
         : datosCurso.equipamiento;
-        
-   
-   
-     // Obtener detalles de las firmas (elaborado_por, revisado_por, autorizado_por)
+
+    // Obtener detalles de las firmas (elaborado_por, revisado_por, autorizado_por)
     const firmasQuery = `
       SELECT id, nombre, cargo, tipo_firma
       FROM firmas
@@ -80,11 +78,33 @@ exports.getByIdInfoReporte = async (req, res) => {
     // Organizar las firmas por tipo
     const firmas = firmasResult.rows.reduce((acc, firma) => {
       acc[firma.tipo_firma.toLowerCase()] = {
-        nombre: firma.nombre,
-        cargo: firma.cargo,
+        nombre: firma.nombre || "No disponible",
+        cargo: firma.cargo || "No disponible",
       };
       return acc;
     }, {});
+
+    // Determinar etiquetas dinámicas según el tipo de curso
+    const etiquetasCurso = {
+      1: {
+        ETIQUETA_BIBLIOGRAFIA: "BIBLIOGRAFÍA",
+        ETIQUETA_CRITERIOS: "CRITERIOS DE ACREDITACIÓN",
+        ETIQUETA_RECONOCIMIENTO: "RECONOCIMIENTO A LA PERSONA EGRESADA",
+      },
+      2: {
+        ETIQUETA_BIBLIOGRAFIA: "BIBLIOGRAFÍA",
+        ETIQUETA_CRITERIOS: "REQUISITOS TÉCNICOS PARA EL ESTUDIO O TUTORÍA EN LÍNEA",
+        ETIQUETA_RECONOCIMIENTO: "RECONOCIMIENTO AL ALUMNO",
+      },
+      3: {
+        ETIQUETA_BIBLIOGRAFIA: "BIBLIOGRAFÍA / WEBGRAFÍA",
+        ETIQUETA_CRITERIOS: "CRITERIOS DE ACREDITACIÓN",
+        ETIQUETA_RECONOCIMIENTO: "RECONOCIMIENTO A LA PERSONA EGRESADA",
+      },
+    };
+
+    // Obtener el conjunto de etiquetas según el tipo de curso
+    const etiquetas = etiquetasCurso[datosCurso.tipo_curso_id] || etiquetasCurso[1];
 
     // Construir el objeto de respuesta
     const response = {
@@ -95,6 +115,7 @@ exports.getByIdInfoReporte = async (req, res) => {
       DESCRIPCION: datosCurso.descripcion || "No disponible",
       AREA_ID: datosCurso.area_id || "No disponible",
       ESPECIALIDAD_ID: datosCurso.especialidad_id || "No disponible",
+      TIPO_CURSO_ID: datosCurso.tipo_curso_id, // ID del tipo de curso
       TIPO_CURSO: datosCurso.tipo_curso, // Nombre del tipo de curso
       VIGENCIA_INICIO: datosCurso.vigencia_inicio || "No disponible",
       FECHA_PUBLICACION: datosCurso.fecha_publicacion || "No disponible",
@@ -103,60 +124,73 @@ exports.getByIdInfoReporte = async (req, res) => {
       REVISADO_POR: firmas.revisado || { nombre: "No disponible", cargo: "No disponible" },
       AUTORIZADO_POR: firmas.autorizado || { nombre: "No disponible", cargo: "No disponible" },
       USUARIO_VALIDADOR_ID: datosCurso.usuario_validador_id || "No disponible",
+
       FICHA_TECNICA: {
         OBJETIVO: datosCurso.objetivo || "No disponible",
         PERFIL_INGRESO: datosCurso.perfil_ingreso || "No disponible",
         PERFIL_EGRESO: datosCurso.perfil_egreso || "No disponible",
         PERFIL_DEL_DOCENTE: datosCurso.perfil_del_docente || "No disponible",
         METODOLOGIA: datosCurso.metodologia || "No disponible",
-        BIBLIOGRAFIA: datosCurso.bibliografia || "No disponible",
-        CRITERIOS_ACREDITACION:
-          datosCurso.criterios_acreditacion || "No disponible",
-        RECONOCIMIENTO: datosCurso.reconocimiento || "No disponible",
+        // Estructura con las etiquetas, valores y datos
+        ETIQUETAS: [
+          {
+            NOMBRE: etiquetas.ETIQUETA_BIBLIOGRAFIA,
+            VALOR: "Bibliografía",
+            DATO: datosCurso.bibliografia || "No disponible",
+          },
+          {
+            NOMBRE: etiquetas.ETIQUETA_CRITERIOS,
+            VALOR: "Criterios de Acreditación",
+            DATO: datosCurso.criterios_acreditacion || "No disponible",
+          },
+          {
+            NOMBRE: etiquetas.ETIQUETA_RECONOCIMIENTO,
+            VALOR: "Reconocimiento",
+            DATO: datosCurso.reconocimiento || "No disponible",
+          }
+        ]
       },
+
       MATERIALES: (() => {
-        switch (true) {
-          case materiales == null ||
-            materiales.every(
-              (m) =>
-                m.material_cantidad_10 === 0 &&
-                m.material_cantidad_15 === 0 &&
-                m.material_cantidad_20 === 0
-            ):
-            return 0;
-          default:
-            return materiales.map((m) => ({
-              material_descripcion: m.material_descripcion || "No disponible",
-              material_unidad_de_medida:
-                m.material_unidad_de_medida || "No disponible",
-              material_cantidad_10: m.material_cantidad_10 || 0,
-              material_cantidad_15: m.material_cantidad_15 || 0,
-              material_cantidad_20: m.material_cantidad_20 || 0,
-            }));
+        if (
+          !materiales ||
+          materiales.every(
+            (m) =>
+              m.material_cantidad_10 === 0 &&
+              m.material_cantidad_15 === 0 &&
+              m.material_cantidad_20 === 0
+          )
+        ) {
+          return 0;
         }
+        return materiales.map((m) => ({
+          material_descripcion: m.material_descripcion || "No disponible",
+          material_unidad_de_medida: m.material_unidad_de_medida || "No disponible",
+          material_cantidad_10: m.material_cantidad_10 || 0,
+          material_cantidad_15: m.material_cantidad_15 || 0,
+          material_cantidad_20: m.material_cantidad_20 || 0,
+        }));
       })(),
 
       EQUIPAMIENTO: (() => {
-        switch (true) {
-          case equipamiento == null ||
-            equipamiento.every(
-              (e) =>
-                e.equipamiento_cantidad_10 === 0 &&
-                e.equipamiento_cantidad_15 === 0 &&
-                e.equipamiento_cantidad_20 === 0
-            ):
-            return 0;
-          default:
-            return equipamiento.map((e) => ({
-              equipamiento_descripcion:
-                e.equipamiento_descripcion || "No disponible",
-              equipamiento_unidad_de_medida:
-                e.equipamiento_unidad_de_medida || "No disponible",
-              equipamiento_cantidad_10: e.equipamiento_cantidad_10 || 0,
-              equipamiento_cantidad_15: e.equipamiento_cantidad_15 || 0,
-              equipamiento_cantidad_20: e.equipamiento_cantidad_20 || 0,
-            }));
+        if (
+          !equipamiento ||
+          equipamiento.every(
+            (e) =>
+              e.equipamiento_cantidad_10 === 0 &&
+              e.equipamiento_cantidad_15 === 0 &&
+              e.equipamiento_cantidad_20 === 0
+          )
+        ) {
+          return 0;
         }
+        return equipamiento.map((e) => ({
+          equipamiento_descripcion: e.equipamiento_descripcion || "No disponible",
+          equipamiento_unidad_de_medida: e.equipamiento_unidad_de_medida || "No disponible",
+          equipamiento_cantidad_10: e.equipamiento_cantidad_10 || 0,
+          equipamiento_cantidad_15: e.equipamiento_cantidad_15 || 0,
+          equipamiento_cantidad_20: e.equipamiento_cantidad_20 || 0,
+        }));
       })(),
     };
 
@@ -308,7 +342,7 @@ exports.create = async (req, res) => {
       perfil_del_docente: parsedObjetivos.perfil_del_docente || "N/C",
       metodologia: parsedObjetivos.metodologia || "N/C",
       bibliografia: parsedObjetivos.bibliografia || "N/C",
-      criterios_acreditacion: parsedObjetivos.criteriosAcreditacion || "N/C",
+      criterios_acreditacion: parsedObjetivos.criterios_acreditacion || "N/C",
       reconocimiento: parsedObjetivos.reconocimiento || "N/C",
     };
 
@@ -611,7 +645,8 @@ exports.getCourseDetails = async (req, res) => {
       SELECT 
         c.id, c.nombre, c.clave, c.costo, c.duracion_horas, c.descripcion, c.nivel, 
         c.area_id, c.especialidad_id, c.tipo_curso_id, c.vigencia_inicio, 
-        c.fecha_publicacion, c.ultima_actualizacion ,c.archivo_url,c.elaborado_por,c.revisado_por,c.autorizado_por
+        c.fecha_publicacion, c.ultima_actualizacion, c.archivo_url,
+        c.elaborado_por, c.revisado_por, c.autorizado_por
       FROM cursos c
       WHERE c.id = $1
     `;
@@ -625,28 +660,28 @@ exports.getCourseDetails = async (req, res) => {
 
     // Obtener la ficha técnica del curso
     const fichaQuery = `
-      SELECT  id,
-        objetivo, perfil_ingreso, perfil_egreso, perfil_del_docente, 
+      SELECT 
+        id, objetivo, perfil_ingreso, perfil_egreso, perfil_del_docente, 
         metodologia, bibliografia, criterios_acreditacion, reconocimiento
       FROM ficha_tecnica
       WHERE id_curso = $1
     `;
     const fichaResult = await client.query(fichaQuery, [id]);
     const fichaTecnica = fichaResult.rows[0] || {};
+
     // Obtener el contenido programático del curso
     const contenidoProgramaticoQuery = `
-      SELECT  id,tema_nombre, tiempo, competencias, evaluacion, actividades
+      SELECT 
+        id, tema_nombre, tiempo, competencias, evaluacion, actividades
       FROM contenido_programatico
       WHERE id_curso = $1
-      `;
-    const contenidoProgramaticoResult = await client.query(
-      contenidoProgramaticoQuery,
-      [id]
-    );
+    `;
+    const contenidoProgramaticoResult = await client.query(contenidoProgramaticoQuery, [id]);
 
     // Obtener los materiales del curso
     const materialesQuery = `
-      SELECT  id,descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20
+      SELECT 
+        id, descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20
       FROM material
       WHERE id_curso = $1
     `;
@@ -654,18 +689,20 @@ exports.getCourseDetails = async (req, res) => {
 
     // Obtener el equipamiento del curso
     const equipamientoQuery = `
-      SELECT id, descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20
+      SELECT 
+        id, descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20
       FROM equipamiento
       WHERE id_curso = $1
     `;
     const equipamientoResult = await client.query(equipamientoQuery, [id]);
+
     // Obtener detalles de las firmas (elaborado_por, revisado_por, autorizado_por)
     const firmasQuery = `
- SELECT 
-   id, nombre, cargo, tipo_firma
- FROM firmas
- WHERE id IN ($1, $2, $3)
-`;
+      SELECT 
+        id, nombre, cargo, tipo_firma
+      FROM firmas
+      WHERE id IN ($1, $2, $3)
+    `;
     const firmasResult = await client.query(firmasQuery, [
       curso.elaborado_por,
       curso.revisado_por,
@@ -674,24 +711,25 @@ exports.getCourseDetails = async (req, res) => {
 
     // Organizar las firmas por tipo
     const firmas = firmasResult.rows.reduce((acc, firma) => {
-      acc[firma.tipo_firma.toLowerCase()] = firma;
+      acc[firma.tipo_firma.toLowerCase()] = {
+        nombre: firma.nombre || "",
+        cargo: firma.cargo || "",
+      };
       return acc;
     }, {});
 
     // Formar la respuesta con todos los detalles del curso
     const cursoDetalles = {
       ...curso,
-       firmas: {
-        elaborado_por: firmas.elaborado || null,
-        revisado_por: firmas.revisado || null,
-        autorizado_por: firmas.autorizado || null,
+      firmas: {
+        revisado: firmas.revisado_por || { nombre: "", cargo: "" },
+        autorizado: firmas.autorizado_por || { nombre: "", cargo: "" },
+        elaborado: firmas.elaborado_por || { nombre: "", cargo: "" },
       },
       fichaTecnica,
       contenidoProgramatico: contenidoProgramaticoResult.rows,
       materiales: materialesResult.rows,
       equipamiento: equipamientoResult.rows,
-      contenidoProgramatico: contenidoProgramaticoResult.rows,
-     
     };
 
     await client.query("COMMIT");
@@ -741,9 +779,11 @@ exports.updateCourseDetails = async (req, res) => {
       fecha_publicacion,
       ultima_actualizacion,
       revisado_por,
+      cargo_revisado_por,
       autorizado_por,
+      cargo_autorizado_por,
       elaborado_por,
-
+      cargo_elaborado_por,
       objetivos,
       materiales,
       equipamiento,
@@ -760,7 +800,30 @@ exports.updateCourseDetails = async (req, res) => {
 
     await client.query("BEGIN");
 
-    // **Actualizar curso**
+    // **Obtener los IDs de las firmas actuales**
+    const cursoResult = await client.query(
+      "SELECT revisado_por, autorizado_por, elaborado_por FROM cursos WHERE id = $1",
+      [id]
+    );
+    const { revisado_por: oldRevisadoPor, autorizado_por: oldAutorizadoPor, elaborado_por: oldElaboradoPor } = cursoResult.rows[0];
+
+    // **Insertar nuevas firmas y obtener sus IDs**
+    const insertFirma = async (nombre, cargo, tipo_firma) => {
+      if (nombre && cargo) {
+        const result = await client.query(
+          "INSERT INTO firmas (nombre, cargo, tipo_firma) VALUES ($1, $2, $3) RETURNING id",
+          [nombre, cargo, tipo_firma]
+        );
+        return result.rows[0].id;
+      }
+      return null;
+    };
+
+    const newRevisadoPor = await insertFirma(revisado_por, cargo_revisado_por, "revisado_por");
+    const newAutorizadoPor = await insertFirma(autorizado_por, cargo_autorizado_por, "autorizado_por");
+    const newElaboradoPor = await insertFirma(elaborado_por, cargo_elaborado_por, "elaborado_por");
+
+    // **Actualizar curso con los nuevos IDs de las firmas**
     await client.query(
       `UPDATE cursos 
        SET nombre = $1, clave = $2, duracion_horas = $3, descripcion = $4, nivel = $5, costo = $6,
@@ -781,12 +844,23 @@ exports.updateCourseDetails = async (req, res) => {
         vigencia_inicio || null,
         fecha_publicacion || null,
         ultima_actualizacion || null,
-        revisado_por,
-        autorizado_por,
-        elaborado_por,
+        newRevisadoPor,
+        newAutorizadoPor,
+        newElaboradoPor,
         id,
       ]
     );
+
+    // **Eliminar las firmas antiguas**
+    if (oldRevisadoPor) {
+      await client.query("DELETE FROM firmas WHERE id = $1", [oldRevisadoPor]);
+    }
+    if (oldAutorizadoPor) {
+      await client.query("DELETE FROM firmas WHERE id = $1", [oldAutorizadoPor]);
+    }
+    if (oldElaboradoPor) {
+      await client.query("DELETE FROM firmas WHERE id = $1", [oldElaboradoPor]);
+    }
 
     // **Ficha Técnica**
     const fichaExists = await client.query(
@@ -802,7 +876,7 @@ exports.updateCourseDetails = async (req, res) => {
       perfil_del_docente: objetivos.perfil_del_docente || "N/C",
       metodologia: objetivos.metodologia || "N/C",
       bibliografia: objetivos.bibliografia || "N/C",
-      criterios_acreditacion: objetivos.criteriosAcreditacion || "N/C",
+      criterios_acreditacion: objetivos.criterios_acreditacion || "N/C",
       reconocimiento: objetivos.reconocimiento || "N/C",
     };
 

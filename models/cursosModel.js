@@ -103,6 +103,7 @@ WHERE pc.plantel_id = ${idPlantel} AND pc.estatus = true
   c.elaborado_por AS ELABORADO_POR,
   c.revisado_por AS REVISADO_POR,
   c.autorizado_por AS AUTORIZADO_POR,
+  c.tipo_curso_id AS tipo_curso_id,
   t.nombre AS tipo_curso,
   ft.objetivo,
   ft.perfil_ingreso,
