@@ -1,4 +1,6 @@
+
 const express = require('express');
+const cors = require("cors");
 const app = express();
 require('dotenv').config(); // Carga variables de entorno
 const morgan = require('morgan');
@@ -35,15 +37,28 @@ app.use(morgan('dev'));
 app.use(express.json());
 
 // Configuración de CORS
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', '*');
-  if (req.method === 'OPTIONS') {
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE');
-    return res.status(200).json({});
-  }
-  next();
-});
+// app.use((req, res, next) => {
+//   res.header('Access-Control-Allow-Origin', '*');
+//   res.header('Access-Control-Allow-Headers', '*');
+//   if (req.method === 'OPTIONS') {
+//     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE');
+//     return res.status(200).json({});
+//   }
+//   next();
+// });
+// const cors = require("cors");
+
+
+// Configuración de CORS con el paquete `cors`
+app.use(cors({
+  origin: "https://icathi.vercel.app", // Solo permite este dominio
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
+// Permitir preflight requests (OPTIONS)
+app.options("*", cors());
+
 
 // Servir archivos estáticos desde 'uploads'
 app.use('/uploads', express.static('uploads'));
