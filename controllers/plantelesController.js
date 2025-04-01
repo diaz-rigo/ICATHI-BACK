@@ -23,17 +23,22 @@ exports.getById = async (req, res) => {
 };
 
 exports.create = async (req, res) => {
-  console.log("*********************++")
-  console.log("*********************++")
-  console.log("*********************++",req.body)
-  console.log("*********************++")
   try {
     const nuevoPlantel = await PlantelesModel.create(req.body);
     res.status(201).json(nuevoPlantel);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error al crear el plantel:', error);
+    if (error.message === 'El correo electrónico ya está registrado en el sistema') {
+      // Si el correo ya está registrado, enviamos un mensaje más específico
+      res.status(400).json({ message: 'El correo electrónico ya está registrado en el sistema' });
+    } else {
+      // Otro tipo de error
+      res.status(500).json({ message: 'Ocurrió un error en el servidor' });
+    }
   }
 };
+
+
 
 exports.update = async (req, res) => {
   try {
@@ -52,18 +57,24 @@ exports.update = async (req, res) => {
 exports.delete = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Intentamos eliminar el plantel
     const plantelEliminado = await PlantelesModel.delete(id);
+
+    // Verificamos si el plantel fue eliminado correctamente
     if (!plantelEliminado) {
-      return res.status(404).json({ error: 'Plantel no encontrado' });
+      return res.status(404).json({ error: 'El plantel no existe o ya fue eliminado' });
     }
-    res.status(200).json(plantelEliminado);
+
+    // Si la eliminación fue exitosa, retornamos un mensaje de éxito
+    res.status(200).json({ message: 'Plantel y usuario eliminados correctamente' });
+
   } catch (error) {
+    // Si ocurre un error en el proceso
+    console.error('Error al eliminar el plantel:', error); // Para depurar
     res.status(500).json({ error: error.message });
   }
-
-
 };
-
 
 exports.getPlantelDetails = async (req, res) => {
 // async getPlantelDetails(req, res) {

@@ -62,13 +62,17 @@ exports.listarUsuarios = async (req, res) => {
 };
 exports.crearUsuario = async (req, res) => {
   try {
+    // Intentar crear el usuario
     const nuevoUsuario = await Usuario.crearUsuario(req.body);
     res.status(201).json({ message: 'Usuario creado exitosamente', usuario: nuevoUsuario });
   } catch (error) {
-    res.status(500).json({ message: 'Error al crear el usuario', error: error.message });
+    console.error('Error al crear el usuario:', error.message);
+    
+    // Devolver un error con el mensaje adecuado
+    res.status(500).json({ error: 'Error al crear el usuario', message: error.message });
   }
-  
 }
+
 
 exports.obtenerUsuario = async (req, res) => {
   const { email, username } = req.query;

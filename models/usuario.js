@@ -81,41 +81,38 @@ const Usuario = {
   ,
   async crearUsuario(data) {
     const { nombre, apellidos, email, username, password, rol } = data;
-
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-    const query = `
-      INSERT INTO usuarios (nombre, apellidos, email, username, password_hash, rol, estatus)
-      VALUES ($1, $2, $3, $4, $5, $6, false)
-      RETURNING *;
-    `;
-
-    const values = [nombre, apellidos, email, username, hashedPassword, rol];
-
+  
+    // Verificar si el correo ya está registrado
+    const checkEmailQuery = 'SELECT * FROM usuarios WHERE email = $1';
+    
     try {
-        const result = await pool.query(query, values);
-        return result.rows[0]; 
+      const emailResult = await pool.query(checkEmailQuery, [email]);
+      
+      // Si ya existe un usuario con el correo, devolver un error
+      if (emailResult.rows.length > 0) {
+        throw new Error('El correo electrónico ya está registrado');
+      }
+  
+      // Generar el hash de la contraseña usando bcrypt
+      const saltRounds = 10; // Número de rondas de salt
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+  
+      const query = `
+        INSERT INTO usuarios (nombre, apellidos, email, username, password_hash, rol, estatus)
+        VALUES ($1, $2, $3, $4, $5, $6, false)
+        RETURNING *;
+      `;
+      const values = [nombre, apellidos, email, username, hashedPassword, rol];
+      
+      const result = await pool.query(query, values);
+      return result.rows[0]; // Retorna el usuario creado
+  
     } catch (error) {
-        console.error('Error al crear usuario:', error.message);
-
-        if (error.code === '23505') {
-            // Verificamos si la restricción violada es por el email o el username
-            if (error.constraint === 'usuarios_email_key') {
-                throw new Error("El correo electrónico ya está registrado.");
-            } else if (error.constraint === 'usuarios_username_key') {
-                throw new Error("El nombre de usuario ya está en uso.");
-            }
-        } else if (error.code === '23502') {
-            throw new Error("Todos los campos son obligatorios.");
-        } else if (error.code === '08003') {
-            throw new Error("Error de conexión con la base de datos. Intenta más tarde.");
-        } else {
-            throw new Error("Ocurrió un error inesperado. Intenta más tarde.");
-        }
+      console.error('Error al crear usuario:', error.message);
+      throw error;
     }
-}
-
+  }
+  
   
 ,
   // Listar todos los usuarios

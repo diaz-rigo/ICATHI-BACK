@@ -89,78 +89,106 @@ WHERE pc.plantel_id = ${idPlantel} AND pc.estatus = true
   async getByIdInfoReporte(id) {
     const query = `
       SELECT 
-        c.id AS Id_Curso,
-        c.nombre AS NOMBRE,
-        c.clave AS CLAVE,
-        c.duracion_horas AS DURACION_HORAS,
-        c.descripcion AS DESCRIPCION,
-        c.area_id AS AREA_ID,
-        c.especialidad_id AS ESPECIALIDAD_ID,
-        c.vigencia_inicio AS VIGENCIA_INICIO,
-        c.fecha_publicacion AS FECHA_PUBLICACION,
-        c.usuario_validador_id AS USUARIO_VALIDADOR_ID,
-        c.fecha_validacion AS FECHA_VALIDACION,
-        c.elaborado_por AS ELABORADO_POR,
-        ft.objetivo,
-        ft.perfil_ingreso,
-        ft.perfil_egreso,
-        ft.perfil_del_docente,
-        ft.metodologia,
-        ft.bibliografia,
-        ft.criterios_acreditacion,
-        ft.reconocimiento,
-        -- Agrupando materiales en un array
-        ARRAY_AGG(
-          DISTINCT JSONB_BUILD_OBJECT(
-            'material_descripcion', m.descripcion,
-            'material_unidad_de_medida', m.unidad_de_medida,
-            'material_cantidad_10', m.cantidad_10,
-            'material_cantidad_15', m.cantidad_15,
-            'material_cantidad_20', m.cantidad_20
-          )
-        ) AS materiales,
-        -- Agrupando equipamiento en un array
-        ARRAY_AGG(
-          DISTINCT JSONB_BUILD_OBJECT(
-            'equipamiento_descripcion', e.descripcion,
-            'equipamiento_unidad_de_medida', e.unidad_de_medida,
-            'equipamiento_cantidad_10', e.cantidad_10,
-            'equipamiento_cantidad_15', e.cantidad_15,
-            'equipamiento_cantidad_20', e.cantidad_20
-          )
-        ) AS equipamiento
-      FROM 
-        cursos c
-      LEFT JOIN 
-        ficha_tecnica ft ON c.id = ft.id_curso
-      LEFT JOIN 
-        material m ON c.id = m.id_curso
-      LEFT JOIN 
-        equipamiento e ON c.id = e.id_curso
-      WHERE 
-        c.id = $1
-      GROUP BY 
-        c.id, ft.objetivo, ft.perfil_ingreso, ft.perfil_egreso, ft.perfil_del_docente, 
-        ft.metodologia, ft.bibliografia, ft.criterios_acreditacion, ft.reconocimiento;
-    `;
-    
+  c.id,
+  c.nombre AS NOMBRE,
+  c.clave AS CLAVE,
+  c.duracion_horas AS DURACION_HORAS,
+  c.descripcion AS DESCRIPCION,
+  c.area_id AS AREA_ID,
+  c.especialidad_id AS ESPECIALIDAD_ID,
+  c.vigencia_inicio AS VIGENCIA_INICIO,
+  c.fecha_publicacion AS FECHA_PUBLICACION,
+  c.usuario_validador_id AS USUARIO_VALIDADOR_ID,
+  c.fecha_validacion AS FECHA_VALIDACION,
+  c.elaborado_por AS ELABORADO_POR,
+  c.revisado_por AS REVISADO_POR,
+  c.autorizado_por AS AUTORIZADO_POR,
+  c.tipo_curso_id AS tipo_curso_id,
+  t.nombre AS tipo_curso,
+  ft.objetivo,
+  ft.perfil_ingreso,
+  ft.perfil_egreso,
+  ft.perfil_del_docente,
+  ft.metodologia,
+  ft.bibliografia,
+  ft.criterios_acreditacion,
+  ft.reconocimiento,
+  -- Datos de las firmas
+  JSONB_BUILD_OBJECT(
+    'elaborado_por', JSONB_BUILD_OBJECT(
+      'nombre', fe.nombre,
+      'cargo', fe.cargo
+    ),
+    'revisado_por', JSONB_BUILD_OBJECT(
+      'nombre', fr.nombre,
+      'cargo', fr.cargo
+    ),
+    'autorizado_por', JSONB_BUILD_OBJECT(
+      'nombre', fa.nombre,
+      'cargo', fa.cargo
+    )
+  ) AS firmas,
+  -- Agrupando materiales en un array
+  ARRAY_AGG(
+    DISTINCT JSONB_BUILD_OBJECT(
+      'material_descripcion', m.descripcion,
+      'material_unidad_de_medida', m.unidad_de_medida,
+      'material_cantidad_10', m.cantidad_10,
+      'material_cantidad_15', m.cantidad_15,
+      'material_cantidad_20', m.cantidad_20
+    )
+  ) AS materiales,
+  -- Agrupando equipamiento en un array
+  ARRAY_AGG(
+    DISTINCT JSONB_BUILD_OBJECT(
+      'equipamiento_descripcion', e.descripcion,
+      'equipamiento_unidad_de_medida', e.unidad_de_medida,
+      'equipamiento_cantidad_10', e.cantidad_10,
+      'equipamiento_cantidad_15', e.cantidad_15,
+      'equipamiento_cantidad_20', e.cantidad_20
+    )
+  ) AS equipamiento
+FROM 
+  cursos c
+LEFT JOIN 
+  ficha_tecnica ft ON c.id = ft.id_curso
+LEFT JOIN 
+  material m ON c.id = m.id_curso
+LEFT JOIN 
+  equipamiento e ON c.id = e.id_curso
+LEFT JOIN 
+  tipos_curso t ON c.tipo_curso_id = t.id
+LEFT JOIN 
+  firmas fe ON c.elaborado_por = fe.id -- Firma de elaborado_por
+LEFT JOIN 
+  firmas fr ON c.revisado_por = fr.id -- Firma de revisado_por
+LEFT JOIN 
+  firmas fa ON c.autorizado_por = fa.id -- Firma de autorizado_por
+WHERE 
+  c.id = $1
+GROUP BY 
+  c.id, ft.objetivo, ft.perfil_ingreso, ft.perfil_egreso, ft.perfil_del_docente, 
+  ft.metodologia, ft.bibliografia, ft.criterios_acreditacion, ft.reconocimiento,
+  fe.nombre, fe.cargo, fr.nombre, fr.cargo, fa.nombre, fa.cargo, t.nombre; `;
+
     const { rows } = await pool.query(query, [id]);
-    
+
     // Validar si no hay resultados
     if (!rows || rows.length === 0) {
       return null;
     }
-  
+
     // Verificar si los materiales y equipamiento están vacíos y asignar "vacío" o "0"
     const curso = rows[0];
-    
-    curso.materiales = curso.materiales.length > 0 ? curso.materiales : null;
-    curso.equipamiento = curso.equipamiento.length > 0 ? curso.equipamiento : null;
-  
-    return curso;
-  }
 
-,async create(curso) {
+    curso.materiales = curso.materiales.length > 0 ? curso.materiales : null;
+    curso.equipamiento =
+      curso.equipamiento.length > 0 ? curso.equipamiento : null;
+
+    return curso;
+  },
+
+  async create(curso) {
     const query = `
       INSERT INTO cursos (
         nombre, 
@@ -313,14 +341,14 @@ WHERE pc.plantel_id = ${idPlantel} AND pc.estatus = true
       //   SELECT id FROM planteles WHERE id_usuario = $1 LIMIT 1
       // `;
       // const plantelResult = await pool.query(plantelQuery, [usuarioId]);
-  
+
       // if (plantelResult.rows.length === 0) {
       //   throw new Error("No se encontró un plantel asociado al usuario.");
       // }
-  
+
       // const plantelId = plantelResult.rows[0].id;
       const plantelId = usuarioId;
-  
+
       // 2️⃣ Consultar los cursos con la validación de "registrado"
       const cursosQuery = `
         SELECT 
@@ -356,68 +384,69 @@ WHERE pc.plantel_id = ${idPlantel} AND pc.estatus = true
         WHERE 
           c.especialidad_id = $1
       `;
-  
-      const cursosResult = await pool.query(cursosQuery, [especialidadId, plantelId]);
-  
+
+      const cursosResult = await pool.query(cursosQuery, [
+        especialidadId,
+        plantelId,
+      ]);
+
       return cursosResult.rows;
     } catch (error) {
       console.error("Error al obtener los cursos:", error);
       throw error;
     }
-  }
-  
-//   async getCursosByEspecialidadId(especialidadId, usuarioId) {
-//     const query = `
-//   SELECT 
-//     c.id, 
-//     c.nombre, 
-//     c.descripcion, 
-//     c.duracion_horas, 
-//     c.nivel, 
-//     c.costo, 
-//     c.requisitos, 
-//     c.estatus, 
-//     c.created_at, 
-//     c.updated_at, 
-//     c.usuario_validador_id, 
-//     c.fecha_validacion, 
-//     c.modalidad, 
-//     c.clave, 
-//     c.area_id, 
-//     c.especialidad_id, 
-//     c.tipo_curso_id, 
-//     c.vigencia_inicio, 
-//     c.fecha_publicacion, 
-//     c.ultima_actualizacion,
-//     CASE 
-//       WHEN pc.curso_id IS NOT NULL THEN true
-//       ELSE false
-//     END AS registrado
-//   FROM 
-//     cursos c
-//   LEFT JOIN 
-//     planteles_cursos pc 
-//     ON c.id = pc.curso_id 
-//   LEFT JOIN 
-//     planteles p 
-//     ON pc.plantel_id = p.id
-//   LEFT JOIN 
-//     usuarios u 
-//     ON p.id_usuario = u.id
-//   WHERE 
-//     c.especialidad_id = $1`; 
+  },
 
-// try {
-//   const { rows } = await pool.query(query, [especialidadId]);
-//   return rows;
-// } catch (error) {
-//   console.error("Error al obtener los cursos:", error);
-//   throw error;
-// }
+  //   async getCursosByEspecialidadId(especialidadId, usuarioId) {
+  //     const query = `
+  //   SELECT
+  //     c.id,
+  //     c.nombre,
+  //     c.descripcion,
+  //     c.duracion_horas,
+  //     c.nivel,
+  //     c.costo,
+  //     c.requisitos,
+  //     c.estatus,
+  //     c.created_at,
+  //     c.updated_at,
+  //     c.usuario_validador_id,
+  //     c.fecha_validacion,
+  //     c.modalidad,
+  //     c.clave,
+  //     c.area_id,
+  //     c.especialidad_id,
+  //     c.tipo_curso_id,
+  //     c.vigencia_inicio,
+  //     c.fecha_publicacion,
+  //     c.ultima_actualizacion,
+  //     CASE
+  //       WHEN pc.curso_id IS NOT NULL THEN true
+  //       ELSE false
+  //     END AS registrado
+  //   FROM
+  //     cursos c
+  //   LEFT JOIN
+  //     planteles_cursos pc
+  //     ON c.id = pc.curso_id
+  //   LEFT JOIN
+  //     planteles p
+  //     ON pc.plantel_id = p.id
+  //   LEFT JOIN
+  //     usuarios u
+  //     ON p.id_usuario = u.id
+  //   WHERE
+  //     c.especialidad_id = $1`;
 
-//   }
-,  
+  // try {
+  //   const { rows } = await pool.query(query, [especialidadId]);
+  //   return rows;
+  // } catch (error) {
+  //   console.error("Error al obtener los cursos:", error);
+  //   throw error;
+  // }
 
+  //   }
   async getDetailedCursos() {
     const query = `
       SELECT 
@@ -448,12 +477,14 @@ WHERE pc.plantel_id = ${idPlantel} AND pc.estatus = true
       FROM cursos
       WHERE id = $1;
     `;
-    const { rows: [curso] } = await pool.query(querySelect, [id]);
-  
+    const {
+      rows: [curso],
+    } = await pool.query(querySelect, [id]);
+
     if (!curso) {
       return null; // Si el curso no existe
     }
-  
+
     const nuevoEstatus = !curso.estatus; // Invierte el valor actual
     const queryUpdate = `
       UPDATE cursos
@@ -465,8 +496,6 @@ WHERE pc.plantel_id = ${idPlantel} AND pc.estatus = true
     const { rows } = await pool.query(queryUpdate, values);
     return rows[0]; // Devuelve el curso actualizado
   },
-  
-  
 
   async getCursosByIdDocente(idUsuario) {
     try {
