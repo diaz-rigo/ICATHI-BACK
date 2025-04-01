@@ -47,15 +47,23 @@ app.use(express.json());
 //   next();
 // });
 // const cors = require("cors");
+const allowedOrigins = [
+  "https://icathi.vercel.app",
+  "http://201.116.27.119:4200"
+];
 
 
-// Configuración de CORS con el paquete `cors`
 app.use(cors({
-  origin: "https://icathi.vercel.app", // Solo permite este dominio
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
-
 // Permitir preflight requests (OPTIONS)
 app.options("*", cors());
 
