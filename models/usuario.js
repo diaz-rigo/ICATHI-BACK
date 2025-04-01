@@ -82,25 +82,37 @@ const Usuario = {
   async crearUsuario(data) {
     const { nombre, apellidos, email, username, password, rol } = data;
   
-    // Generar el hash de la contraseña usando bcrypt
-    const saltRounds = 10; // Número de rondas de salt
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-  
-    const query = `
-      INSERT INTO usuarios (nombre, apellidos, email, username, password_hash, rol, estatus)
-      VALUES ($1, $2, $3, $4, $5, $6, false)
-      RETURNING *;
-    `;
-    const values = [nombre, apellidos, email, username, hashedPassword, rol];
-  
+    // Verificar si el correo ya está registrado
+    const checkEmailQuery = 'SELECT * FROM usuarios WHERE email = $1';
+    
     try {
+      const emailResult = await pool.query(checkEmailQuery, [email]);
+      
+      // Si ya existe un usuario con el correo, devolver un error
+      if (emailResult.rows.length > 0) {
+        throw new Error('El correo electrónico ya está registrado');
+      }
+  
+      // Generar el hash de la contraseña usando bcrypt
+      const saltRounds = 10; // Número de rondas de salt
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+  
+      const query = `
+        INSERT INTO usuarios (nombre, apellidos, email, username, password_hash, rol, estatus)
+        VALUES ($1, $2, $3, $4, $5, $6, false)
+        RETURNING *;
+      `;
+      const values = [nombre, apellidos, email, username, hashedPassword, rol];
+      
       const result = await pool.query(query, values);
       return result.rows[0]; // Retorna el usuario creado
+  
     } catch (error) {
       console.error('Error al crear usuario:', error.message);
       throw error;
     }
   }
+  
   
 ,
   // Listar todos los usuarios

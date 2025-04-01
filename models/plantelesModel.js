@@ -3,7 +3,6 @@ const pool = require('../config/database');
 const { enviarCorreo } = require('../config/nodemailer'); // Importa la función para enviar correos
 
 const PlantelesModel = {
-
   async create(plantel) {
     const saltRounds = 10;
     const password = generateRandomPassword();
@@ -11,17 +10,25 @@ const PlantelesModel = {
     const username = generateUsername(plantel.nombre);
 
     try {
+      // Verificar si el correo ya existe
+      const emailCheckQuery = 'SELECT 1 FROM usuarios WHERE email = $1';
+      const emailCheckResult = await pool.query(emailCheckQuery, [plantel.email]);
+
+      if (emailCheckResult.rows.length > 0) {
+        throw new Error('El correo electrónico ya está registrado en el sistema');
+      }
+
       // Insertar el usuario primero
       const userQuery = `
         INSERT INTO usuarios (
             nombre, apellidos, email, telefono, username, password_hash, rol, estatus
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`;
-      
+
       const userValues = [
         plantel.director, '', plantel.email, plantel.telefono || null,
         username, hashedPassword, 'PLANTEL', true
       ];
-      
+
       const userResult = await pool.query(userQuery, userValues);
       const userId = userResult.rows[0].id;
 
@@ -31,15 +38,15 @@ const PlantelesModel = {
             nombre, direccion, telefono, email, director, capacidad_alumnos,
             estatus, estado, municipio, password, id_usuario
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`;
-      
+
       const plantelValues = [
         plantel.nombre, plantel.direccion, plantel.telefono || null, plantel.email || null,
         plantel.director, plantel.capacidad_alumnos, plantel.estatus !== undefined ? plantel.estatus : true,
         plantel.estado, plantel.municipio, hashedPassword, userId
       ];
-      
+
       const plantelResult = await pool.query(plantelQuery, plantelValues);
-      
+
       // Configuración del correo
       const mailOptions = {
         from: '"ICATHI" <icathi.edu@gmail.com>',
@@ -82,8 +89,7 @@ const PlantelesModel = {
           </div>
         `,
       };
-      
-  
+
       // Enviar el correo de credenciales
       await enviarCorreo(mailOptions);
 
@@ -94,6 +100,10 @@ const PlantelesModel = {
       throw error;
     }
   },
+// };
+
+
+
 
   async getAll() {
     const query = 'SELECT * FROM planteles';
@@ -139,52 +149,92 @@ const PlantelesModel = {
 
   async update(id, plantel) {
     const saltRounds = 10;
+  
+    try {
+      // Generar hash de la nueva contraseña si se proporciona
+      const hashedPassword = plantel.password
+        ? await bcrypt.hash(plantel.password, saltRounds)
+        : null;
+  
+      const query = `
+        UPDATE planteles
+        SET nombre = $1,
+            direccion = $2,
+            telefono = $3,
+            email = $4,
+            director = $5,
+            capacidad_alumnos = $6,
+            estatus = $7,
+            estado = $8,
+            municipio = $9,
+            password = COALESCE($10, password),  -- Se usa $10 para hashedPassword
+            updated_at = NOW()
+        WHERE id = $11 RETURNING *`;  // Asegurarse de que $11 se corresponde con 'id'
+        
+      const values = [
+        plantel.nombre,
+        plantel.direccion,
+        plantel.telefono || null,
+        plantel.email || null,
+        plantel.director,
+        plantel.capacidad_alumnos,
+        plantel.estatus || true,
+        plantel.estado,
+        plantel.municipio,
+        hashedPassword,  // Aquí se pasa el hash de la contraseña en la posición $10
+        id,  // El id va en la posición $11
+      ];
+  
+      const { rows } = await pool.query(query, values);
+      return rows[0];
+    } catch (error) {
+      console.error('Error al actualizar plantel:', error);
+      throw new Error('Error al actualizar plantel');
+    }
+  }
+  
+,  
 
-    // Generar hash de la nueva contraseña si se proporciona
-    const hashedPassword = plantel.password
-      ? await bcrypt.hash(plantel.password, saltRounds)
-      : null;
 
-    const query = `
-      UPDATE planteles
-      SET nombre = $1,
-          direccion = $2,
-          telefono = $3,
-          email = $4,
-          director = $5,
-          capacidad_alumnos = $6,
-          estatus = $7,
-          usuario_gestor_id = $8,
-          estado = $9,
-          municipio = $10,
-          password = COALESCE($11, password),
-          updated_at = NOW()
-      WHERE id = $12 RETURNING *`;
-    const values = [
-      plantel.nombre,
-      plantel.direccion,
-      plantel.telefono || null,
-      plantel.email || null,
-      plantel.director,
-      plantel.capacidad_alumnos,
-      plantel.estatus || true,
-      plantel.usuario_gestor_id || null,
-      plantel.estado,
-      plantel.municipio,
-      hashedPassword, // Aquí también pasa el hash directamente
-      id,
-    ];
-    const { rows } = await pool.query(query, values);
-    return rows[0];
-  },
+
 
   async delete(id) {
-    const query = 'DELETE FROM planteles WHERE id = $1 RETURNING *';
-    const { rows } = await pool.query(query, [id]);
-    return rows[0];
-  },
-
-
+    try {
+      // 1️⃣ Obtener el id del usuario asociado al plantel
+      const query1 = `SELECT id_usuario FROM planteles WHERE id = $1`;
+      const { rows } = await pool.query(query1, [id]);
+  
+      if (rows.length === 0) {
+        throw new Error('El plantel no existe');
+      }
+  
+      const idUsuarioPlantel = rows[0].id_usuario;
+      // 3️⃣ Eliminar el plantel (ya se elimina por la relación con el usuario, si corresponde)
+      const deletePlantelQuery = `DELETE FROM planteles WHERE id = $1`;
+      const { rowCount } = await pool.query(deletePlantelQuery, [id]);
+  
+      if (rowCount === 0) {
+        throw new Error('El plantel no se pudo eliminar, ya no existe');
+      }
+      // 2️⃣ Eliminar el usuario asociado al plantel (si existe)
+      if (idUsuarioPlantel) {
+        const query2 = `DELETE FROM usuarios WHERE id = $1`;
+        await pool.query(query2, [idUsuarioPlantel]);
+      }
+  
+  
+  
+      // 4️⃣ Retornar un mensaje de éxito
+      return { message: 'Plantel y usuario eliminados correctamente' };
+  
+    } catch (error) {
+      console.error('Error en delete:', error.message, error.stack);
+      throw new Error(`Error al eliminar: ${error.message}`);
+    }
+  }
+  
+  
+,  
   async getPlantelDetails(plantelId) {
     const query = `
       SELECT 
