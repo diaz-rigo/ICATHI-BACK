@@ -49,6 +49,7 @@ app.use(express.json());
 // const cors = require("cors");
 const allowedOrigins = [
   "https://icathi.vercel.app",
+  "http://localhost:4200",
   "http://201.116.27.119:4200"
 ];
 
