@@ -40,7 +40,6 @@ exports.getById = async (req, res) => {
   }
 };
 
-
 exports.getByIdInfoReporte = async (req, res) => {
   try {
     const { id } = req.params;
@@ -75,14 +74,13 @@ exports.getByIdInfoReporte = async (req, res) => {
       datosCurso.autorizado_por,
     ]);
 
-    // Organizar las firmas por tipo
-    const firmas = firmasResult.rows.reduce((acc, firma) => {
-      acc[firma.tipo_firma.toLowerCase()] = {
-        nombre: firma.nombre || "No disponible",
-        cargo: firma.cargo || "No disponible",
+    const firmasPorId = {};
+    firmasResult.rows.forEach((firma) => {
+      firmasPorId[firma.id] = {
+        nombre: firma.nombre || "",
+        cargo: firma.cargo || "",
       };
-      return acc;
-    }, {});
+    });
 
     // Determinar etiquetas dinámicas según el tipo de curso
     const etiquetasCurso = {
@@ -93,7 +91,8 @@ exports.getByIdInfoReporte = async (req, res) => {
       },
       2: {
         ETIQUETA_BIBLIOGRAFIA: "BIBLIOGRAFÍA",
-        ETIQUETA_CRITERIOS: "REQUISITOS TÉCNICOS PARA EL ESTUDIO O TUTORÍA EN LÍNEA",
+        ETIQUETA_CRITERIOS:
+          "REQUISITOS TÉCNICOS PARA EL ESTUDIO O TUTORÍA EN LÍNEA",
         ETIQUETA_RECONOCIMIENTO: "RECONOCIMIENTO AL ALUMNO",
       },
       3: {
@@ -104,7 +103,25 @@ exports.getByIdInfoReporte = async (req, res) => {
     };
 
     // Obtener el conjunto de etiquetas según el tipo de curso
-    const etiquetas = etiquetasCurso[datosCurso.tipo_curso_id] || etiquetasCurso[1];
+    const etiquetas =
+      etiquetasCurso[datosCurso.tipo_curso_id] || etiquetasCurso[1];
+    // Obtener el contenido programático del curso
+    const contenidoProgramaticoQuery = `
+      SELECT 
+        id, tema_nombre, tiempo, competencias, evaluacion, actividades
+      FROM contenido_programatico
+      WHERE id_curso = $1
+    `;
+    //   const firmasResult = await pool.query(firmasQuery, [
+    //   datosCurso.elaborado_por,
+    //   datosCurso.revisado_por,
+    //   datosCurso.autorizado_por,
+    // ]);
+
+    const contenidoProgramaticoResult = await pool.query(
+      contenidoProgramaticoQuery,
+      [datosCurso.id]
+    );
 
     // Construir el objeto de respuesta
     const response = {
@@ -120,10 +137,23 @@ exports.getByIdInfoReporte = async (req, res) => {
       VIGENCIA_INICIO: datosCurso.vigencia_inicio || "No disponible",
       FECHA_PUBLICACION: datosCurso.fecha_publicacion || "No disponible",
       FECHA_VALIDACION: datosCurso.fecha_validacion || "No disponible",
-      ELABORADO_POR: firmas.elaborado || { nombre: "No disponible", cargo: "No disponible" },
-      REVISADO_POR: firmas.revisado || { nombre: "No disponible", cargo: "No disponible" },
-      AUTORIZADO_POR: firmas.autorizado || { nombre: "No disponible", cargo: "No disponible" },
+
+      firmas: {
+        REVISADO_POR: firmasPorId[datosCurso.revisado_por] || {
+          nombre: "",
+          cargo: "",
+        },
+        AUTORIZADO_POR: firmasPorId[datosCurso.autorizado_por] || {
+          nombre: "",
+          cargo: "",
+        },
+        ELABORADO_POR: firmasPorId[datosCurso.elaborado_por] || {
+          nombre: "",
+          cargo: "",
+        },
+      },
       USUARIO_VALIDADOR_ID: datosCurso.usuario_validador_id || "No disponible",
+      CONTENIDOPROGRAMATICO: contenidoProgramaticoResult.rows,
 
       FICHA_TECNICA: {
         OBJETIVO: datosCurso.objetivo || "No disponible",
@@ -147,8 +177,8 @@ exports.getByIdInfoReporte = async (req, res) => {
             NOMBRE: etiquetas.ETIQUETA_RECONOCIMIENTO,
             VALOR: "Reconocimiento",
             DATO: datosCurso.reconocimiento || "No disponible",
-          }
-        ]
+          },
+        ],
       },
 
       MATERIALES: (() => {
@@ -165,7 +195,8 @@ exports.getByIdInfoReporte = async (req, res) => {
         }
         return materiales.map((m) => ({
           material_descripcion: m.material_descripcion || "No disponible",
-          material_unidad_de_medida: m.material_unidad_de_medida || "No disponible",
+          material_unidad_de_medida:
+            m.material_unidad_de_medida || "No disponible",
           material_cantidad_10: m.material_cantidad_10 || 0,
           material_cantidad_15: m.material_cantidad_15 || 0,
           material_cantidad_20: m.material_cantidad_20 || 0,
@@ -185,8 +216,10 @@ exports.getByIdInfoReporte = async (req, res) => {
           return 0;
         }
         return equipamiento.map((e) => ({
-          equipamiento_descripcion: e.equipamiento_descripcion || "No disponible",
-          equipamiento_unidad_de_medida: e.equipamiento_unidad_de_medida || "No disponible",
+          equipamiento_descripcion:
+            e.equipamiento_descripcion || "No disponible",
+          equipamiento_unidad_de_medida:
+            e.equipamiento_unidad_de_medida || "No disponible",
           equipamiento_cantidad_10: e.equipamiento_cantidad_10 || 0,
           equipamiento_cantidad_15: e.equipamiento_cantidad_15 || 0,
           equipamiento_cantidad_20: e.equipamiento_cantidad_20 || 0,
@@ -306,7 +339,7 @@ exports.getByIdInfoReporte = async (req, res) => {
 //     // Inserta curso
 //     const cursoQuery = `
 //       INSERT INTO cursos (
-//         nombre, clave, duracion_horas, descripcion, nivel, costo, area_id, especialidad_id, tipo_curso_id, 
+//         nombre, clave, duracion_horas, descripcion, nivel, costo, area_id, especialidad_id, tipo_curso_id,
 //         vigencia_inicio, fecha_publicacion, ultima_actualizacion, revisado_por, autorizado_por, elaborado_por, archivo_url
 //       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id
 //     `;
@@ -347,9 +380,9 @@ exports.getByIdInfoReporte = async (req, res) => {
 //     };
 
 //     await client.query(
-//       `INSERT INTO ficha_tecnica 
+//       `INSERT INTO ficha_tecnica
 //        (id_curso, objetivo, perfil_ingreso, perfil_egreso, perfil_del_docente, metodologia,
-//         bibliografia, criterios_acreditacion, reconocimiento) 
+//         bibliografia, criterios_acreditacion, reconocimiento)
 //        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
 //       Object.values(fichaTecnicaParams)
 //     );
@@ -366,8 +399,8 @@ exports.getByIdInfoReporte = async (req, res) => {
 //       };
 
 //       await client.query(
-//         `INSERT INTO material 
-//          (id_curso, descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20) 
+//         `INSERT INTO material
+//          (id_curso, descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20)
 //          VALUES ($1, $2, $3, $4, $5, $6)`,
 //         Object.values(materialParams)
 //       );
@@ -385,8 +418,8 @@ exports.getByIdInfoReporte = async (req, res) => {
 //       };
 
 //       await client.query(
-//         `INSERT INTO equipamiento 
-//          (id_curso, descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20) 
+//         `INSERT INTO equipamiento
+//          (id_curso, descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20)
 //          VALUES ($1, $2, $3, $4, $5, $6)`,
 //         Object.values(equipamientoParams)
 //       );
@@ -404,8 +437,8 @@ exports.getByIdInfoReporte = async (req, res) => {
 //       };
 
 //       await client.query(
-//         `INSERT INTO contenido_programatico 
-//          (id_curso, tema_nombre, tiempo, competencias, evaluacion, actividades) 
+//         `INSERT INTO contenido_programatico
+//          (id_curso, tema_nombre, tiempo, competencias, evaluacion, actividades)
 //          VALUES ($1, $2, $3, $4, $5, $6)`,
 //         Object.values(contenidoParams)
 //       );
@@ -428,7 +461,7 @@ exports.getByIdInfoReporte = async (req, res) => {
 exports.create = async (req, res) => {
   const client = await pool.connect();
   let uploadResult = null;
-  
+
   try {
     console.log("Datos recibidos del frontend  para la creacion:", req.body);
     // console.log("Archivo recibido:", req.file);
@@ -455,39 +488,83 @@ exports.create = async (req, res) => {
     // }
 
     const {
-      nombre, clave, duracion_horas, descripcion, costo, nivel, area_id,
-      especialidad_id, tipo_curso_id, vigencia_inicio, fecha_publicacion,
-      ultima_actualizacion, revisado_por, cargo_revisado_por, autorizado_por,
-      cargo_autorizado_por, elaborado_por, cargo_elaborado_por, objetivos,
-      materiales, equipamiento, contenidoProgramatico
+      nombre,
+      clave,
+      duracion_horas,
+      descripcion,
+      costo,
+      nivel,
+      area_id,
+      especialidad_id,
+      tipo_curso_id,
+      vigencia_inicio,
+      fecha_publicacion,
+      ultima_actualizacion,
+      revisado_por,
+      cargo_revisado_por,
+      autorizado_por,
+      cargo_autorizado_por,
+      elaborado_por,
+      cargo_elaborado_por,
+      objetivos,
+      materiales,
+      equipamiento,
+      contenidoProgramatico,
     } = req.body;
 
     // Validaciones básicas
-    if (!nombre || !clave || !duracion_horas || !descripcion || !tipo_curso_id) {
-      return res.status(400).json({ error: "Los campos obligatorios deben completarse" });
+    if (
+      !nombre ||
+      !clave ||
+      !duracion_horas ||
+      !descripcion ||
+      !tipo_curso_id
+    ) {
+      return res
+        .status(400)
+        .json({ error: "Los campos obligatorios deben completarse" });
     }
 
     // Validar firmantes
     if (!revisado_por || !autorizado_por || !elaborado_por) {
-      return res.status(400).json({ error: "Debe especificar todos los firmantes" });
+      return res
+        .status(400)
+        .json({ error: "Debe especificar todos los firmantes" });
     }
 
     if (!cargo_revisado_por || !cargo_autorizado_por || !cargo_elaborado_por) {
-      return res.status(400).json({ error: "Debe especificar los cargos de todos los firmantes" });
+      return res
+        .status(400)
+        .json({ error: "Debe especificar los cargos de todos los firmantes" });
     }
 
     await client.query("BEGIN");
 
     // Obtener o crear firmas
     const firmaIds = {
-      revisado: await obtenerOcrearFirma(client, revisado_por, cargo_revisado_por, "Revisado"),
-      autorizado: await obtenerOcrearFirma(client, autorizado_por, cargo_autorizado_por, "Autorizado"),
-      elaborado: await obtenerOcrearFirma(client, elaborado_por, cargo_elaborado_por, "Elaborado")
+      revisado: await obtenerOcrearFirma(
+        client,
+        revisado_por,
+        cargo_revisado_por,
+        "Revisado"
+      ),
+      autorizado: await obtenerOcrearFirma(
+        client,
+        autorizado_por,
+        cargo_autorizado_por,
+        "Autorizado"
+      ),
+      elaborado: await obtenerOcrearFirma(
+        client,
+        elaborado_por,
+        cargo_elaborado_por,
+        "Elaborado"
+      ),
     };
 
     // Resto del código de inserción (curso, ficha técnica, materiales, etc.) permanece igual
     // ... [código existente]
-        const parseJSON = (data) =>
+    const parseJSON = (data) =>
       typeof data === "string" ? JSON.parse(data) : data;
     const parsedObjetivos = parseJSON(objetivos) || {};
     const parsedMateriales = parseJSON(materiales) || [];
@@ -504,7 +581,7 @@ exports.create = async (req, res) => {
     `;
     // const cursoQuery = `
     //   INSERT INTO cursos (
-    //     nombre, clave, duracion_horas, descripcion, nivel, costo, area_id, especialidad_id, tipo_curso_id, 
+    //     nombre, clave, duracion_horas, descripcion, nivel, costo, area_id, especialidad_id, tipo_curso_id,
     //     vigencia_inicio, fecha_publicacion, ultima_actualizacion, revisado_por, autorizado_por, elaborado_por, archivo_url
     //   ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id
     // `;
@@ -620,16 +697,17 @@ exports.create = async (req, res) => {
       firmaIds.revisado,
       firmaIds.autorizado,
       id_curso,
-      vigencia_inicio || null
+      vigencia_inicio || null,
     ]);
 
     await client.query("COMMIT");
-    res.status(201).json({ message: "Curso registrado exitosamente", id_curso });
-    
+    res
+      .status(201)
+      .json({ message: "Curso registrado exitosamente", id_curso });
   } catch (error) {
     await client.query("ROLLBACK");
     console.error("Error al registrar el curso:", error);
-    
+
     if (uploadResult?.public_id) {
       try {
         await cloudinary.uploader.destroy(uploadResult.public_id);
@@ -637,11 +715,11 @@ exports.create = async (req, res) => {
         console.error("Error al eliminar archivo de Cloudinary:", e);
       }
     }
-    
-    res.status(500).json({ 
-      error: "Error al registrar el curso", 
+
+    res.status(500).json({
+      error: "Error al registrar el curso",
       details: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   } finally {
     client.release();
@@ -654,19 +732,18 @@ async function obtenerOcrearFirma(client, nombre, cargo, tipo) {
     `SELECT id FROM firmas WHERE nombre = $1 AND cargo = $2 AND tipo_firma = $3 LIMIT 1`,
     [nombre, cargo, tipo]
   );
-  
+
   if (existing.length > 0) {
     return existing[0].id;
   }
-  
+
   const { rows: newFirma } = await client.query(
     `INSERT INTO firmas (nombre, cargo, tipo_firma) VALUES ($1, $2, $3) RETURNING id`,
     [nombre, cargo, tipo]
   );
-  
+
   return newFirma[0].id;
 }
-
 
 exports.update = async (req, res) => {
   try {
@@ -894,13 +971,13 @@ exports.getCourseDetails = async (req, res) => {
       WHERE c.id = $1
     `;
     const cursoResult = await client.query(cursoQuery, [id]);
-    console.log("cursoResult",cursoResult )
+    console.log("cursoResult", cursoResult);
     if (cursoResult.rows.length === 0) {
       return res.status(404).json({ error: "Curso no encontrado" });
     }
-    
+
     const curso = cursoResult.rows[0];
-    console.log("cursoResult",curso )
+    console.log("cursoResult", curso);
 
     // Obtener la ficha técnica del curso
     const fichaQuery = `
@@ -920,7 +997,10 @@ exports.getCourseDetails = async (req, res) => {
       FROM contenido_programatico
       WHERE id_curso = $1
     `;
-    const contenidoProgramaticoResult = await client.query(contenidoProgramaticoQuery, [id]);
+    const contenidoProgramaticoResult = await client.query(
+      contenidoProgramaticoQuery,
+      [id]
+    );
 
     // Obtener los materiales del curso
     const materialesQuery = `
@@ -952,7 +1032,7 @@ exports.getCourseDetails = async (req, res) => {
       curso.revisado_por,
       curso.autorizado_por,
     ]);
-    console.log("firmasResult",firmasResult)
+    console.log("firmasResult", firmasResult);
     // Organizar las firmas por tipo
     // const firmas = firmasResult.rows.reduce((acc, firma) => {
     //   acc[firma.tipo_firma.toLowerCase()] = {
@@ -963,21 +1043,27 @@ exports.getCourseDetails = async (req, res) => {
     // }, {});
     // Crear un mapa de firmas por ID para referencia rápida
     const firmasPorId = {};
-    firmasResult.rows.forEach(firma => {
+    firmasResult.rows.forEach((firma) => {
       firmasPorId[firma.id] = {
         nombre: firma.nombre || "",
-        cargo: firma.cargo || ""
+        cargo: firma.cargo || "",
       };
     });
 
     // Formar la respuesta con todos los detalles del curso
     const cursoDetalles = {
       ...curso,
-        firmas: {
-          revisado: firmasPorId[curso.revisado_por] || { nombre: "", cargo: "" },
-          autorizado: firmasPorId[curso.autorizado_por] || { nombre: "", cargo: "" },
-          elaborado: firmasPorId[curso.elaborado_por] || { nombre: "", cargo: "" },
+      firmas: {
+        revisado: firmasPorId[curso.revisado_por] || { nombre: "", cargo: "" },
+        autorizado: firmasPorId[curso.autorizado_por] || {
+          nombre: "",
+          cargo: "",
         },
+        elaborado: firmasPorId[curso.elaborado_por] || {
+          nombre: "",
+          cargo: "",
+        },
+      },
       fichaTecnica,
       contenidoProgramatico: contenidoProgramaticoResult.rows,
       materiales: materialesResult.rows,
@@ -1010,6 +1096,7 @@ exports.getCursosByEspecialidadId = async (req, res) => {
     res.status(500).json({ error: "Error al obtener los cursos" });
   }
 };
+
 exports.updateCourseDetails = async (req, res) => {
   const client = await pool.connect();
   try {
@@ -1046,7 +1133,7 @@ exports.updateCourseDetails = async (req, res) => {
     const parseJSON = (data) =>
       typeof data === "string" ? JSON.parse(data) : data;
     objetivos = parseJSON(objetivos) || {};
-    contenidoProgramatico = parseJSON(contenidoProgramatico) || { temas: [] };
+    contenidoProgramatico = parseJSON(contenidoProgramatico);
     materiales = parseJSON(materiales) || [];
     equipamiento = parseJSON(equipamiento) || [];
 
@@ -1057,7 +1144,11 @@ exports.updateCourseDetails = async (req, res) => {
       "SELECT revisado_por, autorizado_por, elaborado_por FROM cursos WHERE id = $1",
       [id]
     );
-    const { revisado_por: oldRevisadoPor, autorizado_por: oldAutorizadoPor, elaborado_por: oldElaboradoPor } = cursoResult.rows[0];
+    const {
+      revisado_por: oldRevisadoPor,
+      autorizado_por: oldAutorizadoPor,
+      elaborado_por: oldElaboradoPor,
+    } = cursoResult.rows[0];
 
     // **Insertar nuevas firmas y obtener sus IDs**
     const insertFirma = async (nombre, cargo, tipo_firma) => {
@@ -1071,9 +1162,21 @@ exports.updateCourseDetails = async (req, res) => {
       return null;
     };
 
-    const newRevisadoPor = await insertFirma(revisado_por, cargo_revisado_por, "revisado_por");
-    const newAutorizadoPor = await insertFirma(autorizado_por, cargo_autorizado_por, "autorizado_por");
-    const newElaboradoPor = await insertFirma(elaborado_por, cargo_elaborado_por, "elaborado_por");
+    const newRevisadoPor = await insertFirma(
+      revisado_por,
+      cargo_revisado_por,
+      "revisado_por"
+    );
+    const newAutorizadoPor = await insertFirma(
+      autorizado_por,
+      cargo_autorizado_por,
+      "autorizado_por"
+    );
+    const newElaboradoPor = await insertFirma(
+      elaborado_por,
+      cargo_elaborado_por,
+      "elaborado_por"
+    );
 
     // **Actualizar curso con los nuevos IDs de las firmas**
     await client.query(
@@ -1108,7 +1211,9 @@ exports.updateCourseDetails = async (req, res) => {
       await client.query("DELETE FROM firmas WHERE id = $1", [oldRevisadoPor]);
     }
     if (oldAutorizadoPor) {
-      await client.query("DELETE FROM firmas WHERE id = $1", [oldAutorizadoPor]);
+      await client.query("DELETE FROM firmas WHERE id = $1", [
+        oldAutorizadoPor,
+      ]);
     }
     if (oldElaboradoPor) {
       await client.query("DELETE FROM firmas WHERE id = $1", [oldElaboradoPor]);
@@ -1152,48 +1257,15 @@ exports.updateCourseDetails = async (req, res) => {
       );
     }
 
-
-
+    // **Material**
 
     // **Material**
-    // if (materiales && materiales.length > 0) {
-    //   const materialExists = await client.query(
-    //     "SELECT 1 FROM material WHERE id_curso = $1",
-    //     [id]
-    //   );
-
-    //   if (materialExists.rowCount > 0) {
-    //     console.log("Los materiales para el curso con ID", id, "ya existen.");
-    //     await client.query("DELETE FROM material WHERE id_curso = $1", [id]);
-    //   }
-
-    //   for (const material of materiales) {
-    //     const materialParams = {
-    //       id_curso: id,
-    //       descripcion: material.descripcion || "N/C",
-    //       unidad_de_medida: material.unidad_de_medida || "N/C",
-    //       cantidad_10: material.cantidad10 || 0,
-    //       cantidad_15: material.cantidad15 || 0,
-    //       cantidad_20: material.cantidad20 || 0,
-    //     };
-
-    //     const query = `
-    //       INSERT INTO material 
-    //       (id_curso, descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20) 
-    //       VALUES ($1, $2, $3, $4, $5, $6)
-    //     `;
-
-    //     await client.query(query, Object.values(materialParams));
-    //   }
-    // } else {
-    //   console.log("No se proporcionaron materiales para el curso con ID", id);
-    // }
-// **Material**
     if (materiales) {
       try {
         // Parsear materiales si viene como string JSON
-        let materialesArray = typeof materiales === 'string' ? JSON.parse(materiales) : materiales;
-        
+        let materialesArray =
+          typeof materiales === "string" ? JSON.parse(materiales) : materiales;
+
         if (!Array.isArray(materialesArray)) {
           materialesArray = [];
         }
@@ -1206,14 +1278,18 @@ exports.updateCourseDetails = async (req, res) => {
           );
 
           // Obtener IDs de materiales existentes en la base de datos
-          const existingIds = materialExists.rows.map(row => row.id);
-          
+          const existingIds = materialExists.rows.map((row) => row.id);
+
           // Obtener IDs de materiales que vienen en la solicitud (que no son null)
-          const incomingIds = materialesArray.filter(m => m.id).map(m => m.id);
-          
+          const incomingIds = materialesArray
+            .filter((m) => m.id)
+            .map((m) => m.id);
+
           // Identificar materiales a eliminar (están en BD pero no en la solicitud)
-          const idsToDelete = existingIds.filter(id => !incomingIds.includes(id));
-          
+          const idsToDelete = existingIds.filter(
+            (id) => !incomingIds.includes(id)
+          );
+
           // Eliminar materiales que ya no están en la lista
           if (idsToDelete.length > 0) {
             await client.query(
@@ -1244,7 +1320,10 @@ exports.updateCourseDetails = async (req, res) => {
                   cantidad_20 = $6
                 WHERE id = $1
               `;
-              await client.query(query, [material.id, ...Object.values(materialParams).slice(1)]);
+              await client.query(query, [
+                material.id,
+                ...Object.values(materialParams).slice(1),
+              ]);
             } else {
               // Insertar nuevo material
               const query = `
@@ -1253,7 +1332,10 @@ exports.updateCourseDetails = async (req, res) => {
                 VALUES ($1, $2, $3, $4, $5, $6)
                 RETURNING id
               `;
-              const result = await client.query(query, Object.values(materialParams));
+              const result = await client.query(
+                query,
+                Object.values(materialParams)
+              );
               // Aquí podrías capturar el nuevo ID si lo necesitas
             }
           }
@@ -1268,7 +1350,6 @@ exports.updateCourseDetails = async (req, res) => {
     } else {
       console.log("No se proporcionaron materiales para el curso con ID", id);
     }
-
 
     // **Equipamiento**
     if (equipamiento && equipamiento.length > 0) {
@@ -1307,53 +1388,136 @@ exports.updateCourseDetails = async (req, res) => {
     }
 
     // **Contenido Programático**
-    if (
-      contenidoProgramatico &&
-      contenidoProgramatico.temas &&
-      contenidoProgramatico.temas.length > 0
-    ) {
-      const contenidoExists = await client.query(
-        "SELECT 1 FROM contenido_programatico WHERE id_curso = $1",
-        [id]
-      );
+    // **Contenido Programático - Optimizado y Profesional**
+    // **Manejo Profesional de Contenido Programático (Versión Corregida)**
+    if (contenidoProgramatico !== undefined) {
+      try {
+        await client.query("BEGIN");
 
-      if (contenidoExists.rowCount > 0) {
-        console.log(
-          "El contenido programático para el curso con ID",
-          id,
-          "ya existe."
-        );
-        await client.query(
-          "DELETE FROM contenido_programatico WHERE id_curso = $1",
+        // 1. Parsear y normalizar los datos de entrada
+        const contenidoData =
+          typeof contenidoProgramatico === "string"
+            ? JSON.parse(contenidoProgramatico)
+            : contenidoProgramatico;
+
+        const temasArray = Array.isArray(contenidoData)
+          ? contenidoData
+          : contenidoData?.temas || [];
+
+        // 2. Verificar contenido existente en BD
+        const { rows: existingContent } = await client.query(
+          `SELECT id FROM contenido_programatico 
+       WHERE id_curso = $1`,
           [id]
         );
-      }
+        const hadPreviousContent = existingContent.length > 0;
+        const existingIds = existingContent.map((row) => row.id);
 
-      for (const tema of contenidoProgramatico.temas) {
-        const contenidoParams = {
-          id_curso: id,
-          tema_nombre: tema.tema_nombre || "N/C",
-          tiempo: tema.tiempo || 0,
-          competencias: tema.competencias || null,
-          evaluacion: tema.evaluacion || null,
-          actividades: tema.actividades || null,
-        };
+        // 3. Lógica para los diferentes casos
+        if (temasArray.length === 0) {
+          // Caso 1: Se envía array vacío (eliminar todo si existía)
+          if (hadPreviousContent) {
+            await client.query(
+              `DELETE FROM contenido_programatico 
+           WHERE id_curso = $1`,
+              [id]
+            );
+            console.log(
+              `🗑️ Eliminado contenido previo (${existingContent.length} temas) del curso ${id}`
+            );
+          } else {
+            console.log(
+              `ℹ️ No se modificó contenido programático (curso ${id} no tenía temas)`
+            );
+          }
+        } else {
+          // Caso 2: Hay temas para procesar
+          const incomingIds = temasArray.filter((t) => t.id).map((t) => t.id);
 
-        const query = `
-          INSERT INTO contenido_programatico 
-          (id_curso, tema_nombre, tiempo, competencias, evaluacion, actividades) 
-          VALUES ($1, $2, $3, $4, $5, $6)
-        `;
+          // Eliminar temas removidos
+          const idsToDelete = existingIds.filter(
+            (id) => !incomingIds.includes(id)
+          );
+          if (idsToDelete.length > 0) {
+            await client.query(
+              `DELETE FROM contenido_programatico 
+           WHERE id = ANY($1::int[]) AND id_curso = $2`,
+              [idsToDelete, id]
+            );
+            console.log(`✂️ Eliminados ${idsToDelete.length} temas obsoletos`);
+          }
 
-        await client.query(query, Object.values(contenidoParams));
+          // Procesar cada tema (insertar o actualizar)
+          const { insertedCount, updatedCount } = await processTopics(
+            client,
+            id,
+            temasArray,
+            existingIds
+          );
+
+          console.log(
+            `🔄 Sincronizado contenido - Nuevos: ${insertedCount}, Actualizados: ${updatedCount}`
+          );
+        }
+
+        await client.query("COMMIT");
+      } catch (error) {
+        await client.query("ROLLBACK");
+        console.error("⚠️ Error en contenido programático:", error);
+        throw new Error(`Error al procesar contenido: ${error.message}`);
       }
     } else {
-      console.log(
-        "No se proporcionó contenido programático para el curso con ID",
-        id
-      );
+      console.log(`ℹ️ No se envió contenido programático (curso ${id})`);
     }
 
+    // Función auxiliar para procesar temas (versión corregida)
+    async function processTopics(client, courseId, temasArray, existingIds) {
+      let insertedCount = 0;
+      let updatedCount = 0;
+
+      await Promise.all(
+        temasArray.map(async (tema) => {
+          const {
+            id: temaId,
+            tema_nombre,
+            tiempo,
+            competencias,
+            evaluacion,
+            actividades,
+          } = tema;
+          const values = [
+            tema_nombre || "",
+            tiempo || 0,
+            competencias || null,
+            evaluacion || null,
+            actividades || null,
+          ];
+
+          if (temaId && existingIds.includes(temaId)) {
+            // Actualizar tema existente (VERSIÓN CORREGIDA - sin updated_at)
+            await client.query({
+              text: `UPDATE contenido_programatico SET
+          tema_nombre = $1, tiempo = $2, competencias = $3,
+          evaluacion = $4, actividades = $5
+          WHERE id = $6 AND id_curso = $7`,
+              values: [...values, temaId, courseId],
+            });
+            updatedCount++;
+          } else if (!temaId) {
+            // Insertar nuevo tema (sin ID)
+            await client.query({
+              text: `INSERT INTO contenido_programatico 
+          (id_curso, tema_nombre, tiempo, competencias, evaluacion, actividades)
+          VALUES ($1, $2, $3, $4, $5, $6)`,
+              values: [courseId, ...values],
+            });
+            insertedCount++;
+          }
+        })
+      );
+
+      return { insertedCount, updatedCount };
+    }
     await client.query("COMMIT");
     res.status(200).json({ message: "Curso actualizado exitosamente" });
   } catch (error) {

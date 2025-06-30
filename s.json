@@ -1,12 +1,103 @@
 {
-  "objetivo": "Lorem, ipsum dolor sit amet consectetur adipisicing elit. Quo quis unde deserunt dolor assumenda voluptate facere labore fuga, corporis illum illo numquam ullam qui repellendus cupiditate ex atque nulla! Facilis.\\n",
-  "perfil_ingreso": "Lorem, ipsum dolor sit amet consectetur adipisicing elit. Quo quis unde deserunt dolor assumenda voluptate facere labore fuga, corporis illum illo numquam ullam qui repellendus cupiditate ex atque nulla! Facilis.\\n",
-  "perfil_egreso": "Lorem, ipsum dolor sit amet consectetur adipisicing elit. Quo quis unde deserunt dolor assumenda voluptate facere labore fuga, corporis illum illo numquam ullam qui repellendus cupiditate ex atque nulla! Facilis.\\n",
-  "perfil_del_docente": "Lorem, ipsum dolor sit amet consectetur adipisicing elit. Quo quis unde deserunt dolor assumenda voluptate facere labore fuga, corporis illum illo numquam ullam qui repellendus cupiditate ex atque nulla! Facilis.\\n",
-  "metodologia": "vLorem, ipsum dolor sit amet consectetur adipisicing elit. Quo quis unde deserunt dolor assumenda voluptate facere labore fuga, corporis illum illo numquam ullam qui repellendus cupiditate ex atque nulla! Facilis.\\n",
-  "bibliografia": "Lorem, ipsum dolor sit amet consectetur adipisicing elit. Quo quis unde deserunt dolor assumenda voluptate facere labore fuga, corporis illum illo numquam ullam qui repellendus cupiditate ex atque nulla! Facilis.\\n",
-  "criteriosAcreditacion": "bbbbbbb",
-  "reconocimiento": "Lorem, ipsum dolor sit amet consectetur adipisicing elit. Quo quis unde deserunt dolor assumenda voluptate facere labore fuga, corporis illum illo numquam ullam qui repellendus cupiditate ex atque nulla! Facilis.\\n",
-  "id": 22,
-  "criterios_acreditacion": "N/C"
+    "id": 31,
+    "nombre": "Plantel Huichapan",
+    "costo": 200,
+    "duracion_horas": 2,
+    "descripcion": "psdjksjhkldjskldkls skdjskd zsdkjskd djdjdjd jsdjksd sdkjsdkl",
+    "nivel": "Intermedio",
+    "clave": "prueba2025",
+    "area_id": 1,
+    "especialidad_id": 1,
+    "tipo_curso_id": 1,
+    "firmas": {
+        "revisado": {
+            "nombre": "juan ",
+            "cargo": "Programas de Estudio"
+        },
+        "autorizado": {
+            "nombre": "pedro",
+            "cargo": "Directora Académica"
+        },
+        "elaborado": {
+            "nombre": "lalo",
+            "cargo": "Director General"
+        }
+    },
+    "vigencia_inicio": "2025-06-22",
+    "fecha_publicacion": "2025-06-30",
+    "objetivos": {
+        "objetivo": "El alumnado realizará la administración de archivos y utilizará herramientas ofimáticas en \nla plataforma de almacenamiento de datos de internet, mediante ejercicios prácticos.  ",
+        "perfil_ingreso": "• Ser mayor de 15 años \n• Conocimientos básicos de computación e internet",
+        "perfil_egreso": "La persona egresada mostrará las siguientes competencias: \n• Administrar archivos en línea. \n• Administrar el espacio de almacenamiento. \n• Crear, editar y compartir archivos en línea. \n• Utilizar las herramientas ofimáticas en la nube. ",
+        "perfil_del_docente": "El personal docente que imparta este curso deberá cumplir con alguno de los siguientes \nrequisitos: \n• Estudios en: - \nIngeniería en Sistemas Computacionales,  \nLicenciatura en Informática,  \nTSU en Informática, o  \nAfines. \n• Documentos probatorios que acrediten su conocimiento, certificado y/o acreditación \nen temas relacionados a este curso. \n• Experiencia de un año en la impartición de este tipo de cursos.",
+        "metodologia": "• El proceso de enseñanza y aprendizaje deberá realizarse aplicando 80 % del tiempo \npara actividades prácticas y 20 % del tiempo para actividades teóricas. Para trasmitir \nconocimientos teóricos, se utilizará material didáctico diseñado por la o el docente, a \nfin de complementar los temas al alumnado; así mismo, se utilizarán modelos \ndidácticos y tecnológicos. \n• Se aplicarán técnicas grupales e instruccionales, durante el proceso de impartición de \nlas sesiones del curso, como herramientas que contribuyan con el logro de los \nobjetivos del aprendizaje. \n• El docente deberá actuar como facilitador del proceso de enseñanza y aprendizaje, \nayudando a fomentar valores que contribuyan a desarrollar una conciencia en el \nalumnado, de igualdad, equidad de género e inclusión social. \n• El material y el equipo para impartir la capacitación, se especifica en función del \nnúmero de participantes. ",
+        "bibliografia": "• Aulaclic. (2024, 8 de febrero).  Curso de Google Drive. \nhttps://www.aulaclic.es/googledrive/  \n• Google LLC. (2024, 8 de febrero). Ayuda de Google Drive. \nhttps://support.google.com/drive?sjid=17942764223017975644-NC#topic=14940  \n• ITdesk. (2024, 8 de febrero). Proyecto de educación informática con acceso libre. \nhttps://www.itdesk.info/esp/manual/Google_Drive-Manual.pdf  \n• Microsoft Support. (2024, 8 de febrero).  Ayuda y aprendizaje de OneDrive. \nhttps://support.microsoft.com/es-es/onedrive ",
+        "criterios_acreditacion": "Para la acreditación de este curso, el alumnado deberá obtener un promedio mínimo de 8 \ny una asistencia no menor a 80 %, con base en el reglamento del Proceso de Impartición \nde Cursos del Instituto de Capacitación para el Trabajo del Estado de Hidalgo, aprobado \npor el pleno de la Junta Directiva en su Tercera Sesión Ordinaria, celebrada el 26 de \nnoviembre de 2020, mediante acuerdo SO/III/2020/22.",
+        "reconocimiento": "Al concluir y aprobar el curso, la persona egresada obtendrá una constancia del ICATHI. ",
+        "id": 63
+    },
+    "contenidoProgramatico": {
+        "temas": [
+            {
+                "id": 191,
+                "tema_nombre": "1. Acceso de servidores a \ntravés de internet \n1.1 ¿Qué es almacenamiento \nen la nube? \n1.2 Requisitos de uso \n1.3 Servicios y aplicaciones \ndisponibles \n1.4 Iniciar sesión en el servicio \nde almacenamiento en el \nnavegador de internet \n1.5 Partes de la v",
+                "tiempo": 2,
+                "competencias": "Conocimiento \nDesempeño ",
+                "evaluacion": "Cuestionario \nGuía de observación",
+                "actividades": "DOCENTE / \nINSTRUCTOR: Dar a \nconocer los aspectos \ngenerales de acceso a \nservidores a través de \ninternet, tales como sus \nrequisitos de uso, \nservicios y aplicaciones \ndisponibles, cómo iniciar \nsesión, así como las \npartes de la ventana de \ntrabajo, utilizando la \ntécnica demostración – \nejecución. \n \nALUMNO: Conocerá los \naspectos generales de \nacceso a servidores a \ntravés de internet, \nmediante ejercicios \nprácticos solicitados por \nel docente / instructor. "
+            },
+            {
+                "id": 192,
+                "tema_nombre": "2. Gestionar y organizar \narchivos en línea \n2.1 Crear carpetas y archivos \n2.2 Subir y descargar archivos \n2.3 Compartir archivos y \ncarpetas \n2.4 Administrar archivos \n2.5 Administrar espacio de \nalmacenamiento \n2.6 Administrar archivos desde \nel dispos",
+                "tiempo": 6,
+                "competencias": "Desempeño \nProducto ",
+                "evaluacion": "Guía de observación \nLista de cotejo",
+                "actividades": "DOCENTE / \nINSTRUCTOR: \nEjemplificar como crear, \nadministrar, organizar, \ndescargar y compartir \narchivos y carpetas en \nlínea, así como gestionar \nel espacio de \nalmacenamiento, por \nmedio de la técnica demostración – \nejecución. \n \nALUMNO: Mediante \nprácticas podrá crear, \nadministrar, organizar, \ndescargar y compartir \narchivos y carpetas en \nlínea, así como gestionar \nel espacio de \nalmacenamiento. "
+            },
+            {
+                "id": 193,
+                "tema_nombre": "3. Herramientas \nofimáticas en la nube \n3.1 Crear y editar documentos \n3.1.1 Crear y guardar nuevos \ndocumentos \n3.1.2 Dar formato a títulos y \npárrafos. \n3.1.3 Insertar y dar formato a \nimágenes, tablas y dibujos \n3.1.4 Configurar la página e \nimprimir e",
+                "tiempo": 30,
+                "competencias": "Desempeño \nProducto ",
+                "evaluacion": "Guía de observación \nLista de cotejo ",
+                "actividades": "\nDOCENTE / \nINSTRUCTOR: Explicar \nel procedimiento para \ncrear y editar \ndocumentos, \npresentaciones, hojas de \ncálculo, gráficos y \nformularios en la nube, \nasí como la forma de \ntrabajo individual y \ncolaborativo, cómo \nrealizar la descarga de \ndocumentos en \ndiferentes versiones y \ncómo trabajar sin \nconexión a internet; \nutilizar la técnica \ndemostración – \nejecución. \n \nALUMNO: Mediante \nprácticas podrá crear y \neditar documentos, \npresentaciones, hojas de \ncálculo, gráficos y \nformularios en la nube, \nasimismo conocerá la \nforma de trabajo \nindividual y colaborativo, \ncómo realizar la \ndescarga de documentos \nen diferentes versiones y \ncómo trabajar sin \nconexión a internet. "
+            }
+        ]
+    },
+    "materiales": [
+        {
+            "id": 150,
+            "descripcion": "hhhhh",
+            "unidad_de_medida": "SERVICIO",
+            "cantidad10": 2,
+            "cantidad15": 2,
+            "cantidad20": 2
+        }
+    ],
+    "equipamiento": [
+        {
+            "id": 123,
+            "descripcion": "tttttttttttttttttttttttttt",
+            "unidad_de_medida": "PIEZA",
+            "cantidad10": 3,
+            "cantidad15": 33,
+            "cantidad20": 3
+        }
+    ],
+    "ultima_actualizacion": null,
+    "archivo_url": null,
+    "elaborado_por": 279,
+    "revisado_por": 277,
+    "autorizado_por": 278,
+    "fichaTecnica": {
+        "id": 63,
+        "objetivo": "El alumnado realizará la administración de archivos y utilizará herramientas ofimáticas en \nla plataforma de almacenamiento de datos de internet, mediante ejercicios prácticos.  ",
+        "perfil_ingreso": "• Ser mayor de 15 años \n• Conocimientos básicos de computación e internet",
+        "perfil_egreso": "La persona egresada mostrará las siguientes competencias: \n• Administrar archivos en línea. \n• Administrar el espacio de almacenamiento. \n• Crear, editar y compartir archivos en línea. \n• Utilizar las herramientas ofimáticas en la nube. ",
+        "perfil_del_docente": "El personal docente que imparta este curso deberá cumplir con alguno de los siguientes \nrequisitos: \n• Estudios en: - \nIngeniería en Sistemas Computacionales,  \nLicenciatura en Informática,  \nTSU en Informática, o  \nAfines. \n• Documentos probatorios que acrediten su conocimiento, certificado y/o acreditación \nen temas relacionados a este curso. \n• Experiencia de un año en la impartición de este tipo de cursos.",
+        "metodologia": "• El proceso de enseñanza y aprendizaje deberá realizarse aplicando 80 % del tiempo \npara actividades prácticas y 20 % del tiempo para actividades teóricas. Para trasmitir \nconocimientos teóricos, se utilizará material didáctico diseñado por la o el docente, a \nfin de complementar los temas al alumnado; así mismo, se utilizarán modelos \ndidácticos y tecnológicos. \n• Se aplicarán técnicas grupales e instruccionales, durante el proceso de impartición de \nlas sesiones del curso, como herramientas que contribuyan con el logro de los \nobjetivos del aprendizaje. \n• El docente deberá actuar como facilitador del proceso de enseñanza y aprendizaje, \nayudando a fomentar valores que contribuyan a desarrollar una conciencia en el \nalumnado, de igualdad, equidad de género e inclusión social. \n• El material y el equipo para impartir la capacitación, se especifica en función del \nnúmero de participantes. ",
+        "bibliografia": "• Aulaclic. (2024, 8 de febrero).  Curso de Google Drive. \nhttps://www.aulaclic.es/googledrive/  \n• Google LLC. (2024, 8 de febrero). Ayuda de Google Drive. \nhttps://support.google.com/drive?sjid=17942764223017975644-NC#topic=14940  \n• ITdesk. (2024, 8 de febrero). Proyecto de educación informática con acceso libre. \nhttps://www.itdesk.info/esp/manual/Google_Drive-Manual.pdf  \n• Microsoft Support. (2024, 8 de febrero).  Ayuda y aprendizaje de OneDrive. \nhttps://support.microsoft.com/es-es/onedrive ",
+        "criterios_acreditacion": "Para la acreditación de este curso, el alumnado deberá obtener un promedio mínimo de 8 \ny una asistencia no menor a 80 %, con base en el reglamento del Proceso de Impartición \nde Cursos del Instituto de Capacitación para el Trabajo del Estado de Hidalgo, aprobado \npor el pleno de la Junta Directiva en su Tercera Sesión Ordinaria, celebrada el 26 de \nnoviembre de 2020, mediante acuerdo SO/III/2020/22.",
+        "reconocimiento": "Al concluir y aprobar el curso, la persona egresada obtendrá una constancia del ICATHI. "
+    }
 }
