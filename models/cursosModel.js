@@ -87,6 +87,7 @@ WHERE pc.plantel_id = ${idPlantel} AND pc.estatus = true
     return rows[0];
   },
   async getByIdInfoReporte(id) {
+
     const query = `
       SELECT 
   c.id,
@@ -112,7 +113,7 @@ WHERE pc.plantel_id = ${idPlantel} AND pc.estatus = true
   ft.metodologia,
   ft.bibliografia,
   ft.criterios_acreditacion,
-  ft.reconocimiento,
+  ft.reconocimiento,c.nota_materiales,
   -- Datos de las firmas
   JSONB_BUILD_OBJECT(
     'elaborado_por', JSONB_BUILD_OBJECT(
@@ -222,40 +223,6 @@ GROUP BY
     const { rows } = await pool.query(query, values);
     return rows[0];
   },
-  //original async create(curso) {
-  //   const query = `
-  //     INSERT INTO cursos (
-  //       nombre,
-  //       clave,
-  //       duracion_horas,
-  //       descripcion,
-  //       nivel, -- Incluimos el campo nivel
-  //       area_id,
-  //       especialidad_id,
-  //       tipo_curso_id,
-  //       vigencia_inicio,
-  //       fecha_publicacion,
-  //       ultima_actualizacion
-  //     )
-  //     VALUES (\$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$9, \$10, \$11)
-  //     RETURNING *
-  //   `;
-  //   const values = [
-  //     curso.nombre,
-  //     curso.clave,
-  //     curso.duracion_horas,
-  //     curso.descripcion,
-  //     curso.nivel || "Básico", // Valor predeterminado
-  //     curso.area_id,
-  //     curso.especialidad_id,
-  //     curso.tipo_curso_id,
-  //     curso.vigencia_inicio || null,
-  //     curso.fecha_publicacion || null,
-  //     curso.ultima_actualizacion || null,
-  //   ];
-  //   const { rows } = await pool.query(query, values);
-  //   return rows[0];
-  // },
 
   async update(id, curso) {
     const query = `        
@@ -397,56 +364,7 @@ GROUP BY
     }
   },
 
-  //   async getCursosByEspecialidadId(especialidadId, usuarioId) {
-  //     const query = `
-  //   SELECT
-  //     c.id,
-  //     c.nombre,
-  //     c.descripcion,
-  //     c.duracion_horas,
-  //     c.nivel,
-  //     c.costo,
-  //     c.requisitos,
-  //     c.estatus,
-  //     c.created_at,
-  //     c.updated_at,
-  //     c.usuario_validador_id,
-  //     c.fecha_validacion,
-  //     c.modalidad,
-  //     c.clave,
-  //     c.area_id,
-  //     c.especialidad_id,
-  //     c.tipo_curso_id,
-  //     c.vigencia_inicio,
-  //     c.fecha_publicacion,
-  //     c.ultima_actualizacion,
-  //     CASE
-  //       WHEN pc.curso_id IS NOT NULL THEN true
-  //       ELSE false
-  //     END AS registrado
-  //   FROM
-  //     cursos c
-  //   LEFT JOIN
-  //     planteles_cursos pc
-  //     ON c.id = pc.curso_id
-  //   LEFT JOIN
-  //     planteles p
-  //     ON pc.plantel_id = p.id
-  //   LEFT JOIN
-  //     usuarios u
-  //     ON p.id_usuario = u.id
-  //   WHERE
-  //     c.especialidad_id = $1`;
 
-  // try {
-  //   const { rows } = await pool.query(query, [especialidadId]);
-  //   return rows;
-  // } catch (error) {
-  //   console.error("Error al obtener los cursos:", error);
-  //   throw error;
-  // }
-
-  //   }
   async getDetailedCursos() {
     const query = `
       SELECT 

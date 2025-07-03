@@ -41,6 +41,7 @@ exports.getById = async (req, res) => {
 };
 
 exports.getByIdInfoReporte = async (req, res) => {
+  console.log("pdf")
   try {
     const { id } = req.params;
 
@@ -202,7 +203,9 @@ exports.getByIdInfoReporte = async (req, res) => {
           material_cantidad_20: m.material_cantidad_20 || 0,
         }));
       })(),
+      NOTA_MATERIALES: datosCurso.nota_materiales || "No disponible",
 
+// c.nota_materiales,
       EQUIPAMIENTO: (() => {
         if (
           !equipamiento ||
@@ -746,6 +749,7 @@ async function obtenerOcrearFirma(client, nombre, cargo, tipo) {
 }
 
 exports.update = async (req, res) => {
+  console.log("updATE 2");
   try {
     const { id } = req.params;
     const {
@@ -966,7 +970,10 @@ exports.getCourseDetails = async (req, res) => {
         c.id, c.nombre, c.clave, c.costo, c.duracion_horas, c.descripcion, c.nivel, 
         c.area_id, c.especialidad_id, c.tipo_curso_id, c.vigencia_inicio, 
         c.fecha_publicacion, c.ultima_actualizacion, c.archivo_url,
-        c.elaborado_por, c.revisado_por, c.autorizado_por
+        c.elaborado_por, c.revisado_por, c.autorizado_por,
+            c.nota_materiales, c.nota_equipamiento, c.nota_requisitos, c.nota_evaluacion
+
+
       FROM cursos c
       WHERE c.id = $1
     `;
@@ -1033,15 +1040,7 @@ exports.getCourseDetails = async (req, res) => {
       curso.autorizado_por,
     ]);
     console.log("firmasResult", firmasResult);
-    // Organizar las firmas por tipo
-    // const firmas = firmasResult.rows.reduce((acc, firma) => {
-    //   acc[firma.tipo_firma.toLowerCase()] = {
-    //     nombre: firma.nombre || "",
-    //     cargo: firma.cargo || "",
-    //   };
-    //   return acc;
-    // }, {});
-    // Crear un mapa de firmas por ID para referencia rápida
+
     const firmasPorId = {};
     firmasResult.rows.forEach((firma) => {
       firmasPorId[firma.id] = {
@@ -1053,6 +1052,12 @@ exports.getCourseDetails = async (req, res) => {
     // Formar la respuesta con todos los detalles del curso
     const cursoDetalles = {
       ...curso,
+      notas: {
+        materiales: curso.nota_materiales || "",
+        equipamiento: curso.nota_equipamiento || "",
+        requisitos: curso.nota_requisitos || "",
+        evaluacion: curso.nota_evaluacion || "",
+      },
       firmas: {
         revisado: firmasPorId[curso.revisado_por] || { nombre: "", cargo: "" },
         autorizado: firmasPorId[curso.autorizado_por] || {
@@ -1098,6 +1103,8 @@ exports.getCursosByEspecialidadId = async (req, res) => {
 };
 
 exports.updateCourseDetails = async (req, res) => {
+  console.log("updATE 2");
+
   const client = await pool.connect();
   try {
     console.log("Datos recibidos del frontend: updateCourseDetailsz", req.body);
@@ -1127,6 +1134,7 @@ exports.updateCourseDetails = async (req, res) => {
       materiales,
       equipamiento,
       contenidoProgramatico,
+      nota_materiales  // Extraemos directamente del body
     } = req.body;
 
     // Función para parsear JSON si es necesario
@@ -1136,6 +1144,9 @@ exports.updateCourseDetails = async (req, res) => {
     contenidoProgramatico = parseJSON(contenidoProgramatico);
     materiales = parseJSON(materiales) || [];
     equipamiento = parseJSON(equipamiento) || [];
+    // const notas = parseJSON(notas_adicionales) || {}; // Asegurar que es objeto, no array
+
+    // console.log("Notas recibidas:", notas); // Debug: verificar lo que llega
 
     await client.query("BEGIN");
 
@@ -1184,8 +1195,8 @@ exports.updateCourseDetails = async (req, res) => {
        SET nombre = $1, clave = $2, duracion_horas = $3, descripcion = $4, nivel = $5, costo = $6,
            area_id = $7, especialidad_id = $8, tipo_curso_id = $9, vigencia_inicio = $10, 
            fecha_publicacion = $11, ultima_actualizacion = $12, revisado_por = $13, 
-           autorizado_por = $14, elaborado_por = $15 
-       WHERE id = $16`,
+           autorizado_por = $14, elaborado_por = $15 ,nota_materiales = $16
+       WHERE id = $17`,
       [
         nombre,
         clave,
@@ -1202,6 +1213,7 @@ exports.updateCourseDetails = async (req, res) => {
         newRevisadoPor,
         newAutorizadoPor,
         newElaboradoPor,
+        nota_materiales || null,  // Añadimos nota_materiales aquí
         id,
       ]
     );
