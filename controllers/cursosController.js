@@ -41,7 +41,7 @@ exports.getById = async (req, res) => {
 };
 
 exports.getByIdInfoReporte = async (req, res) => {
-  console.log("pdf")
+  console.log("pdf");
   try {
     const { id } = req.params;
 
@@ -205,7 +205,7 @@ exports.getByIdInfoReporte = async (req, res) => {
       })(),
       NOTA_MATERIALES: datosCurso.nota_materiales || "No disponible",
 
-// c.nota_materiales,
+      // c.nota_materiales,
       EQUIPAMIENTO: (() => {
         if (
           !equipamiento ||
@@ -466,29 +466,10 @@ exports.create = async (req, res) => {
   let uploadResult = null;
 
   try {
-    console.log("Datos recibidos del frontend  para la creacion:", req.body);
-    // console.log("Archivo recibido:", req.file);
-
-    // // Validación de archivo
-    // const file = req.file;
-    // if (file && !fs.existsSync(file.path)) {
-    //   return res.status(400).json({ error: "El archivo no existe en la ruta especificada." });
-    // }
-
-    // Subida a Cloudinary
-    // try {
-    //   uploadResult = await cloudinary.uploader.upload(file.path, {
-    //     folder: "temarios_cursos",
-    //     resource_type: "raw",
-    //   });
-    // } catch (cloudinaryError) {
-    //   console.error("Error al subir el archivo a Cloudinary:", cloudinaryError);
-    //   return res.status(500).json({ error: "Error al subir el archivo a Cloudinary" });
-    // } finally {
-    //   if (fs.existsSync(file.path)) {
-    //     fs.unlinkSync(file.path);
-    //   }
-    // }
+    console.log(
+      "Datos recibidos del frontend  para la creacion_____:",
+      req.body
+    );
 
     const {
       nombre,
@@ -513,6 +494,7 @@ exports.create = async (req, res) => {
       materiales,
       equipamiento,
       contenidoProgramatico,
+      archivo_url,
     } = req.body;
 
     // Validaciones básicas
@@ -579,15 +561,9 @@ exports.create = async (req, res) => {
     const cursoQuery = `
       INSERT INTO cursos (
         nombre, clave, duracion_horas, descripcion, nivel, costo, area_id, especialidad_id, tipo_curso_id, 
-        vigencia_inicio, fecha_publicacion, ultima_actualizacion, revisado_por, autorizado_por, elaborado_por
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id
+        vigencia_inicio, fecha_publicacion, ultima_actualizacion, revisado_por, autorizado_por, elaborado_por,archivo_url 
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,$16) RETURNING id
     `;
-    // const cursoQuery = `
-    //   INSERT INTO cursos (
-    //     nombre, clave, duracion_horas, descripcion, nivel, costo, area_id, especialidad_id, tipo_curso_id,
-    //     vigencia_inicio, fecha_publicacion, ultima_actualizacion, revisado_por, autorizado_por, elaborado_por, archivo_url
-    //   ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id
-    // `;
 
     const cursoValues = [
       nombre,
@@ -605,7 +581,7 @@ exports.create = async (req, res) => {
       firmaIds.revisado, // Usar el ID de la firma "Revisado"
       firmaIds.autorizado, // Usar el ID de la firma "Autorizado"
       firmaIds.elaborado, // Usar el ID de la firma "Elaborado"
-      // uploadResult.secure_url,
+      archivo_url || null, // Nuevo valor añadido
     ];
 
     const { rows: cursoRows } = await client.query(cursoQuery, cursoValues);
@@ -1134,7 +1110,8 @@ exports.updateCourseDetails = async (req, res) => {
       materiales,
       equipamiento,
       contenidoProgramatico,
-      nota_materiales  // Extraemos directamente del body
+      nota_materiales,
+      archivo_url,
     } = req.body;
 
     // Función para parsear JSON si es necesario
@@ -1144,9 +1121,6 @@ exports.updateCourseDetails = async (req, res) => {
     contenidoProgramatico = parseJSON(contenidoProgramatico);
     materiales = parseJSON(materiales) || [];
     equipamiento = parseJSON(equipamiento) || [];
-    // const notas = parseJSON(notas_adicionales) || {}; // Asegurar que es objeto, no array
-
-    // console.log("Notas recibidas:", notas); // Debug: verificar lo que llega
 
     await client.query("BEGIN");
 
@@ -1195,8 +1169,8 @@ exports.updateCourseDetails = async (req, res) => {
        SET nombre = $1, clave = $2, duracion_horas = $3, descripcion = $4, nivel = $5, costo = $6,
            area_id = $7, especialidad_id = $8, tipo_curso_id = $9, vigencia_inicio = $10, 
            fecha_publicacion = $11, ultima_actualizacion = $12, revisado_por = $13, 
-           autorizado_por = $14, elaborado_por = $15 ,nota_materiales = $16
-       WHERE id = $17`,
+           autorizado_por = $14, elaborado_por = $15 ,nota_materiales = $16,  archivo_url = $17 
+       WHERE id = $18`,
       [
         nombre,
         clave,
@@ -1213,7 +1187,9 @@ exports.updateCourseDetails = async (req, res) => {
         newRevisadoPor,
         newAutorizadoPor,
         newElaboradoPor,
-        nota_materiales || null,  // Añadimos nota_materiales aquí
+        nota_materiales || null,
+        archivo_url || null,
+
         id,
       ]
     );

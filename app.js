@@ -36,17 +36,7 @@ app.use(morgan('dev'));
 // Middleware para parsear JSON
 app.use(express.json());
 
-// Configuración de CORS
-// app.use((req, res, next) => {
-//   res.header('Access-Control-Allow-Origin', '*');
-//   res.header('Access-Control-Allow-Headers', '*');
-//   if (req.method === 'OPTIONS') {
-//     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE');
-//     return res.status(200).json({});
-//   }
-//   next();
-// });
-// const cors = require("cors");
+
 const allowedOrigins = [
   "https://icathi.vercel.app",
   "http://localhost:4200",
