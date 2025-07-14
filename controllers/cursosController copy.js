@@ -41,6 +41,7 @@
 // };
 
 // exports.getByIdInfoReporte = async (req, res) => {
+//   console.log("pdf");
 //   try {
 //     const { id } = req.params;
 
@@ -202,7 +203,9 @@
 //           material_cantidad_20: m.material_cantidad_20 || 0,
 //         }));
 //       })(),
+//       NOTA_MATERIALES: datosCurso.nota_materiales || "No disponible",
 
+//       // c.nota_materiales,
 //       EQUIPAMIENTO: (() => {
 //         if (
 //           !equipamiento ||
@@ -463,29 +466,10 @@
 //   let uploadResult = null;
 
 //   try {
-//     console.log("Datos recibidos del frontend  para la creacion:", req.body);
-//     // console.log("Archivo recibido:", req.file);
-
-//     // // Validación de archivo
-//     // const file = req.file;
-//     // if (file && !fs.existsSync(file.path)) {
-//     //   return res.status(400).json({ error: "El archivo no existe en la ruta especificada." });
-//     // }
-
-//     // Subida a Cloudinary
-//     // try {
-//     //   uploadResult = await cloudinary.uploader.upload(file.path, {
-//     //     folder: "temarios_cursos",
-//     //     resource_type: "raw",
-//     //   });
-//     // } catch (cloudinaryError) {
-//     //   console.error("Error al subir el archivo a Cloudinary:", cloudinaryError);
-//     //   return res.status(500).json({ error: "Error al subir el archivo a Cloudinary" });
-//     // } finally {
-//     //   if (fs.existsSync(file.path)) {
-//     //     fs.unlinkSync(file.path);
-//     //   }
-//     // }
+//     console.log(
+//       "Datos recibidos del frontend  para la creacion_____:",
+//       req.body
+//     );
 
 //     const {
 //       nombre,
@@ -510,6 +494,7 @@
 //       materiales,
 //       equipamiento,
 //       contenidoProgramatico,
+//       archivo_url,
 //     } = req.body;
 
 //     // Validaciones básicas
@@ -524,7 +509,9 @@
 //         .status(400)
 //         .json({ error: "Los campos obligatorios deben completarse" });
 //     }
-
+//  // Convertir '0' a null para area_id y especialidad_id
+//   const areaId = area_id === '0' ? null : area_id;
+//   const especialidadId = especialidad_id === '0' ? null : especialidad_id;
 //     // Validar firmantes
 //     if (!revisado_por || !autorizado_por || !elaborado_por) {
 //       return res
@@ -572,19 +559,14 @@
 //     const parsedContenidoProgramatico = parseJSON(contenidoProgramatico) || {
 //       temas: [],
 //     };
+    
 //     // Inserta curso
 //     const cursoQuery = `
 //       INSERT INTO cursos (
 //         nombre, clave, duracion_horas, descripcion, nivel, costo, area_id, especialidad_id, tipo_curso_id, 
-//         vigencia_inicio, fecha_publicacion, ultima_actualizacion, revisado_por, autorizado_por, elaborado_por
-//       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id
+//         vigencia_inicio, fecha_publicacion, ultima_actualizacion, revisado_por, autorizado_por, elaborado_por,archivo_url 
+//       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,$16) RETURNING id
 //     `;
-//     // const cursoQuery = `
-//     //   INSERT INTO cursos (
-//     //     nombre, clave, duracion_horas, descripcion, nivel, costo, area_id, especialidad_id, tipo_curso_id,
-//     //     vigencia_inicio, fecha_publicacion, ultima_actualizacion, revisado_por, autorizado_por, elaborado_por, archivo_url
-//     //   ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id
-//     // `;
 
 //     const cursoValues = [
 //       nombre,
@@ -602,7 +584,7 @@
 //       firmaIds.revisado, // Usar el ID de la firma "Revisado"
 //       firmaIds.autorizado, // Usar el ID de la firma "Autorizado"
 //       firmaIds.elaborado, // Usar el ID de la firma "Elaborado"
-//       // uploadResult.secure_url,
+//       archivo_url || null, // Nuevo valor añadido
 //     ];
 
 //     const { rows: cursoRows } = await client.query(cursoQuery, cursoValues);
@@ -746,6 +728,7 @@
 // }
 
 // exports.update = async (req, res) => {
+//   console.log("updATE 2");
 //   try {
 //     const { id } = req.params;
 //     const {
@@ -966,7 +949,10 @@
 //         c.id, c.nombre, c.clave, c.costo, c.duracion_horas, c.descripcion, c.nivel, 
 //         c.area_id, c.especialidad_id, c.tipo_curso_id, c.vigencia_inicio, 
 //         c.fecha_publicacion, c.ultima_actualizacion, c.archivo_url,
-//         c.elaborado_por, c.revisado_por, c.autorizado_por
+//         c.elaborado_por, c.revisado_por, c.autorizado_por,
+//             c.nota_materiales, c.nota_equipamiento, c.nota_requisitos, c.nota_evaluacion
+
+
 //       FROM cursos c
 //       WHERE c.id = $1
 //     `;
@@ -1033,15 +1019,7 @@
 //       curso.autorizado_por,
 //     ]);
 //     console.log("firmasResult", firmasResult);
-//     // Organizar las firmas por tipo
-//     // const firmas = firmasResult.rows.reduce((acc, firma) => {
-//     //   acc[firma.tipo_firma.toLowerCase()] = {
-//     //     nombre: firma.nombre || "",
-//     //     cargo: firma.cargo || "",
-//     //   };
-//     //   return acc;
-//     // }, {});
-//     // Crear un mapa de firmas por ID para referencia rápida
+
 //     const firmasPorId = {};
 //     firmasResult.rows.forEach((firma) => {
 //       firmasPorId[firma.id] = {
@@ -1053,6 +1031,12 @@
 //     // Formar la respuesta con todos los detalles del curso
 //     const cursoDetalles = {
 //       ...curso,
+//       notas: {
+//         materiales: curso.nota_materiales || "",
+//         equipamiento: curso.nota_equipamiento || "",
+//         requisitos: curso.nota_requisitos || "",
+//         evaluacion: curso.nota_evaluacion || "",
+//       },
 //       firmas: {
 //         revisado: firmasPorId[curso.revisado_por] || { nombre: "", cargo: "" },
 //         autorizado: firmasPorId[curso.autorizado_por] || {
@@ -1098,6 +1082,8 @@
 // };
 
 // exports.updateCourseDetails = async (req, res) => {
+//   console.log("updATE 2");
+
 //   const client = await pool.connect();
 //   try {
 //     console.log("Datos recibidos del frontend: updateCourseDetailsz", req.body);
@@ -1127,6 +1113,8 @@
 //       materiales,
 //       equipamiento,
 //       contenidoProgramatico,
+//       nota_materiales,
+//       archivo_url,
 //     } = req.body;
 
 //     // Función para parsear JSON si es necesario
@@ -1138,6 +1126,9 @@
 //     equipamiento = parseJSON(equipamiento) || [];
 
 //     await client.query("BEGIN");
+//     area_id = area_id === '0' ? null : area_id;
+//     especialidad_id = especialidad_id === '0' ? null : especialidad_id;
+
 
 //     // **Obtener los IDs de las firmas actuales**
 //     const cursoResult = await client.query(
@@ -1184,8 +1175,8 @@
 //        SET nombre = $1, clave = $2, duracion_horas = $3, descripcion = $4, nivel = $5, costo = $6,
 //            area_id = $7, especialidad_id = $8, tipo_curso_id = $9, vigencia_inicio = $10, 
 //            fecha_publicacion = $11, ultima_actualizacion = $12, revisado_por = $13, 
-//            autorizado_por = $14, elaborado_por = $15 
-//        WHERE id = $16`,
+//            autorizado_por = $14, elaborado_por = $15 ,nota_materiales = $16,  archivo_url = $17 
+//        WHERE id = $18`,
 //       [
 //         nombre,
 //         clave,
@@ -1202,6 +1193,9 @@
 //         newRevisadoPor,
 //         newAutorizadoPor,
 //         newElaboradoPor,
+//         nota_materiales || null,
+//         archivo_url || null,
+
 //         id,
 //       ]
 //     );
@@ -1388,98 +1382,135 @@
 //     }
 
 //     // **Contenido Programático**
-//     // **Contenido Programático**
-//     // **Contenido Programático**
-//     if (contenidoProgramatico === undefined) {
-//       console.log(
-//         "No se proporcionó contenido programático para el curso con ID",
-//         id
-//       );
-//       return;
-//     }
+//     // **Contenido Programático - Optimizado y Profesional**
+//     // **Manejo Profesional de Contenido Programático (Versión Corregida)**
+//     if (contenidoProgramatico !== undefined) {
+//       try {
+//         await client.query("BEGIN");
 
-//     try {
-//       // Parsear contenido programático si viene como string JSON
-//       const contenidoData =
-//         typeof contenidoProgramatico === "string"
-//           ? JSON.parse(contenidoProgramatico)
-//           : contenidoProgramatico;
+//         // 1. Parsear y normalizar los datos de entrada
+//         const contenidoData =
+//           typeof contenidoProgramatico === "string"
+//             ? JSON.parse(contenidoProgramatico)
+//             : contenidoProgramatico;
 
-//       // Extraer el array de temas (maneja tanto el formato {temas:[]} como array directo)
-//       const temasArray = Array.isArray(contenidoData)
-//         ? contenidoData
-//         : contenidoData?.temas || [];
+//         const temasArray = Array.isArray(contenidoData)
+//           ? contenidoData
+//           : contenidoData?.temas || [];
 
-//       // Verificar si existen temas para este curso
-//       const contenidoExists = await client.query(
-//         "SELECT id FROM contenido_programatico WHERE id_curso = $1",
-//         [id]
-//       );
-//       const existingIds = contenidoExists.rows.map((row) => row.id);
+//         // 2. Verificar contenido existente en BD
+//         const { rows: existingContent } = await client.query(
+//           `SELECT id FROM contenido_programatico 
+//        WHERE id_curso = $1`,
+//           [id]
+//         );
+//         const hadPreviousContent = existingContent.length > 0;
+//         const existingIds = existingContent.map((row) => row.id);
 
-//       // Si no hay temas en el input, eliminamos todos los existentes
-//       if (temasArray.length === 0) {
-//         if (existingIds.length > 0) {
-//           await client.query(
-//             "DELETE FROM contenido_programatico WHERE id_curso = $1",
-//             [id]
+//         // 3. Lógica para los diferentes casos
+//         if (temasArray.length === 0) {
+//           // Caso 1: Se envía array vacío (eliminar todo si existía)
+//           if (hadPreviousContent) {
+//             await client.query(
+//               `DELETE FROM contenido_programatico 
+//            WHERE id_curso = $1`,
+//               [id]
+//             );
+//             console.log(
+//               `🗑️ Eliminado contenido previo (${existingContent.length} temas) del curso ${id}`
+//             );
+//           } else {
+//             console.log(
+//               `ℹ️ No se modificó contenido programático (curso ${id} no tenía temas)`
+//             );
+//           }
+//         } else {
+//           // Caso 2: Hay temas para procesar
+//           const incomingIds = temasArray.filter((t) => t.id).map((t) => t.id);
+
+//           // Eliminar temas removidos
+//           const idsToDelete = existingIds.filter(
+//             (id) => !incomingIds.includes(id)
 //           );
+//           if (idsToDelete.length > 0) {
+//             await client.query(
+//               `DELETE FROM contenido_programatico 
+//            WHERE id = ANY($1::int[]) AND id_curso = $2`,
+//               [idsToDelete, id]
+//             );
+//             console.log(`✂️ Eliminados ${idsToDelete.length} temas obsoletos`);
+//           }
+
+//           // Procesar cada tema (insertar o actualizar)
+//           const { insertedCount, updatedCount } = await processTopics(
+//             client,
+//             id,
+//             temasArray,
+//             existingIds
+//           );
+
 //           console.log(
-//             `✅ Se eliminó todo el contenido programático del curso ${id}`
+//             `🔄 Sincronizado contenido - Nuevos: ${insertedCount}, Actualizados: ${updatedCount}`
 //           );
 //         }
-//         return;
+
+//         await client.query("COMMIT");
+//       } catch (error) {
+//         await client.query("ROLLBACK");
+//         console.error("⚠️ Error en contenido programático:", error);
+//         throw new Error(`Error al procesar contenido: ${error.message}`);
 //       }
+//     } else {
+//       console.log(`ℹ️ No se envió contenido programático (curso ${id})`);
+//     }
 
-//       // Procesar temas a eliminar
-//       const incomingIds = temasArray.filter((t) => t.id).map((t) => t.id);
-//       const idsToDelete = existingIds.filter((id) => !incomingIds.includes(id));
+//     // Función auxiliar para procesar temas (versión corregida)
+//     async function processTopics(client, courseId, temasArray, existingIds) {
+//       let insertedCount = 0;
+//       let updatedCount = 0;
 
-//       if (idsToDelete.length > 0) {
-//         await client.query(
-//           "DELETE FROM contenido_programatico WHERE id = ANY($1::int[])",
-//           [idsToDelete]
-//         );
-//       }
-
-//       // Procesar cada tema (inserción o actualización)
 //       await Promise.all(
 //         temasArray.map(async (tema) => {
-//           const queryParams = [
-//             tema.tema_nombre || "",
-//             tema.tiempo || 0,
-//             tema.competencias || null,
-//             tema.evaluacion || null,
-//             tema.actividades || null,
+//           const {
+//             id: temaId,
+//             tema_nombre,
+//             tiempo,
+//             competencias,
+//             evaluacion,
+//             actividades,
+//           } = tema;
+//           const values = [
+//             tema_nombre || "",
+//             tiempo || 0,
+//             competencias || null,
+//             evaluacion || null,
+//             actividades || null,
 //           ];
 
-//           if (tema.id) {
-//             // Actualizar tema existente
-//             const updateQuery = {
+//           if (temaId && existingIds.includes(temaId)) {
+//             // Actualizar tema existente (VERSIÓN CORREGIDA - sin updated_at)
+//             await client.query({
 //               text: `UPDATE contenido_programatico SET
 //           tema_nombre = $1, tiempo = $2, competencias = $3,
 //           evaluacion = $4, actividades = $5
-//           WHERE id = $6`,
-//               values: [...queryParams, tema.id],
-//             };
-//             await client.query(updateQuery);
-//           } else {
-//             // Insertar nuevo tema
-//             const insertQuery = {
+//           WHERE id = $6 AND id_curso = $7`,
+//               values: [...values, temaId, courseId],
+//             });
+//             updatedCount++;
+//           } else if (!temaId) {
+//             // Insertar nuevo tema (sin ID)
+//             await client.query({
 //               text: `INSERT INTO contenido_programatico 
 //           (id_curso, tema_nombre, tiempo, competencias, evaluacion, actividades)
 //           VALUES ($1, $2, $3, $4, $5, $6)`,
-//               values: [id, ...queryParams],
-//             };
-//             await client.query(insertQuery);
+//               values: [courseId, ...values],
+//             });
+//             insertedCount++;
 //           }
 //         })
 //       );
 
-//       console.log(`✅ Contenido programático actualizado para el curso ${id}`);
-//     } catch (error) {
-//       console.error("Error procesando contenido programático:", error);
-//       throw error;
+//       return { insertedCount, updatedCount };
 //     }
 //     await client.query("COMMIT");
 //     res.status(200).json({ message: "Curso actualizado exitosamente" });

@@ -2,28 +2,54 @@ const pool = require("../config/database");
 const { getByIdInfoReporte } = require("../controllers/cursosController");
 
 const CursosModel = {
+  // async getAll() {
+  //   const query = `
+  //     SELECT 
+  //       c.id, 
+  //       c.nombre, 
+  //       c.clave,
+  //       c.duracion_horas,
+  //       c.descripcion, -- Incluimos el campo descripcion
+  //       c.area_id,
+  //       a.nombre AS area_nombre,
+  //       c.especialidad_id,
+  //       e.nombre AS especialidad_nombre,
+  //       c.tipo_curso_id,
+  //       c.estatus,
+  //       t.nombre AS tipo_curso_nombre,
+  //       c.vigencia_inicio,
+  //       c.fecha_publicacion,
+  //       c.ultima_actualizacion
+  //     FROM cursos c
+  //     JOIN areas a ON c.area_id = a.id
+  //     JOIN especialidades e ON c.especialidad_id = e.id
+  //     JOIN tipos_curso t ON c.tipo_curso_id = t.id
+  //   `;
+  //   const { rows } = await pool.query(query);
+  //   return rows;
+  // },
   async getAll() {
     const query = `
-      SELECT 
-        c.id, 
-        c.nombre, 
-        c.clave,
-        c.duracion_horas,
-        c.descripcion, -- Incluimos el campo descripcion
-        c.area_id,
-        a.nombre AS area_nombre,
-        c.especialidad_id,
-        e.nombre AS especialidad_nombre,
-        c.tipo_curso_id,
-        c.estatus,
-        t.nombre AS tipo_curso_nombre,
-        c.vigencia_inicio,
-        c.fecha_publicacion,
-        c.ultima_actualizacion
-      FROM cursos c
-      JOIN areas a ON c.area_id = a.id
-      JOIN especialidades e ON c.especialidad_id = e.id
-      JOIN tipos_curso t ON c.tipo_curso_id = t.id
+SELECT 
+    c.id, 
+    c.nombre, 
+    c.clave,
+    c.duracion_horas,
+    c.descripcion,
+    c.area_id,
+    a.nombre AS area_nombre,
+    c.especialidad_id,
+    e.nombre AS especialidad_nombre,
+    c.tipo_curso_id,
+    c.estatus,
+    t.nombre AS tipo_curso_nombre,
+    c.vigencia_inicio,
+    c.fecha_publicacion,
+    c.ultima_actualizacion
+FROM cursos c
+LEFT JOIN areas a ON c.area_id = a.id
+LEFT JOIN especialidades e ON c.especialidad_id = e.id
+JOIN tipos_curso t ON c.tipo_curso_id = t.id 
     `;
     const { rows } = await pool.query(query);
     return rows;
@@ -365,30 +391,52 @@ GROUP BY
   },
 
 
+  // async getDetailedCursos() {
+  //   const query = `
+  //     SELECT 
+  //       c.id, 
+  //       c.estatus, 
+  //       c.area_id, 
+  //       a.nombre AS area_nombre, 
+  //       c.especialidad_id, 
+  //       e.nombre AS especialidad_nombre, 
+  //       c.clave, 
+  //       c.nombre AS curso_nombre, 
+  //       c.tipo_curso_id, 
+  //       t.nombre AS tipo_curso_nombre, 
+  //       c.duracion_horas AS horas, 
+  //       c.descripcion AS detalles
+  //     FROM cursos c
+  //     JOIN areas a ON c.area_id = a.id
+  //     JOIN especialidades e ON c.especialidad_id = e.id
+  //     JOIN tipos_curso t ON c.tipo_curso_id = t.id
+  //   `;
+  //   const { rows } = await pool.query(query);
+  //   return rows;
+  // },
   async getDetailedCursos() {
     const query = `
-      SELECT 
-        c.id, 
-        c.estatus, 
-        c.area_id, 
-        a.nombre AS area_nombre, 
-        c.especialidad_id, 
-        e.nombre AS especialidad_nombre, 
-        c.clave, 
-        c.nombre AS curso_nombre, 
-        c.tipo_curso_id, 
-        t.nombre AS tipo_curso_nombre, 
-        c.duracion_horas AS horas, 
-        c.descripcion AS detalles
-      FROM cursos c
-      JOIN areas a ON c.area_id = a.id
-      JOIN especialidades e ON c.especialidad_id = e.id
-      JOIN tipos_curso t ON c.tipo_curso_id = t.id
-    `;
+    SELECT 
+      c.id, 
+      c.estatus, 
+      c.area_id, 
+      a.nombre AS area_nombre, 
+      c.especialidad_id, 
+      e.nombre AS especialidad_nombre, 
+      c.clave, 
+      c.nombre AS curso_nombre, 
+      c.tipo_curso_id, 
+      t.nombre AS tipo_curso_nombre, 
+      c.duracion_horas AS horas, 
+      c.descripcion AS detalles
+    FROM cursos c
+    LEFT JOIN areas a ON c.area_id = a.id
+    LEFT JOIN especialidades e ON c.especialidad_id = e.id
+    JOIN tipos_curso t ON c.tipo_curso_id = t.id
+  `;
     const { rows } = await pool.query(query);
     return rows;
   },
-
   async updateStatus(id) {
     const querySelect = `
       SELECT estatus
