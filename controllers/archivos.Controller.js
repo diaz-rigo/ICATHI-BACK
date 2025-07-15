@@ -3,7 +3,8 @@ const fs = require('fs');
 const FormData = require('form-data');
 
 // Configuración del servidor de archivos
-const FILE_SERVER_URL = 'http://201.116.27.119:3000';
+// const FILE_SERVER_URL = 'http://201.116.27.119:3000';
+const FILE_SERVER_URL = 'https://201.116.27.119:3443';
 const UPLOAD_ENDPOINT = '/api/files/upload';
 
 exports.uploadTemario = async (req, res) => {
