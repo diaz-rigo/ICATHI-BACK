@@ -1,7 +1,13 @@
+const https = require('https'); // Añade esta línea al inicio del archivo
+
 const axios = require('axios');
 const fs = require('fs');
 const FormData = require('form-data');
-
+const axiosInstance = axios.create({
+  httpsAgent: new https.Agent({  
+    rejectUnauthorized: false // ⚠️ Solo para desarrollo/testing
+  })
+});
 // Configuración del servidor de archivos
 // const FILE_SERVER_URL = 'http://201.116.27.119:3000';
 const FILE_SERVER_URL = 'https://201.116.27.119:3443';
@@ -20,7 +26,7 @@ exports.uploadTemario = async (req, res) => {
     formData.append('file', fs.createReadStream(file.path), file.originalname);
     
     // Subir el archivo al servidor de archivos
-    const response = await axios.post(
+    const response = await axiosInstance.post(
       `${FILE_SERVER_URL}${UPLOAD_ENDPOINT}?folder=temarios_cursos`,
       formData,
       {
@@ -55,7 +61,7 @@ exports.uploadImageProfile = async (req, res) => {
     const formData = new FormData();
     formData.append('file', fs.createReadStream(file.path), file.originalname);
     
-    const response = await axios.post(
+    const response = await axiosInstance.post(
       `${FILE_SERVER_URL}${UPLOAD_ENDPOINT}?folder=perfiles_docentes`,
       formData,
       {
@@ -89,7 +95,7 @@ exports.uploadCedula = async (req, res) => {
     const formData = new FormData();
     formData.append('file', fs.createReadStream(file.path), file.originalname);
     
-    const response = await axios.post(
+    const response = await axiosInstance.post(
       `${FILE_SERVER_URL}${UPLOAD_ENDPOINT}?folder=cedulas_docentes`,
       formData,
       {
@@ -123,7 +129,7 @@ exports.uploadCurriculum = async (req, res) => {
     const formData = new FormData();
     formData.append('file', fs.createReadStream(file.path), file.originalname);
     
-    const response = await axios.post(
+    const response = await axiosInstance.post(
       `${FILE_SERVER_URL}${UPLOAD_ENDPOINT}?folder=curriculum_docentes`,
       formData,
       {
@@ -159,7 +165,7 @@ exports.uploadDocumentoIdentificacion = async (req, res) => {
     const formData = new FormData();
     formData.append('file', fs.createReadStream(file.path), file.originalname);
     
-    const response = await axios.post(
+    const response = await axiosInstance.post(
       `${FILE_SERVER_URL}${UPLOAD_ENDPOINT}?folder=documentos_identificacion_docentes`,
       formData,
       {
