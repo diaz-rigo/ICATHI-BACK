@@ -13,6 +13,10 @@ const UPLOAD_ENDPOINT = '/api/files/upload';
 
 
 
+function generarUrlPublica(folder, uploadedUrl, req) {
+  const nombreArchivo = uploadedUrl.split('/').pop();
+  return `https://${req.get('host')}/archivos/descargar?folder=${folder}&nombre=${nombreArchivo}`;
+}
 
 
 exports.descargarTemario = async (req, res) => {
@@ -45,8 +49,6 @@ exports.descargarTemario = async (req, res) => {
 
 
 
-
-
 // exports.uploadTemario = async (req, res) => {
 //   try {
 //     if (!req.file) {
@@ -54,11 +56,11 @@ exports.descargarTemario = async (req, res) => {
 //     }
 
 //     const file = req.file;
-    
+
 //     // Crear FormData para enviar el archivo
 //     const formData = new FormData();
 //     formData.append('file', fs.createReadStream(file.path), file.originalname);
-    
+
 //     // Subir el archivo al servidor de archivos
 //     const response = await axiosInstance.post(
 //       `${FILE_SERVER_URL}${UPLOAD_ENDPOINT}?folder=temarios_cursos`,
@@ -68,63 +70,44 @@ exports.descargarTemario = async (req, res) => {
 //       }
 //     );
 
-//     // Eliminar el archivo temporal
+//     // Eliminar archivo temporal
 //     if (fs.existsSync(file.path)) {
 //       fs.unlinkSync(file.path);
 //     }
 
-//     // Enviar la URL del archivo
-//     res.status(201).json({ fileUrl: response.data.url });
+//     // Obtener el nombre del archivo
+//     const uploadedUrl = response.data.url;
+//     const nombreArchivo = uploadedUrl.split('/').pop();
+//       const renderUrl = `https://${req.get('host')}/archivos/descargar-temario?nombre=${nombreArchivo}`;
+
+//     // Enviar esa URL
+//     res.status(201).json({ fileUrl: renderUrl });
 //   } catch (error) {
 //     console.error("Error al subir el temario:", error.message);
-//     res.status(500).json({ 
-//       message: "Error al subir el temario.", 
-//       error: error.message 
+//     res.status(500).json({
+//       message: "Error al subir el temario.",
+//       error: error.message
 //     });
 //   }
 // };
 exports.uploadTemario = async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: "No se ha enviado el archivo de temario." });
-    }
+    if (!req.file) return res.status(400).json({ message: "No se ha enviado el archivo de temario." });
 
-    const file = req.file;
-
-    // Crear FormData para enviar el archivo
+    const folder = 'temarios_cursos';
     const formData = new FormData();
-    formData.append('file', fs.createReadStream(file.path), file.originalname);
+    formData.append('file', fs.createReadStream(req.file.path), req.file.originalname);
 
-    // Subir el archivo al servidor de archivos
-    const response = await axiosInstance.post(
-      `${FILE_SERVER_URL}${UPLOAD_ENDPOINT}?folder=temarios_cursos`,
-      formData,
-      {
-        headers: formData.getHeaders()
-      }
-    );
+    const response = await axiosInstance.post(`${FILE_SERVER_URL}${UPLOAD_ENDPOINT}?folder=${folder}`, formData, {
+      headers: formData.getHeaders()
+    });
 
-    // Eliminar archivo temporal
-    if (fs.existsSync(file.path)) {
-      fs.unlinkSync(file.path);
-    }
-
-    // Obtener el nombre del archivo
-    const uploadedUrl = response.data.url;
-    const nombreArchivo = uploadedUrl.split('/').pop();
-
-    // Construir la URL del backend Render (proxy)
-    // const renderUrl = `${req.protocol}://${req.get('host')}/archivos/descargar-temario?nombre=${nombreArchivo}`;
-      const renderUrl = `https://${req.get('host')}/archivos/descargar-temario?nombre=${nombreArchivo}`;
-
-    // Enviar esa URL
+    fs.existsSync(req.file.path) && fs.unlinkSync(req.file.path);
+    const renderUrl = generarUrlPublica(folder, response.data.url, req);
     res.status(201).json({ fileUrl: renderUrl });
   } catch (error) {
     console.error("Error al subir el temario:", error.message);
-    res.status(500).json({
-      message: "Error al subir el temario.",
-      error: error.message
-    });
+    res.status(500).json({ message: "Error al subir el temario.", error: error.message });
   }
 };
 
