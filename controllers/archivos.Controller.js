@@ -12,11 +12,31 @@ const FILE_SERVER_URL = 'http://201.116.27.119:3000';
 const UPLOAD_ENDPOINT = '/api/files/upload';
 
 
+exports.descargarArchivoGeneral = async (req, res) => {
+  const { folder, nombre } = req.query;
 
-// function generarUrlPublica(folder, uploadedUrl, req) {
-//   const nombreArchivo = uploadedUrl.split('/').pop();
-//   return `https://${req.get('host')}/archivos/descargar?folder=${folder}&nombre=${nombreArchivo}`;
-// }
+  if (!folder || !nombre) {
+    return res.status(400).json({ message: 'Faltan parámetros: folder y/o nombre' });
+  }
+
+  try {
+    const archivoURL = `${FILE_SERVER_URL}/uploads/${folder}/${nombre}`;
+
+    const response = await axios.get(archivoURL, {
+      responseType: 'stream'
+    });
+
+    res.setHeader('Content-Type', response.headers['content-type'] || 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${nombre}"`);
+
+    response.data.pipe(res);
+  } catch (error) {
+    console.error("Error al descargar archivo:", error.message);
+    res.status(500).json({ message: "Error al descargar el archivo.", error: error.message });
+  }
+};
+
+
 
 
 exports.descargarTemario = async (req, res) => {

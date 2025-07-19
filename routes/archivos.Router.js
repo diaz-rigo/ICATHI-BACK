@@ -5,6 +5,7 @@ const upload = require('../config/upload');
 const archivos__ = require('../controllers/archivos.Controller');
 router.post('/upload-temario_curso', upload.single('temario'), archivos__.uploadTemario);
 router.get('/descargar-temario', archivos__.descargarTemario);
+router.get('/descargar', archivos__.descargarArchivoGeneral);   // general para todos
 
 
 
