@@ -114,7 +114,8 @@ exports.uploadTemario = async (req, res) => {
     const nombreArchivo = uploadedUrl.split('/').pop();
 
     // Construir la URL del backend Render (proxy)
-    const renderUrl = `${req.protocol}://${req.get('host')}/archivos/descargar-temario?nombre=${nombreArchivo}`;
+    // const renderUrl = `${req.protocol}://${req.get('host')}/archivos/descargar-temario?nombre=${nombreArchivo}`;
+      const renderUrl = `https://${req.get('host')}/archivos/descargar-temario?nombre=${nombreArchivo}`;
 
     // Enviar esa URL
     res.status(201).json({ fileUrl: renderUrl });
