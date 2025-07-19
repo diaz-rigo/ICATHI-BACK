@@ -8,10 +8,44 @@ const axiosInstance = axios.create({
     rejectUnauthorized: false // ⚠️ Solo para desarrollo/testing
   })
 });
-// Configuración del servidor de archivos
 const FILE_SERVER_URL = 'http://201.116.27.119:3000';
-// const FILE_SERVER_URL = 'https://201.116.27.119:3443';
 const UPLOAD_ENDPOINT = '/api/files/upload';
+
+
+
+
+
+exports.descargarTemario = async (req, res) => {
+  const { nombre } = req.query;
+
+  if (!nombre) {
+    return res.status(400).json({ message: 'Falta el nombre del archivo' });
+  }
+
+  try {
+    // Llama al servidor de archivos en HTTP
+    const archivoURL = `${FILE_SERVER_URL}/uploads/temarios_cursos/${nombre}`;
+
+    const response = await axios.get(archivoURL, {
+      responseType: 'stream'
+    });
+
+    // Reenviar headers relevantes
+    res.setHeader('Content-Type', response.headers['content-type'] || 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${nombre}"`);
+
+    // Transmitir el contenido del archivo
+    response.data.pipe(res);
+  } catch (error) {
+    console.error("Error al descargar temario:", error.message);
+    res.status(500).json({ message: "Error al descargar el archivo.", error: error.message });
+  }
+};
+
+
+
+
+
 
 exports.uploadTemario = async (req, res) => {
   try {
