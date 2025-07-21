@@ -138,6 +138,12 @@ exports.getByIdInfoReporte = async (req, res) => {
       VIGENCIA_INICIO: datosCurso.vigencia_inicio || "No disponible",
       FECHA_PUBLICACION: datosCurso.fecha_publicacion || "No disponible",
       FECHA_VALIDACION: datosCurso.fecha_validacion || "No disponible",
+      // FECHA_VALIDACION: datosCurso.fecha_validacion || "No disponible",
+
+      version_formato: datosCurso.version_formato || 0,
+      fecha_emision_formato: datosCurso.fecha_emision_formato || "No disponible",
+      codigo_formato: datosCurso.codigo_formato || "No disponible",
+      reviso_aprobo_texto: datosCurso.reviso_aprobo_texto || "No disponible",
 
       firmas: {
         REVISADO_POR: firmasPorId[datosCurso.revisado_por] || {
@@ -498,6 +504,10 @@ exports.create = async (req, res) => {
       archivo_url,
       nota_materiales,
       nota_equipamiento,
+      codigo_formato,
+      version_formato,
+      fecha_emision_formato,
+      reviso_aprobo_texto
     } = req.body;
 
     // Validaciones básicas
@@ -569,7 +579,10 @@ exports.create = async (req, res) => {
         nombre, clave, duracion_horas, descripcion, nivel, costo, area_id, especialidad_id, tipo_curso_id, 
         vigencia_inicio, fecha_publicacion, ultima_actualizacion, revisado_por, autorizado_por, elaborado_por,archivo_url ,
         nota_materiales, nota_equipamiento
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,$16,$17,$18) RETURNING id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,$16,$17,$18,
+          $19, $20, $21, $22
+  
+      ) RETURNING id
     `;
 
     const cursoValues = [
@@ -591,6 +604,10 @@ exports.create = async (req, res) => {
       archivo_url || null, // Nuevo valor añadido
       nota_materiales,
       nota_equipamiento,
+      codigo_formato || null,
+      version_formato || 1,
+      fecha_emision_formato || null,
+      reviso_aprobo_texto || null
     ];
 
     const { rows: cursoRows } = await client.query(cursoQuery, cursoValues);
@@ -957,7 +974,7 @@ exports.getCourseDetails = async (req, res) => {
         c.fecha_publicacion, c.ultima_actualizacion, c.archivo_url,
         c.elaborado_por, c.revisado_por, c.autorizado_por,
             c.nota_materiales, c.nota_equipamiento, c.nota_requisitos, c.nota_evaluacion
-
+      , c.codigo_formato, c.version_formato, c.fecha_emision_formato, c.reviso_aprobo_texto
 
       FROM cursos c
       WHERE c.id = $1
@@ -1088,7 +1105,7 @@ exports.getCursosByEspecialidadId = async (req, res) => {
 };
 
 exports.updateCourseDetails = async (req, res) => {
-  console.log("updATE 2");
+  console.log("updATE 2***");
 
   const client = await pool.connect();
   try {
@@ -1122,7 +1139,15 @@ exports.updateCourseDetails = async (req, res) => {
       nota_materiales,
       nota_equipamiento,
       archivo_url,
+      codigo_formato,
+      version_formato,
+      fecha_emision_formato,
+      reviso_aprobo_texto
+
     } = req.body;
+fecha_emision_formato = fecha_emision_formato && fecha_emision_formato.trim() !== ''
+  ? fecha_emision_formato
+  : new Date().toISOString().split('T')[0];
 
     // Función para parsear JSON si es necesario
     const parseJSON = (data) =>
@@ -1202,15 +1227,16 @@ exports.updateCourseDetails = async (req, res) => {
     };
     const newFirmaIds = await handleFirmas();
 
-
-    // **Actualizar curso con los nuevos IDs de las firmas**
     await client.query(
       `UPDATE cursos 
-       SET nombre = $1, clave = $2, duracion_horas = $3, descripcion = $4, nivel = $5, costo = $6,
-           area_id = $7, especialidad_id = $8, tipo_curso_id = $9, vigencia_inicio = $10, 
-           fecha_publicacion = $11, ultima_actualizacion = $12, revisado_por = $13, 
-           autorizado_por = $14, elaborado_por = $15 ,nota_materiales = $16,nota_equipamiento = $19,  archivo_url = $17 
-       WHERE id = $18`,
+   SET nombre = $1, clave = $2, duracion_horas = $3, descripcion = $4, nivel = $5, costo = $6,
+       area_id = $7, especialidad_id = $8, tipo_curso_id = $9, vigencia_inicio = $10, 
+       fecha_publicacion = $11, ultima_actualizacion = $12, revisado_por = $13, 
+       autorizado_por = $14, elaborado_por = $15, nota_materiales = $16, 
+       nota_equipamiento = $17, archivo_url = $18,
+       version_formato = $19, fecha_emision_formato = $20, 
+       codigo_formato = $21, reviso_aprobo_texto = $22
+   WHERE id = $23`,
       [
         nombre,
         clave,
@@ -1228,13 +1254,15 @@ exports.updateCourseDetails = async (req, res) => {
         newFirmaIds.autorizado,
         newFirmaIds.elaborado,
         nota_materiales || null,
-        archivo_url || null,
-
-        id,
         nota_equipamiento || null,
+        archivo_url || null,
+        version_formato || 1,
+        fecha_emision_formato || null,
+        codigo_formato || null,
+        reviso_aprobo_texto || null,
+        id
       ]
     );
-
     // **Eliminar las firmas antiguas**
     const firmasParaEliminar = [];
     if (newFirmaIds.revisado && newFirmaIds.revisado !== oldRevisadoPor) firmasParaEliminar.push(oldRevisadoPor);

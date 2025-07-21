@@ -112,6 +112,7 @@ WHERE pc.plantel_id = ${idPlantel} AND pc.estatus = true
     const { rows } = await pool.query(query, [id]);
     return rows[0];
   },
+
   async getByIdInfoReporte(id) {
 
     const query = `
@@ -131,6 +132,11 @@ WHERE pc.plantel_id = ${idPlantel} AND pc.estatus = true
   c.revisado_por AS REVISADO_POR,
   c.autorizado_por AS AUTORIZADO_POR,
   c.tipo_curso_id AS tipo_curso_id,
+  c.version_formato,
+  c.fecha_emision_formato,
+  c.codigo_formato,
+  c.reviso_aprobo_texto,
+
   t.nombre AS tipo_curso,
   ft.objetivo,
   ft.perfil_ingreso,
