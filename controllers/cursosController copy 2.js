@@ -244,13 +244,276 @@ exports.getByIdInfoReporte = async (req, res) => {
   }
 };
 
+// exports.create = async (req, res) => {
+//   const client = await pool.connect();
+//   let uploadResult = null;
+
+//   try {
+//     console.log(
+//       "Datos recibidos del frontend  para la creacion_____:",
+//       req.body
+//     );
+
+//     const {
+//       nombre,
+//       clave,
+//       duracion_horas,
+//       descripcion,
+//       costo,
+//       nivel,
+//       area_id,
+//       especialidad_id,
+//       tipo_curso_id,
+//       vigencia_inicio,
+//       fecha_publicacion,
+//       ultima_actualizacion,
+//       revisado_por,
+//       cargo_revisado_por,
+//       autorizado_por,
+//       cargo_autorizado_por,
+//       elaborado_por,
+//       cargo_elaborado_por,
+//       objetivos,
+//       materiales,
+//       equipamiento,
+//       contenidoProgramatico,
+//       archivo_url,
+//       nota_materiales,
+//       nota_equipamiento,
+//       codigo_formato,
+//       version_formato,
+//       fecha_emision_formato,
+//       reviso_aprobo_texto
+//     } = req.body;
+
+//     // Validaciones básicas
+//     if (
+//       !nombre ||
+//       !clave ||
+//       !duracion_horas ||
+//       !descripcion ||
+//       !tipo_curso_id
+//     ) {
+//       return res
+//         .status(400)
+//         .json({ error: "Los campos obligatorios deben completarse" });
+//     }
+//     // Convertir '0' a null para area_id y especialidad_id
+//     const areaId = area_id === '0' ? null : area_id;
+//     const especialidadId = especialidad_id === '0' ? null : especialidad_id;
+//     // Validar firmantes
+//     if (!revisado_por || !autorizado_por || !elaborado_por) {
+//       return res
+//         .status(400)
+//         .json({ error: "Debe especificar todos los firmantes" });
+//     }
+
+//     if (!cargo_revisado_por || !cargo_autorizado_por || !cargo_elaborado_por) {
+//       return res
+//         .status(400)
+//         .json({ error: "Debe especificar los cargos de todos los firmantes" });
+//     }
+
+//     await client.query("BEGIN");
+
+//     // Obtener o crear firmas
+//     const firmaIds = {
+//       revisado: await obtenerOcrearFirma(
+//         client,
+//         revisado_por,
+//         cargo_revisado_por,
+//         "Revisado"
+//       ),
+//       autorizado: await obtenerOcrearFirma(
+//         client,
+//         autorizado_por,
+//         cargo_autorizado_por,
+//         "Autorizado"
+//       ),
+//       elaborado: await obtenerOcrearFirma(
+//         client,
+//         elaborado_por,
+//         cargo_elaborado_por,
+//         "Elaborado"
+//       ),
+//     };
+
+//     // Resto del código de inserción (curso, ficha técnica, materiales, etc.) permanece igual
+//     // ... [código existente]
+//     const parseJSON = (data) =>
+//       typeof data === "string" ? JSON.parse(data) : data;
+//     const parsedObjetivos = parseJSON(objetivos) || {};
+//     const parsedMateriales = parseJSON(materiales) || [];
+//     const parsedEquipamiento = parseJSON(equipamiento) || [];
+//     const parsedContenidoProgramatico = parseJSON(contenidoProgramatico) || {
+//       temas: [],
+//     };
+
+//     // Inserta curso
+//     const cursoQuery = `
+//       INSERT INTO cursos (
+//         nombre, clave, duracion_horas, descripcion, nivel, costo, area_id, especialidad_id, tipo_curso_id, 
+//         vigencia_inicio, fecha_publicacion, ultima_actualizacion, revisado_por, autorizado_por, elaborado_por,archivo_url ,
+//         nota_materiales, nota_equipamiento
+//       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,$16,$17,$18,
+//           $19, $20, $21, $22
+
+//       ) RETURNING id
+//     `;
+
+//     const cursoValues = [
+//       nombre,
+//       clave,
+//       duracion_horas,
+//       descripcion,
+//       nivel || "Básico",
+//       costo,
+//       area_id || null,
+//       especialidad_id || null,
+//       tipo_curso_id,
+//       vigencia_inicio || null,
+//       fecha_publicacion || null,
+//       ultima_actualizacion || null,
+//       firmaIds.revisado, // Usar el ID de la firma "Revisado"
+//       firmaIds.autorizado, // Usar el ID de la firma "Autorizado"
+//       firmaIds.elaborado, // Usar el ID de la firma "Elaborado"
+//       archivo_url || null, // Nuevo valor añadido
+//       nota_materiales,
+//       nota_equipamiento,
+//       codigo_formato || null,
+//       version_formato || 1,
+//       fecha_emision_formato || null,
+//       reviso_aprobo_texto || null
+//     ];
+
+//     const { rows: cursoRows } = await client.query(cursoQuery, cursoValues);
+//     const id_curso = cursoRows[0].id;
+
+//     // Inserta ficha técnica
+//     const fichaTecnicaParams = {
+//       id_curso,
+//       objetivo: parsedObjetivos.objetivo || "N/C",
+//       perfil_ingreso: parsedObjetivos.perfil_ingreso || "N/C",
+//       perfil_egreso: parsedObjetivos.perfil_egreso || "N/C",
+//       perfil_del_docente: parsedObjetivos.perfil_del_docente || "N/C",
+//       metodologia: parsedObjetivos.metodologia || "N/C",
+//       bibliografia: parsedObjetivos.bibliografia || "N/C",
+//       criterios_acreditacion: parsedObjetivos.criterios_acreditacion || "N/C",
+//       reconocimiento: parsedObjetivos.reconocimiento || "N/C",
+//     };
+
+//     await client.query(
+//       `INSERT INTO ficha_tecnica 
+//        (id_curso, objetivo, perfil_ingreso, perfil_egreso, perfil_del_docente, metodologia,
+//         bibliografia, criterios_acreditacion, reconocimiento) 
+//        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+//       Object.values(fichaTecnicaParams)
+//     );
+
+//     // Inserta materiales
+//     for (const material of parsedMateriales) {
+//       const materialParams = {
+//         id_curso,
+//         descripcion: material.descripcion || "N/C",
+//         unidad_de_medida: material.unidad_de_medida || "N/C",
+//         cantidad_10: material.cantidad10 || 0,
+//         cantidad_15: material.cantidad15 || 0,
+//         cantidad_20: material.cantidad20 || 0,
+//       };
+
+//       await client.query(
+//         `INSERT INTO material 
+//          (id_curso, descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20) 
+//          VALUES ($1, $2, $3, $4, $5, $6)`,
+//         Object.values(materialParams)
+//       );
+//     }
+
+//     // Inserta equipamiento
+//     for (const equipo of parsedEquipamiento) {
+//       const equipamientoParams = {
+//         id_curso,
+//         descripcion: equipo.descripcion || "N/C",
+//         unidad_de_medida: equipo.unidad_de_medida || "OTRO",
+//         cantidad_10: equipo.cantidad10 || 0,
+//         cantidad_15: equipo.cantidad15 || 0,
+//         cantidad_20: equipo.cantidad20 || 0,
+//       };
+
+//       await client.query(
+//         `INSERT INTO equipamiento 
+//          (id_curso, descripcion, unidad_de_medida, cantidad_10, cantidad_15, cantidad_20) 
+//          VALUES ($1, $2, $3, $4, $5, $6)`,
+//         Object.values(equipamientoParams)
+//       );
+//     }
+
+//     // Inserta contenido programático
+//     for (const tema of parsedContenidoProgramatico.temas) {
+//       const contenidoParams = {
+//         id_curso,
+//         tema_nombre: tema.tema_nombre || "N/C",
+//         tiempo: tema.tiempo || 0,
+//         competencias: tema.competencias || null,
+//         evaluacion: tema.evaluacion || null,
+//         actividades: tema.actividades || null,
+//       };
+
+//       await client.query(
+//         `INSERT INTO contenido_programatico 
+//          (id_curso, tema_nombre, tiempo, competencias, evaluacion, actividades) 
+//          VALUES ($1, $2, $3, $4, $5, $6)`,
+//         Object.values(contenidoParams)
+//       );
+//     }
+
+//     // Insertar registro de autorización
+//     const autorizacionQuery = `
+//       INSERT INTO autorizaciones (
+//         elaborado_por, revisado_por, autorizado_por, curso_id, fecha_vigencia
+//       ) VALUES ($1, $2, $3, $4, $5)
+//     `;
+//     await client.query(autorizacionQuery, [
+//       firmaIds.elaborado,
+//       firmaIds.revisado,
+//       firmaIds.autorizado,
+//       id_curso,
+//       vigencia_inicio || null,
+//     ]);
+
+//     await client.query("COMMIT");
+//     res
+//       .status(201)
+//       .json({ message: "Curso registrado exitosamente", id_curso });
+//   } catch (error) {
+//     await client.query("ROLLBACK");
+//     console.error("Error al registrar el curso:", error);
+
+//     if (uploadResult?.public_id) {
+//       try {
+//         await cloudinary.uploader.destroy(uploadResult.public_id);
+//       } catch (e) {
+//         console.error("Error al eliminar archivo de Cloudinary:", e);
+//       }
+//     }
+
+//     res.status(500).json({
+//       error: "Error al registrar el curso",
+//       details: error.message,
+//       stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+//     });
+//   } finally {
+//     client.release();
+//   }
+// };
+
 exports.create = async (req, res) => {
   const client = await pool.connect();
   let uploadResult = null;
 
   try {
     console.log(
-      "Datos recibidos del frontend  para la creacion_____:",
+      "Datos recibidos del frontend  para la creacion__2025___:",
       req.body
     );
 
@@ -349,18 +612,15 @@ exports.create = async (req, res) => {
       temas: [],
     };
 
-
-      const cursoQuery = `
+    // Inserta curso
+    const cursoQuery = `
       INSERT INTO cursos (
-        nombre, clave, duracion_horas, descripcion, nivel, costo, area_id,
-        especialidad_id, tipo_curso_id, vigencia_inicio, fecha_publicacion,
-        ultima_actualizacion, revisado_por, autorizado_por, elaborado_por,
-        archivo_url, nota_materiales, nota_equipamiento,
-        codigo_formato, version_formato, fecha_emision_formato, reviso_aprobo_texto
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7,
-        $8, $9, $10, $11, $12, $13, $14, $15,
-        $16, $17, $18, $19, $20, $21, $22
+        nombre, clave, duracion_horas, descripcion, nivel, costo, area_id, especialidad_id, tipo_curso_id, 
+        vigencia_inicio, fecha_publicacion, ultima_actualizacion, revisado_por, autorizado_por, elaborado_por,archivo_url ,
+        nota_materiales, nota_equipamiento
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,$16,$17,$18,
+          $19, $20, $21, $22
+  
       ) RETURNING id
     `;
 
@@ -392,27 +652,7 @@ exports.create = async (req, res) => {
     const { rows: cursoRows } = await client.query(cursoQuery, cursoValues);
     const id_curso = cursoRows[0].id;
 
-    // // Inserta ficha técnica
-    // const fichaTecnicaParams = {
-    //   id_curso,
-    //   objetivo: parsedObjetivos.objetivo || "N/C",
-    //   perfil_ingreso: parsedObjetivos.perfil_ingreso || "N/C",
-    //   perfil_egreso: parsedObjetivos.perfil_egreso || "N/C",
-    //   perfil_del_docente: parsedObjetivos.perfil_del_docente || "N/C",
-    //   metodologia: parsedObjetivos.metodologia || "N/C",
-    //   bibliografia: parsedObjetivos.bibliografia || "N/C",
-    //   criterios_acreditacion: parsedObjetivos.criterios_acreditacion || "N/C",
-    //   reconocimiento: parsedObjetivos.reconocimiento || "N/C",
-    // };
-
-    // await client.query(
-    //   `INSERT INTO ficha_tecnica 
-    //    (id_curso, objetivo, perfil_ingreso, perfil_egreso, perfil_del_docente, metodologia,
-    //     bibliografia, criterios_acreditacion, reconocimiento) 
-    //    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-    //   Object.values(fichaTecnicaParams)
-    // );
-        // Inserta ficha técnica
+    // Inserta ficha técnica
     const fichaTecnicaParams = {
       id_curso,
       objetivo: parsedObjetivos.objetivo || "N/C",
@@ -800,8 +1040,7 @@ exports.getCourseDetails = async (req, res) => {
     const fichaQuery = `
       SELECT 
         id, objetivo, perfil_ingreso, perfil_egreso, perfil_del_docente, 
-        metodologia, bibliografia, criterios_acreditacion, reconocimiento,
-        presentacion, objetivo_especialidad, aplicacion_laboral, directorio
+        metodologia, bibliografia, criterios_acreditacion, reconocimiento
       FROM ficha_tecnica
       WHERE id_curso = $1
     `;
@@ -951,12 +1190,12 @@ exports.updateCourseDetails = async (req, res) => {
       codigo_formato,
       version_formato,
       fecha_emision_formato,
-      reviso_aprobo_texto,
-      
+      reviso_aprobo_texto
+
     } = req.body;
-fecha_emision_formato = fecha_emision_formato && fecha_emision_formato.trim() !== ''
-  ? fecha_emision_formato
-  : new Date().toISOString().split('T')[0];
+    fecha_emision_formato = fecha_emision_formato && fecha_emision_formato.trim() !== ''
+      ? fecha_emision_formato
+      : new Date().toISOString().split('T')[0];
 
     // Función para parsear JSON si es necesario
     const parseJSON = (data) =>
@@ -1099,10 +1338,6 @@ fecha_emision_formato = fecha_emision_formato && fecha_emision_formato.trim() !=
       bibliografia: objetivos.bibliografia || "N/C",
       criterios_acreditacion: objetivos.criterios_acreditacion || "N/C",
       reconocimiento: objetivos.reconocimiento || "N/C",
-      presentacion: objetivos.presentacion || "N/C",
-      objetivo_especialidad: objetivos.objetivo_especialidad || "N/C",
-      aplicacion_laboral: objetivos.aplicacion_laboral || "N/C",
-      directorio: objetivos.directorio || "N/C",
     };
 
     if (fichaExists.rowCount > 0) {
@@ -1110,9 +1345,7 @@ fecha_emision_formato = fecha_emision_formato && fecha_emision_formato.trim() !=
       await client.query(
         `UPDATE ficha_tecnica 
          SET objetivo = $2, perfil_ingreso = $3, perfil_egreso = $4, perfil_del_docente = $5,
-             metodologia = $6, bibliografia = $7, criterios_acreditacion = $8, reconocimiento = $9 ,
-              presentacion = $10, objetivo_especialidad = $11, aplicacion_laboral = $12,
-              directorio = $13
+             metodologia = $6, bibliografia = $7, criterios_acreditacion = $8, reconocimiento = $9 
          WHERE id_curso = $1`,
         Object.values(fichaTecnicaParams)
       );
