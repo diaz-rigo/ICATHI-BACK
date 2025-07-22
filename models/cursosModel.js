@@ -145,7 +145,12 @@ WHERE pc.plantel_id = ${idPlantel} AND pc.estatus = true
   ft.metodologia,
   ft.bibliografia,
   ft.criterios_acreditacion,
-  ft.reconocimiento,c.nota_materiales,
+  ft.reconocimiento,
+  ft.presentacion,
+  ft.objetivo_especialidad,
+  ft.aplicacion_laboral,
+  ft.directorio,
+  c.nota_materiales,
   -- Datos de las firmas
   JSONB_BUILD_OBJECT(
     'elaborado_por', JSONB_BUILD_OBJECT(
@@ -202,6 +207,10 @@ WHERE
 GROUP BY 
   c.id, ft.objetivo, ft.perfil_ingreso, ft.perfil_egreso, ft.perfil_del_docente, 
   ft.metodologia, ft.bibliografia, ft.criterios_acreditacion, ft.reconocimiento,
+    ft.presentacion,
+  ft.objetivo_especialidad,
+  ft.aplicacion_laboral,
+  ft.directorio,
   fe.nombre, fe.cargo, fr.nombre, fr.cargo, fa.nombre, fa.cargo, t.nombre; `;
 
     const { rows } = await pool.query(query, [id]);

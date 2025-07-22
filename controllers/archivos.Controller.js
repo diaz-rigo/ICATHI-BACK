@@ -137,6 +137,32 @@ exports.uploadImageProfile = async (req, res) => {
   }
 };
 
+// subir imagenes para formatos de cursos
+exports.uploadImageFormat = async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: "No se ha enviado una imagen." });
+
+    const folder = 'perfiles_docentes';
+    const formData = new FormData();
+    formData.append('file', fs.createReadStream(req.file.path), req.file.originalname);
+
+    const response = await axiosInstance.post(`${FILE_SERVER_URL}${UPLOAD_ENDPOINT}?folder=${folder}`, formData, {
+      headers: formData.getHeaders()
+    });
+
+    if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+
+    const uploadedUrl = response.data.url;
+    const nombreArchivo = uploadedUrl.split('/').pop();
+    const renderUrl = `https://${req.get('host')}/archivos/descargar?folder=${folder}&nombre=${nombreArchivo}`;
+
+    res.status(201).json({ image: renderUrl });
+  } catch (error) {
+    console.error("Error al subir la imagen:", error.message);
+    res.status(500).json({ message: "Error al subir la imagen.", error: error.message });
+  }
+};
+
 exports.uploadCedula = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "No se ha enviado el archivo de cédula." });

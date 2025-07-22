@@ -10,6 +10,7 @@ router.get('/descargar', archivos__.descargarArchivoGeneral);
 
 
 router.post("/upload-profile_docente", upload.single('profileImage'), archivos__.uploadImageProfile);
+router.post("/upload-imagen-portada", upload.single('imagen'), archivos__.uploadImageFormat);
 
 router.post('/upload-documento-identificacion_docente', upload.single('documentoIdentificacion'), archivos__.uploadDocumentoIdentificacion);
 // Rutas para subir los diferentes documentos

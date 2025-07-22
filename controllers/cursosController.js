@@ -144,6 +144,10 @@ exports.getByIdInfoReporte = async (req, res) => {
       fecha_emision_formato: datosCurso.fecha_emision_formato || "No disponible",
       codigo_formato: datosCurso.codigo_formato || "No disponible",
       reviso_aprobo_texto: datosCurso.reviso_aprobo_texto || "No disponible",
+      presentacion: datosCurso.presentacion || "No disponible",
+      objetivo_especialidad: datosCurso.objetivo_especialidad || "No disponible",
+      aplicacion_laboral: datosCurso.aplicacion_laboral || "No disponible",
+      directorio: datosCurso.directorio || "No disponible",
 
       firmas: {
         REVISADO_POR: firmasPorId[datosCurso.revisado_por] || {
