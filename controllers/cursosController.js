@@ -101,6 +101,11 @@ exports.getByIdInfoReporte = async (req, res) => {
         ETIQUETA_CRITERIOS: "CRITERIOS DE ACREDITACIÓN",
         ETIQUETA_RECONOCIMIENTO: "RECONOCIMIENTO A LA PERSONA EGRESADA",
       },
+      4: {
+        ETIQUETA_BIBLIOGRAFIA: "BIBLIOGRAFÍA / WEBGRAFÍA",
+        ETIQUETA_CRITERIOS: "CRITERIOS DE ACREDITACIÓN",
+        ETIQUETA_RECONOCIMIENTO: "RECONOCIMIENTO A LA PERSONA EGRESADA",
+      },
     };
 
     // Obtener el conjunto de etiquetas según el tipo de curso
