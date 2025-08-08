@@ -151,7 +151,7 @@
                 <div class="md-card-content">
                     <div class="uk-grid uk-grid-medium">
                         <div class="uk-width-1-1">
-                            <h3>Alumnos en lista de espera ({{vm.AcademiaObject.Espera.length}})</h3>
+                            <h3>Alumnos en lista de espera  ({{vm.AcademiaObject.Espera.length}})</h3>
                         </div>
                     </div>
                     <div class="uk-grid uk-grid-medium" ng-if="vm.AcademiaObject.Espera.length > 0">
@@ -161,21 +161,20 @@
                                     <tr>
                                         <th class="innovat-campo-dinamico">Nombre</th>
                                         <th class="innovat-campo-dinamico">Grupo</th>
-                                        <th class="innovat-campo-dinamico"><span class="uk-float-right">Acciones</span></th>
+                                        <th class="innovat-campo-dinamico">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody class="innovat-tbody">
                                     <tr ng-repeat="alumno in vm.AcademiaObject.Espera">
                                         <td class="innovat-campo-dinamico">{{alumno.Nombre}}</td>
                                         <td class="innovat-campo-dinamico">{{alumno.Grupo}}</td>
-                                        <td class="innovat-campo-dinamico">
-                                            <button class="md-btn uk-float-right uk-margin-left" ng-click="vm.EliminarDeEspera(alumno)"><i class="md-24 uk-margin-small-right material-icons">&#xE872;</i></button>
-                                             <span class="uk-text-warning uk-float-right"
-                                                ng-if="vm.AcademiaObject.Inscritos.length >= vm.AcademiaObject.Capacidad">La academia esta llena</span>
+                                        <td class="innovat-campo-dinamico ">
+                                            <span class="uk-text-warning uk-float-right"
+                                                ng-if="vm.AcademiaObject.Inscritos.length >= vm.AcademiaObject.Capacidad">La
+                                                academia esta llena</span>
                                             <button class="md-btn uk-float-right" ng-click="vm.Inscribir(alumno)"
                                                 ng-if="vm.AcademiaObject.Inscritos.length < vm.AcademiaObject.Capacidad"><i
                                                     class="md-24 uk-margin-small-right material-icons">&#xea4d;</i>Inscribir</button>
-                                            
                                         </td>
                                     </tr>
                                 </tbody>
