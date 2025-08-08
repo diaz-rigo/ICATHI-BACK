@@ -1,5 +1,6 @@
 const pool = require("../config/database")
-const { enviarCorreo } = require("../config/nodemailer")
+// const { enviarCorreo } = require("../config/nodemailer")
+const { enviarCorreo, transporter } = require("../config/brevo-mailer")
 const EmailValidator = require("../utils/email-validator")
 const EMAIL_CONSTANTS = require("../const/email-constants")
 
