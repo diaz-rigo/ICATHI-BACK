@@ -78,37 +78,37 @@ const ReporteAdminController = {
         }
     },
 
-    async cambiarPasswordUsuario(req, res) {
-        try {
-            // Verificar rol administrador
-            if (!req.user || req.user.rol !== "ADMIN") {
-                return res.status(403).json({ ok: false, message: "No autorizado." });
-            }
+    // async cambiarPasswordUsuario(req, res) {
+    //     try {
+    //         // Verificar rol administrador
+    //         // if (!req.user || req.user.rol !== "ADMIN") {
+    //         //     return res.status(403).json({ ok: false, message: "No autorizado." });
+    //         // }
 
-            const { usuarioId } = req.params;
-            const { nuevoPassword } = req.body;
+    //         const { usuarioId } = req.params;
+    //         const { nuevoPassword } = req.body;
+    //         console.log("req.body",req.body)
+    //         if (!nuevoPassword || nuevoPassword.length < 8) {
+    //             return res.status(400).json({
+    //                 ok: false,
+    //                 message: "El nuevo password es requerido y debe tener al menos 8 caracteres.",
+    //             });
+    //         }
 
-            if (!nuevoPassword || nuevoPassword.length < 8) {
-                return res.status(400).json({
-                    ok: false,
-                    message: "El nuevo password es requerido y debe tener al menos 8 caracteres.",
-                });
-            }
+    //         const hash = await bcrypt.hash(nuevoPassword, saltRounds);
+    //         const actualizado = await ReporteAdminModel.actualizarPasswordUsuario(Number(usuarioId), hash);
+    //         if (!actualizado) return res.status(404).json({ ok: false, message: "Usuario no encontrado." });
 
-            const hash = await bcrypt.hash(nuevoPassword, saltRounds);
-            const actualizado = await ReporteAdminModel.actualizarPasswordUsuario(Number(usuarioId), hash);
-            if (!actualizado) return res.status(404).json({ ok: false, message: "Usuario no encontrado." });
-
-            return res.json({
-                ok: true,
-                message: "Password actualizado correctamente.",
-                data: actualizado, // no incluye el hash
-            });
-        } catch (err) {
-            console.error("Error cambiarPasswordUsuario:", err);
-            return res.status(500).json({ ok: false, message: "Error interno al actualizar el password." });
-        }
-    },
+    //         return res.json({
+    //             ok: true,
+    //             message: "Password actualizado correctamente.",
+    //             data: actualizado, // no incluye el hash
+    //         });
+    //     } catch (err) {
+    //         console.error("Error cambiarPasswordUsuario:", err);
+    //         return res.status(500).json({ ok: false, message: "Error interno al actualizar el password." });
+    //     }
+    // },
 };
 
 module.exports = ReporteAdminController;

@@ -5,6 +5,7 @@
     
     router.post('/registro', postulacionController.registrarUsuarioInicial);
     router.post('/crear-password', postulacionController.crearPassword);
+    router.post('/crear-password-admin', postulacionController.crearPasswordAdmin);
     // Ruta para registrar un usuario
     router.get('/validar-correo', postulacionController.validarCorreo); // Cambiar de POST a GET
 

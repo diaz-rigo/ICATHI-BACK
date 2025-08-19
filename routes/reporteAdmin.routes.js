@@ -50,10 +50,10 @@ router.patch(
  * PATCH /api/admin/usuarios/:usuarioId/password
  * Body: { nuevoPassword: string }
  */
-router.patch(
-    "/usuarios/:usuarioId/password",
-    // requireAuth, requireAdmin,
-    ReporteAdminController.cambiarPasswordUsuario
-);
+// router.put(
+//     "/usuarios/:usuarioId/password",
+//     // requireAuth, requireAdmin,
+//     ReporteAdminController.cambiarPasswordUsuario
+// );
 
 module.exports = router;

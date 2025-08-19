@@ -261,11 +261,61 @@ exports.crearPassword = async (req, res) => {
       `;
       await client.query(queryActualizarRol, [email]);
     }
-    // Activar usuario
-    // const queryActivarUsuario = `
-    //   UPDATE usuarios SET estatus = false, correo_validado = true WHERE id = $1;
-    // `;
-    // await client.query(queryActivarUsuario, [userId]);
+
+    res.json({ mensaje: 'Contraseña creada correctamente y rol actualizado ...' });
+  } catch (error) {
+    console.error('Error al intentar crear la contraseña:', error.message);
+    console.error('Pila de error:', error.stack); // Esto te mostrará la ubicación exacta del error.
+    res.status(500).json({ mensaje: 'Error al crear la contraseña.' });
+  } finally {
+    client.release();
+  }
+};
+exports.crearPasswordAdmin = async (req, res) => {
+  const { email, nuevaContraseña } = req.body;
+  console.log(req.body);
+
+  const client = await pool.connect();
+  try {
+    // Verificar si el usuario existe
+    const queryUsuario = `
+      SELECT id, correo_validado FROM usuarios WHERE email = $1;
+    `;
+    const { rows } = await client.query(queryUsuario, [email]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ mensaje: 'Usuario no encontrado.' });
+    }
+
+    const usuario = rows[0];
+
+    // // Verificar si el correo ha sido validado
+    // if (!usuario.correo_validado) {
+    //   return res.status(400).json({ mensaje: 'Correo no validado.' });
+    // }
+
+    console.log(nuevaContraseña); // Verifica que la nueva contraseña esté llegando correctamente
+    const hashedPassword = await bcrypt.hash(nuevaContraseña, 10);
+
+    // Actualizar la contraseña en la base de datos
+    const queryActualizarContraseña = `
+      UPDATE usuarios SET password_hash = $1 WHERE email = $2;
+    `;
+    await client.query(queryActualizarContraseña, [hashedPassword, email]);
+
+    // Verificar si el correo existe en la tabla docentes
+    const queryDocente = `
+      SELECT id FROM docentes WHERE email = $1;
+    `;
+    const docenteResult = await client.query(queryDocente, [email]);
+
+    if (docenteResult.rows.length > 0) {
+      // Actualizar el rol del usuario a DOCENTE
+      const queryActualizarRol = `
+        UPDATE usuarios SET estatus = true,   rol = 'DOCENTE' WHERE email = $1;
+      `;
+      await client.query(queryActualizarRol, [email]);
+    }
 
     res.json({ mensaje: 'Contraseña creada correctamente y rol actualizado ...' });
   } catch (error) {
