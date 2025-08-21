@@ -1,14 +1,14 @@
-
 const express = require("express");
 const router = express.Router();
 const upload = require('../config/upload');
 const archivos__ = require('../controllers/archivos.Controller');
 router.post('/upload-temario_curso', upload.single('temario'), archivos__.uploadTemario);
 router.get('/descargar-temario', archivos__.descargarTemario);
-router.get('/descargar', archivos__.descargarArchivoGeneral);   
+router.get('/descargar', archivos__.descargarArchivoGeneral);
 
 
 
+// router.post("/upload-profile_docente", upload.single('profileImage'), archivos__.uploadImageProfile);
 router.post("/upload-profile_docente", upload.single('profileImage'), archivos__.uploadImageProfile);
 router.post("/upload-imagen-portada", upload.single('imagen'), archivos__.uploadImageFormat);
 
