@@ -15,16 +15,59 @@ const Usuario = {
     const result = await pool.query(query, [estatus, rol, id]);
     return result.rowCount > 0; // Retorna `true` si se actualizó alguna fila, `false` en caso contrario
   },
-  async insertarUsuario(nombre, apellidos, email, telefono, rol, estatus,username,passwordHash) {
+  async insertarUsuario(nombre, apellidos, email, telefono, rol, estatus, username, passwordHash) {
+    let intentos = 0;
+    const maxIntentos = 3;
 
-    const query = `
-    INSERT INTO usuarios (nombre, apellidos, email, telefono, rol, estatus,username,password_hash)
-    VALUES ($1, $2, $3, $4, $5, $6,$7,$8)
-    RETURNING id;
-  `;
-    const { rows } = await pool.query(query, [nombre, apellidos, email, telefono, rol, estatus, username,passwordHash]);
-    return rows[0].id;
+    while (intentos < maxIntentos) {
+      try {
+        // Obtener el próximo ID disponible
+        const maxIdQuery = 'SELECT COALESCE(MAX(id), 0) + 1 as next_id FROM usuarios';
+        const maxIdResult = await pool.query(maxIdQuery);
+        const nextId = maxIdResult.rows[0].next_id;
+
+        // Resetear la secuencia
+        await pool.query('SELECT setval(\'usuarios_id_seq\', $1)', [nextId]);
+
+        const query = `
+                INSERT INTO usuarios (id, nombre, apellidos, email, telefono, rol, estatus, username, password_hash)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                RETURNING id;
+            `;
+
+        const { rows } = await pool.query(query, [
+          nextId,
+          nombre, apellidos, email, telefono, rol, estatus, username, passwordHash
+        ]);
+
+        return rows[0].id;
+
+      } catch (error) {
+        if (error.code === '23505' && error.constraint === 'usuarios_pkey') {
+          // ID duplicado, intentar de nuevo
+          intentos++;
+          console.warn(`Intento ${intentos}: ID duplicado, reintentando...`);
+
+          if (intentos >= maxIntentos) {
+            throw new Error('No se pudo insertar usuario después de múltiples intentos');
+          }
+        } else {
+          // Otro tipo de error
+          throw error;
+        }
+      }
+    }
   },
+  // async insertarUsuario(nombre, apellidos, email, telefono, rol, estatus,username,passwordHash) {
+
+  //   const query = `
+  //   INSERT INTO usuarios (nombre, apellidos, email, telefono, rol, estatus,username,password_hash)
+  //   VALUES ($1, $2, $3, $4, $5, $6,$7,$8)
+  //   RETURNING id;
+  // `;
+  //   const { rows } = await pool.query(query, [nombre, apellidos, email, telefono, rol, estatus, username,passwordHash]);
+  //   return rows[0].id;
+  // },
   async insertarTokenValidacion(id, token) {
     const query = `
     INSERT INTO validaciones_email (usuario_id, token)
@@ -81,40 +124,40 @@ const Usuario = {
   ,
   async crearUsuario(data) {
     const { nombre, apellidos, email, username, password, rol } = data;
-  
+
     // Verificar si el correo ya está registrado
     const checkEmailQuery = 'SELECT * FROM usuarios WHERE email = $1';
-    
+
     try {
       const emailResult = await pool.query(checkEmailQuery, [email]);
-      
+
       // Si ya existe un usuario con el correo, devolver un error
       if (emailResult.rows.length > 0) {
         throw new Error('El correo electrónico ya está registrado');
       }
-  
+
       // Generar el hash de la contraseña usando bcrypt
       const saltRounds = 10; // Número de rondas de salt
       const hashedPassword = await bcrypt.hash(password, saltRounds);
-  
+
       const query = `
         INSERT INTO usuarios (nombre, apellidos, email, username, password_hash, rol, estatus)
         VALUES ($1, $2, $3, $4, $5, $6, false)
         RETURNING *;
       `;
       const values = [nombre, apellidos, email, username, hashedPassword, rol];
-      
+
       const result = await pool.query(query, values);
       return result.rows[0]; // Retorna el usuario creado
-  
+
     } catch (error) {
       console.error('Error al crear usuario:', error.message);
       throw error;
     }
   }
-  
-  
-,
+
+
+  ,
   // Listar todos los usuarios
   async listarUsuarios() {
     const query = `
@@ -186,7 +229,7 @@ const Usuario = {
       throw error;
     }
   },
-  async  eliminarUsuario(id) {
+  async eliminarUsuario(id) {
     const verificarRelaciones = `
       SELECT
         CASE
@@ -202,29 +245,29 @@ const Usuario = {
       WHERE id = $1
       RETURNING *;
     `;
-  
+
     try {
       // Verifica si el usuario está relacionado con otras tablas
       const result = await pool.query(verificarRelaciones, [id]);
       const tipoUsuario = result.rows[0]?.tipo_usuario;
-  
+
       if (!tipoUsuario) {
         throw new Error('El usuario no existe.');
       }
-  
+
       // Si es un docente, elimina los registros relacionados en la tabla "docentes"
       if (tipoUsuario === 'DOCENTE') {
         await pool.query(eliminarRelacionesDocente, [id]);
       }
-  
+
       // Si es un alumno, elimina los registros relacionados en la tabla "alumnos"
       if (tipoUsuario === 'ALUMNO') {
         await pool.query(eliminarRelacionesAlumno, [id]);
       }
-  
+
       // Finalmente, elimina al usuario
       const usuarioEliminado = await pool.query(eliminarUsuarioQuery, [id]);
-  
+
       console.log(`Usuario de tipo ${tipoUsuario} eliminado correctamente.`);
       return usuarioEliminado.rows[0];
     } catch (error) {
@@ -232,7 +275,7 @@ const Usuario = {
       throw error;
     }
   }
-,  
+  ,
 };
 
 module.exports = Usuario;

@@ -3,12 +3,35 @@ const { enviarCorreo } = require('../config/nodemailer'); // Importa la función
 const crypto = require('crypto'); // Para generar un token aleatorio de validación
 const pool = require('../config/database'); // Importa la configuración del pool de conexiones
 const bcrypt = require('bcrypt');
-
+async function generarUsernameUnico(firstName, lastName1) {
+    const baseUsername = `${firstName.toLowerCase()}_${lastName1.toLowerCase()}`.substring(0, 15);
+    let username = baseUsername;
+    let counter = 1;
+    
+    const checkQuery = 'SELECT COUNT(*) FROM usuarios WHERE username = $1';
+    
+    while (true) {
+        const result = await pool.query(checkQuery, [username]);
+        if (parseInt(result.rows[0].count, 10) === 0) {
+            break;
+        }
+        
+        username = `${baseUsername}${counter}`.substring(0, 15);
+        counter++;
+        
+        if (counter > 100) {
+            throw new Error('No se pudo generar un username único');
+        }
+    }
+    
+    return username;
+}
 exports.registrarUsuarioInicial = async (req, res) => {
   const { firstName, lastName1, lastName2, email, phone } = req.body;
 
   // Generar automáticamente un username basado en el nombre y apellido
-  const username = `${firstName.toLowerCase()}_${lastName1.toLowerCase()}`.substring(0, 15);
+  // const username = `${firstName.toLowerCase()}_${lastName1.toLowerCase()}`.substring(0, 15);
+  const username = await generarUsernameUnico(firstName, lastName1);
 
   // Generar hash de la contraseña
   const saltRounds = 10;
@@ -41,9 +64,9 @@ exports.registrarUsuarioInicial = async (req, res) => {
     );
     // Insertar en la tabla 'docentes' usando el id_usuario recién creado
     const queryInsertDocente = `
-INSERT INTO docentes (nombre, apellidos, email, telefono, id_usuario)
-VALUES ($1, $2, $3, $4, $5) RETURNING id;
-`;
+      INSERT INTO docentes (nombre, apellidos, email, telefono, id_usuario)
+      VALUES ($1, $2, $3, $4, $5) RETURNING id;
+      `;
     const valuesDocente = [
       firstName,
       `${lastName1} ${lastName2}`,

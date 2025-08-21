@@ -1,6 +1,6 @@
 const pool = require("../config/database")
-    // const { enviarCorreo } = require("../config/nodemailer")
-    // cambiarde brevo a nodemailer
+// const { enviarCorreo } = require("../config/nodemailer")
+// cambiarde brevo a nodemailer
 
 const { enviarCorreo, transporter } = require("../config/brevo-mailer")
 const EmailValidator = require("../utils/email-validator")
@@ -15,9 +15,23 @@ class EmailService {
      * @param {string} email - Email a verificar
      * @returns {Promise<boolean>} True si el email ya existe
      */
+    // static async emailExists(email) {
+    //     const result = await pool.query("SELECT id FROM usuarios WHERE email = $1", [email])
+    //     return result.rows.length > 0
+    // }
     static async emailExists(email) {
-        const result = await pool.query("SELECT id FROM usuarios WHERE email = $1", [email])
-        return result.rows.length > 0
+        const query = `
+            SELECT EXISTS (
+                SELECT 1 FROM usuarios WHERE email = $1
+                UNION ALL
+                SELECT 1 FROM docentes WHERE email = $1
+                UNION ALL
+                SELECT 1 FROM alumnos WHERE email = $1
+            ) AS email_exists
+        `;
+
+        const result = await pool.query(query, [email]);
+        return result.rows[0].email_exists;
     }
 
     /**
