@@ -12,7 +12,12 @@ const FILE_SERVER_URL = 'http://201.116.27.119:3000';
 const UPLOAD_ENDPOINT = '/api/files/upload';
 
 
+
 exports.uploadImageProfile = async(req, res) => {
+    const baseUrl =
+        req.get("host") === "localhost:3000" ?
+        "https://iicathi-api-yiit.onrender.com" :
+        `https://${req.get("host")}`;
     console.log("Subiendo imagen de perfil docente...");
     console.log("Archivo recibido:", req.file);
     try {
@@ -30,7 +35,9 @@ exports.uploadImageProfile = async(req, res) => {
 
         const uploadedUrl = response.data.url;
         const nombreArchivo = uploadedUrl.split('/').pop();
-        const renderUrl = `https://${req.get('host')}/archivos/descargar?folder=${folder}&nombre=${nombreArchivo}`;
+
+
+        const renderUrl = `${baseUrl}/archivos/descargar?folder=${folder}&nombre=${nombreArchivo}`;
 
         res.status(201).json({ image: renderUrl });
     } catch (error) {
@@ -41,6 +48,10 @@ exports.uploadImageProfile = async(req, res) => {
 };
 
 exports.descargarArchivoGeneral = async(req, res) => {
+    // const baseUrl =
+    //     req.get("host") === "localhost:3000" ?
+    //     "https://iicathi-api-yiit.onrender.com" :
+    //     `https://${req.get("host")}`;
     const { folder, nombre } = req.query;
 
     if (!folder || !nombre) {
@@ -68,6 +79,10 @@ exports.descargarArchivoGeneral = async(req, res) => {
 
 
 exports.descargarTemario = async(req, res) => {
+    // const baseUrl =
+    //     req.get("host") === "localhost:3000" ?
+    //     "https://iicathi-api-yiit.onrender.com" :
+    //     `https://${req.get("host")}`;
     const { nombre } = req.query;
 
     if (!nombre) {
@@ -98,6 +113,10 @@ exports.descargarTemario = async(req, res) => {
 
 
 exports.uploadTemario = async(req, res) => {
+    const baseUrl =
+        req.get("host") === "localhost:3000" ?
+        "https://iicathi-api-yiit.onrender.com" :
+        `https://${req.get("host")}`;
     try {
         if (!req.file) {
             return res.status(400).json({ message: "No se ha enviado el archivo de temario." });
@@ -125,7 +144,7 @@ exports.uploadTemario = async(req, res) => {
         // Obtener el nombre del archivo
         const uploadedUrl = response.data.url;
         const nombreArchivo = uploadedUrl.split('/').pop();
-        const renderUrl = `https://${req.get('host')}/archivos/descargar-temario?nombre=${nombreArchivo}`;
+        const renderUrl = `${baseUrl}/archivos/descargar-temario?nombre=${nombreArchivo}`;
 
         // Enviar esa URL
         res.status(201).json({ fileUrl: renderUrl });
@@ -141,6 +160,10 @@ exports.uploadTemario = async(req, res) => {
 
 // subir imagenes para formatos de cursos
 exports.uploadImageFormat = async(req, res) => {
+    const baseUrl =
+        req.get("host") === "localhost:3000" ?
+        "https://iicathi-api-yiit.onrender.com" :
+        `https://${req.get("host")}`;
     try {
         if (!req.file) return res.status(400).json({ message: "No se ha enviado una imagen." });
 
@@ -156,7 +179,7 @@ exports.uploadImageFormat = async(req, res) => {
 
         const uploadedUrl = response.data.url;
         const nombreArchivo = uploadedUrl.split('/').pop();
-        const renderUrl = `https://${req.get('host')}/archivos/descargar?folder=${folder}&nombre=${nombreArchivo}`;
+        const renderUrl = `${baseUrl}/archivos/descargar?folder=${folder}&nombre=${nombreArchivo}`;
 
         res.status(201).json({ image: renderUrl });
     } catch (error) {
@@ -166,6 +189,10 @@ exports.uploadImageFormat = async(req, res) => {
 };
 
 exports.uploadCedula = async(req, res) => {
+    const baseUrl =
+        req.get("host") === "localhost:3000" ?
+        "https://iicathi-api-yiit.onrender.com" :
+        `https://${req.get("host")}`;
     try {
         if (!req.file) return res.status(400).json({ message: "No se ha enviado el archivo de cédula." });
 
@@ -181,7 +208,7 @@ exports.uploadCedula = async(req, res) => {
 
         const uploadedUrl = response.data.url;
         const nombreArchivo = uploadedUrl.split('/').pop();
-        const renderUrl = `https://${req.get('host')}/archivos/descargar?folder=${folder}&nombre=${nombreArchivo}`;
+        const renderUrl = `${baseUrl}/archivos/descargar?folder=${folder}&nombre=${nombreArchivo}`;
 
         res.status(201).json({ fileUrl: renderUrl });
     } catch (error) {
@@ -192,6 +219,10 @@ exports.uploadCedula = async(req, res) => {
 
 
 exports.uploadCurriculum = async(req, res) => {
+    const baseUrl =
+        req.get("host") === "localhost:3000" ?
+        "https://iicathi-api-yiit.onrender.com" :
+        `https://${req.get("host")}`;
     try {
         if (!req.file) return res.status(400).json({ message: "No se ha enviado el archivo del currículum." });
 
@@ -207,7 +238,7 @@ exports.uploadCurriculum = async(req, res) => {
 
         const uploadedUrl = response.data.url;
         const nombreArchivo = uploadedUrl.split('/').pop();
-        const renderUrl = `https://${req.get('host')}/archivos/descargar?folder=${folder}&nombre=${nombreArchivo}`;
+        const renderUrl = `${baseUrl}/archivos/descargar?folder=${folder}&nombre=${nombreArchivo}`;
 
         res.status(201).json({ fileUrl: renderUrl });
     } catch (error) {
@@ -218,6 +249,10 @@ exports.uploadCurriculum = async(req, res) => {
 
 
 exports.uploadDocumentoIdentificacion = async(req, res) => {
+    const baseUrl =
+        req.get("host") === "localhost:3000" ?
+        "https://iicathi-api-yiit.onrender.com" :
+        `https://${req.get("host")}`;
     try {
         if (!req.file) return res.status(400).json({
             message: "No se ha enviado el archivo del documento de identificación.",
@@ -235,7 +270,7 @@ exports.uploadDocumentoIdentificacion = async(req, res) => {
 
         const uploadedUrl = response.data.url;
         const nombreArchivo = uploadedUrl.split('/').pop();
-        const renderUrl = `https://${req.get('host')}/archivos/descargar?folder=${folder}&nombre=${nombreArchivo}`;
+        const renderUrl = `${baseUrl}/archivos/descargar?folder=${folder}&nombre=${nombreArchivo}`;
 
         res.status(201).json({ fileUrl: renderUrl });
     } catch (error) {
