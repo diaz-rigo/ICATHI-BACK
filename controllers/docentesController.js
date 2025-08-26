@@ -308,3 +308,76 @@ exports.delete = async(req, res) => {
         res.status(500).json({ error: 'Error al eliminar el docente' });
     }
 };
+
+
+// const userModel = require('../models/userModel');
+
+exports.cambiarPasswordPerfil = async(req, res) => {
+    const userId = parseInt(req.params.id || req.body.id, 10);
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    try {
+        // 1) Validaciones básicas de entrada
+        if (!userId || Number.isNaN(userId)) {
+            return res.status(400).json({ mensaje: 'ID de usuario inválido.' });
+        }
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            return res.status(400).json({ mensaje: 'Faltan campos: currentPassword, newPassword, confirmPassword.' });
+        }
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({ mensaje: 'La confirmación de la nueva contraseña no coincide.' });
+        }
+
+        // 2) Validar política de contraseña
+        const passwordValidation = DocentesModel.validatePasswordPolicy(newPassword);
+        if (!passwordValidation.isValid) {
+            return res.status(400).json({
+                mensaje: 'La nueva contraseña no cumple la política: mínimo 8 caracteres, incluir mayúscula, minúscula, número y símbolo.',
+                requirements: passwordValidation.requirements
+            });
+        }
+
+        // 3) Obtener usuario y verificar contraseña actual
+        const user = await DocentesModel.getUserById(userId);
+        if (!user) {
+            return res.status(404).json({ mensaje: 'Usuario no encontrado o inactivo.' });
+        }
+
+        // 4) Comparar contraseña actual
+        const isCurrentPasswordValid = await DocentesModel.verifyPassword(currentPassword, user.password_hash);
+        if (!isCurrentPasswordValid) {
+            return res.status(400).json({ mensaje: 'La contraseña actual es incorrecta.' });
+        }
+
+        // 5) Evitar que la nueva sea igual a la actual
+        const isSameAsCurrent = await DocentesModel.verifyPassword(newPassword, user.password_hash);
+        if (isSameAsCurrent) {
+            return res.status(400).json({ mensaje: 'La nueva contraseña no puede ser igual a la actual.' });
+        }
+
+        // 6) Hashear y actualizar contraseña
+        const newHash = await DocentesModel.hashPassword(newPassword);
+        await DocentesModel.updatePassword(userId, newHash);
+
+        // 7) Registrar LOG de acción
+        // const ip = (xForwardedFor ? xForwardedFor.toString().split(',')[0].trim() : null) ||
+        //     (req.socket ? req.socket.remoteAddress : null) ||
+        //     null;
+
+        const userAgent = req.headers['user-agent'] || null;
+
+        await DocentesModel.logAction(
+            userId,
+            'CAMBIO_PASSWORD',
+            'Cambio de contraseña desde Perfil',
+            null,
+            userAgent
+        );
+
+        return res.json({ mensaje: 'Contraseña actualizada correctamente.' });
+
+    } catch (error) {
+        console.error('Error al cambiar la contraseña:', error);
+        return res.status(500).json({ mensaje: 'Error interno al cambiar la contraseña.' });
+    }
+};

@@ -17,6 +17,7 @@ router.get('/usuario/:userId', DocentesController.getDocentesByUserId);
 // Nueva ruta para actualizar el estatus de un docente
 router.put('/:docenteId/estatus', DocentesController.updateDocenteStatus); // Actualizar estatus de un docente
 
+router.post('/:id/cambiar-password', DocentesController.cambiarPasswordPerfil);
 
 // funciones
 router.post('/:docenteId/especialidades', especialidadesController.associateEspecialidades);

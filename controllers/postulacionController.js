@@ -7,90 +7,90 @@ async function generarUsernameUnico(firstName, lastName1) {
     const baseUsername = `${firstName.toLowerCase()}_${lastName1.toLowerCase()}`.substring(0, 15);
     let username = baseUsername;
     let counter = 1;
-    
+
     const checkQuery = 'SELECT COUNT(*) FROM usuarios WHERE username = $1';
-    
+
     while (true) {
         const result = await pool.query(checkQuery, [username]);
         if (parseInt(result.rows[0].count, 10) === 0) {
             break;
         }
-        
+
         username = `${baseUsername}${counter}`.substring(0, 15);
         counter++;
-        
+
         if (counter > 100) {
             throw new Error('No se pudo generar un username único');
         }
     }
-    
+
     return username;
 }
-exports.registrarUsuarioInicial = async (req, res) => {
-  const { firstName, lastName1, lastName2, email, phone } = req.body;
+exports.registrarUsuarioInicial = async(req, res) => {
+    const { firstName, lastName1, lastName2, email, phone } = req.body;
 
-  // Generar automáticamente un username basado en el nombre y apellido
-  // const username = `${firstName.toLowerCase()}_${lastName1.toLowerCase()}`.substring(0, 15);
-  const username = await generarUsernameUnico(firstName, lastName1);
+    // Generar automáticamente un username basado en el nombre y apellido
+    // const username = `${firstName.toLowerCase()}_${lastName1.toLowerCase()}`.substring(0, 15);
+    const username = await generarUsernameUnico(firstName, lastName1);
 
-  // Generar hash de la contraseña
-  const saltRounds = 10;
-  const passwordHash = await bcrypt.hash('defaultPassword', saltRounds);
+    // Generar hash de la contraseña
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash('defaultPassword', saltRounds);
 
 
-  const client = await pool.connect(); // Usa el pool que importaste
+    const client = await pool.connect(); // Usa el pool que importaste
 
-  try {
-    await client.query('BEGIN');
-    // Verificar si el correo ya existe
-    const emailCheckQuery = 'SELECT COUNT(*) FROM usuarios WHERE email = $1';
-    const emailCheckResult = await client.query(emailCheckQuery, [email]);
-    if (parseInt(emailCheckResult.rows[0].count, 10) > 0) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ message: 'El correo electrónico ya está registrado.' });
-    }
+    try {
+        await client.query('BEGIN');
+        // Verificar si el correo ya existe
+        const emailCheckQuery = 'SELECT COUNT(*) FROM usuarios WHERE email = $1';
+        const emailCheckResult = await client.query(emailCheckQuery, [email]);
+        if (parseInt(emailCheckResult.rows[0].count, 10) > 0) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ message: 'El correo electrónico ya está registrado.' });
+        }
 
-    // Insertar usuario en la base de datos
-    const userId = await Usuario.insertarUsuario(
-      `${firstName}`,
-      `${lastName1} ${lastName2}`,
-      email,
-      phone,
-      'PENDIENTE', // Rol temporal hasta completar la validación
-      false, // Usuario inactivo hasta validar el correo
-      username, // Usar el username generado automáticamente
-      passwordHash // Password hash
+        // Insertar usuario en la base de datos
+        const userId = await Usuario.insertarUsuario(
+            `${firstName}`,
+            `${lastName1} ${lastName2}`,
+            email,
+            phone,
+            'PENDIENTE', // Rol temporal hasta completar la validación
+            false, // Usuario inactivo hasta validar el correo
+            username, // Usar el username generado automáticamente
+            passwordHash // Password hash
 
-    );
-    // Insertar en la tabla 'docentes' usando el id_usuario recién creado
-    const queryInsertDocente = `
+        );
+        // Insertar en la tabla 'docentes' usando el id_usuario recién creado
+        const queryInsertDocente = `
       INSERT INTO docentes (nombre, apellidos, email, telefono, id_usuario)
       VALUES ($1, $2, $3, $4, $5) RETURNING id;
       `;
-    const valuesDocente = [
-      firstName,
-      `${lastName1} ${lastName2}`,
-      email,
-      phone,
-      userId, // El id del usuario recién insertado
-    ];
-    const resultDocente = await client.query(queryInsertDocente, valuesDocente);
-    const docenteId = resultDocente.rows[0].id;
-    // Generar token de validación para el correo electrónico
-    const token = crypto.randomBytes(32).toString('hex');
+        const valuesDocente = [
+            firstName,
+            `${lastName1} ${lastName2}`,
+            email,
+            phone,
+            userId, // El id del usuario recién insertado
+        ];
+        const resultDocente = await client.query(queryInsertDocente, valuesDocente);
+        const docenteId = resultDocente.rows[0].id;
+        // Generar token de validación para el correo electrónico
+        const token = crypto.randomBytes(32).toString('hex');
 
-    // Insertar el token en la base de datos
-    await Usuario.insertarTokenValidacion(userId, token);
+        // Insertar el token en la base de datos
+        await Usuario.insertarTokenValidacion(userId, token);
 
-    // Crear el enlace de validación con el token
-    const validationLink = `https://icathi.vercel.app/public/validar-correo?token=${token}`;
-    // const validationLink = `http://localhost:4200/public/validar-correo?token=${token}`;
+        // Crear el enlace de validación con el token
+        const validationLink = `https://icathi.vercel.app/public/validar-correo?token=${token}`;
+        // const validationLink = `http://localhost:4200/public/validar-correo?token=${token}`;
 
-    const mailOptions = {
-      from: '"ICATHI" <icathi.edu@gmail.com>',
-      to: email,
-      subject: 'Confirma tu correo electrónico',
-      html: `
+        const mailOptions = {
+            from: '"ICATHI" <icathi.edu@gmail.com>',
+            to: email,
+            subject: 'Confirma tu correo electrónico',
+            html: `
         <div style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px; border-radius: 10px; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);">
           <!-- Header -->
           <div style="background-color: #44509D; padding: 15px 20px; border-radius: 10px 10px 0 0; color: white; text-align: center; border-bottom: 2px solid #f08762;">
@@ -126,226 +126,273 @@ exports.registrarUsuarioInicial = async (req, res) => {
           </div>
         </div>
       `,
-    };
+        };
 
-    // Enviar el correo de validación
-    await enviarCorreo(mailOptions);
+        // Enviar el correo de validación
+        await enviarCorreo(mailOptions);
 
-    await client.query('COMMIT');
-    res.status(201).json({ message: 'Usuario registrado exitosamente. Verifica tu correo electrónico.' });
-  } catch (error) {
-    await client.query('ROLLBACK');
-    console.error(error);
-    res.status(500).json({ message: 'Error al registrar el usuario.' });
-  } finally {
-    client.release();
-  }
+        await client.query('COMMIT');
+        res.status(201).json({ message: 'Usuario registrado exitosamente. Verifica tu correo electrónico.' });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error(error);
+        res.status(500).json({ message: 'Error al registrar el usuario.' });
+    } finally {
+        client.release();
+    }
 };
 
 
-exports.validarCorreo = async (req, res) => {
-  const { token } = req.query;
+exports.validarCorreo = async(req, res) => {
+    const { token } = req.query;
 
-  // Validar que el token esté presente
-  if (!token) {
-    return res.status(400).json({ message: 'Token no proporcionado.' });
-  }
+    // Validar que el token esté presente
+    if (!token) {
+        return res.status(400).json({ message: 'Token no proporcionado.' });
+    }
 
-  const client = await pool.connect();
-  try {
-    // Verificar si el token existe en la base de datos
-    const queryToken = `
+    const client = await pool.connect();
+    try {
+        // Verificar si el token existe en la base de datos
+        const queryToken = `
       SELECT usuario_id FROM validaciones_email WHERE token = $1;
     `;
-    const { rows } = await client.query(queryToken, [token]);
-    if (rows.length === 0) {
-      return res.status(400).json({ message: 'Token inválido o expirado.' });
-    }
+        const { rows } = await client.query(queryToken, [token]);
+        if (rows.length === 0) {
+            return res.status(400).json({ message: 'Token inválido o expirado.' });
+        }
 
-    const userId = rows[0].usuario_id;
+        const userId = rows[0].usuario_id;
 
-    // Obtener el correo del usuario
-    const queryUsuario = `
+        // Obtener el correo del usuario
+        const queryUsuario = `
       SELECT email, correo_validado FROM usuarios WHERE id = $1;
     `;
-    const { rows: usuarioRows } = await client.query(queryUsuario, [userId]);
+        const { rows: usuarioRows } = await client.query(queryUsuario, [userId]);
 
-    if (usuarioRows.length === 0) {
-      return res.status(400).json({ message: 'Usuario no encontrado.' });
-    }
+        if (usuarioRows.length === 0) {
+            return res.status(400).json({ message: 'Usuario no encontrado.' });
+        }
 
-    const userEmail = usuarioRows[0].email;
-    const correoValidado = usuarioRows[0].correo_validado;
+        const userEmail = usuarioRows[0].email;
+        const correoValidado = usuarioRows[0].correo_validado;
 
-    // Verificar si el correo ya ha sido validado
-    if (correoValidado) {
-      return res.status(400).json({ message: 'El correo ya ha sido validado.' });
-    }
+        // Verificar si el correo ya ha sido validado
+        if (correoValidado) {
+            return res.status(400).json({ message: 'El correo ya ha sido validado.' });
+        }
 
-    // Buscar al usuario en las tablas de alumnos y docentes
-    let role = null;
+        // Buscar al usuario en las tablas de alumnos y docentes
+        let role = null;
 
-    // Buscar en la tabla de alumnos
-    const queryAlumno = `
+        // Buscar en la tabla de alumnos
+        const queryAlumno = `
       SELECT id FROM alumnos WHERE email = $1;
     `;
-    const { rows: alumnoRows } = await client.query(queryAlumno, [userEmail]);
+        const { rows: alumnoRows } = await client.query(queryAlumno, [userEmail]);
 
-    if (alumnoRows.length > 0) {
-      role = 'ALUMNO';
-    } else {
-      // Si no se encuentra en alumnos, buscar en docentes
-      const queryDocente = `
+        if (alumnoRows.length > 0) {
+            role = 'ALUMNO';
+        } else {
+            // Si no se encuentra en alumnos, buscar en docentes
+            const queryDocente = `
         SELECT id FROM docentes WHERE email = $1;
       `;
-      const { rows: docenteRows } = await client.query(queryDocente, [userEmail]);
+            const { rows: docenteRows } = await client.query(queryDocente, [userEmail]);
 
-      if (docenteRows.length > 0) {
-        role = 'DOCENTE';
-      }
-    }
+            if (docenteRows.length > 0) {
+                role = 'DOCENTE';
+            }
+        }
 
-    if (!role) {
-      return res.status(404).json({
-        message: 'Usuario no encontrado en el sistema.',
-      });
-    }
+        if (!role) {
+            return res.status(404).json({
+                message: 'Usuario no encontrado en el sistema.',
+            });
+        }
 
-    // Activar usuario
-    const queryActivarUsuario = `
+        // Activar usuario
+        const queryActivarUsuario = `
       UPDATE usuarios SET estatus = false, correo_validado = true WHERE id = $1;
     `;
-    await client.query(queryActivarUsuario, [userId]);
+        await client.query(queryActivarUsuario, [userId]);
 
-    // Eliminar token de la base de datos
-    const queryEliminarToken = `
+        // Eliminar token de la base de datos
+        const queryEliminarToken = `
       DELETE FROM validaciones_email WHERE token = $1;
     `;
-    await client.query(queryEliminarToken, [token]);
+        await client.query(queryEliminarToken, [token]);
 
-    // Responder con el mensaje, id del usuario, correo y rol
-    res.status(200).json({
-      message: 'Correo validado exitosamente.',
-      userId: userId,
-      userEmail: userEmail,
-      role: role,
-    });
-  } catch (error) {
-    console.error('Error al intentar validar el correo:', error.message);
-    console.error('Pila de error:', error.stack);
-    res.status(500).json({ message: 'Error al validar el correo.' });
-  } finally {
-    client.release();
-  }
+        // Responder con el mensaje, id del usuario, correo y rol
+        res.status(200).json({
+            message: 'Correo validado exitosamente.',
+            userId: userId,
+            userEmail: userEmail,
+            role: role,
+        });
+    } catch (error) {
+        console.error('Error al intentar validar el correo:', error.message);
+        console.error('Pila de error:', error.stack);
+        res.status(500).json({ message: 'Error al validar el correo.' });
+    } finally {
+        client.release();
+    }
 };
 
-exports.crearPassword = async (req, res) => {
-  const { email, nuevaContraseña } = req.body;
-  console.log(req.body);
+exports.crearPassword = async(req, res) => {
+    const { email, nuevaContraseña } = req.body;
+    console.log(req.body);
 
-  const client = await pool.connect();
-  try {
-    // Verificar si el usuario existe
-    const queryUsuario = `
+    const client = await pool.connect();
+    try {
+        // Verificar si el usuario existe
+        const queryUsuario = `
       SELECT id, correo_validado FROM usuarios WHERE email = $1;
     `;
-    const { rows } = await client.query(queryUsuario, [email]);
+        const { rows } = await client.query(queryUsuario, [email]);
 
-    if (rows.length === 0) {
-      return res.status(404).json({ mensaje: 'Usuario no encontrado.' });
-    }
+        if (rows.length === 0) {
+            return res.status(404).json({ mensaje: 'Usuario no encontrado.' });
+        }
 
-    const usuario = rows[0];
+        const usuario = rows[0];
 
-    // Verificar si el correo ha sido validado
-    if (!usuario.correo_validado) {
-      return res.status(400).json({ mensaje: 'Correo no validado.' });
-    }
+        // Verificar si el correo ha sido validado
+        if (!usuario.correo_validado) {
+            return res.status(400).json({ mensaje: 'Correo no validado.' });
+        }
 
-    console.log(nuevaContraseña); // Verifica que la nueva contraseña esté llegando correctamente
-    const hashedPassword = await bcrypt.hash(nuevaContraseña, 10);
+        console.log(nuevaContraseña); // Verifica que la nueva contraseña esté llegando correctamente
+        const hashedPassword = await bcrypt.hash(nuevaContraseña, 10);
 
-    // Actualizar la contraseña en la base de datos
-    const queryActualizarContraseña = `
+        // Actualizar la contraseña en la base de datos
+        const queryActualizarContraseña = `
       UPDATE usuarios SET password_hash = $1 WHERE email = $2;
     `;
-    await client.query(queryActualizarContraseña, [hashedPassword, email]);
+        await client.query(queryActualizarContraseña, [hashedPassword, email]);
 
-    // Verificar si el correo existe en la tabla docentes
-    const queryDocente = `
+        // Verificar si el correo existe en la tabla docentes
+        const queryDocente = `
       SELECT id FROM docentes WHERE email = $1;
     `;
-    const docenteResult = await client.query(queryDocente, [email]);
+        const docenteResult = await client.query(queryDocente, [email]);
 
-    if (docenteResult.rows.length > 0) {
-      // Actualizar el rol del usuario a DOCENTE
-      const queryActualizarRol = `
+        if (docenteResult.rows.length > 0) {
+            // Actualizar el rol del usuario a DOCENTE
+            const queryActualizarRol = `
         UPDATE usuarios SET estatus = true,   rol = 'DOCENTE' WHERE email = $1;
       `;
-      await client.query(queryActualizarRol, [email]);
-    }
+            await client.query(queryActualizarRol, [email]);
+        }
 
-    res.json({ mensaje: 'Contraseña creada correctamente y rol actualizado ...' });
-  } catch (error) {
-    console.error('Error al intentar crear la contraseña:', error.message);
-    console.error('Pila de error:', error.stack); // Esto te mostrará la ubicación exacta del error.
-    res.status(500).json({ mensaje: 'Error al crear la contraseña.' });
-  } finally {
-    client.release();
-  }
+        res.json({ mensaje: 'Contraseña creada correctamente y rol actualizado ...' });
+    } catch (error) {
+        console.error('Error al intentar crear la contraseña:', error.message);
+        console.error('Pila de error:', error.stack); // Esto te mostrará la ubicación exacta del error.
+        res.status(500).json({ mensaje: 'Error al crear la contraseña.' });
+    } finally {
+        client.release();
+    }
 };
-exports.crearPasswordAdmin = async (req, res) => {
-  const { email, nuevaContraseña } = req.body;
-  console.log(req.body);
+exports.crearPasswordAdmin = async(req, res) => {
+    const { email, nuevaContraseña } = req.body;
+    console.log(req.body);
 
-  const client = await pool.connect();
-  try {
-    // Verificar si el usuario existe
-    const queryUsuario = `
+    const client = await pool.connect();
+    try {
+        // Verificar si el usuario existe
+        const queryUsuario = `
       SELECT id, correo_validado FROM usuarios WHERE email = $1;
     `;
-    const { rows } = await client.query(queryUsuario, [email]);
+        const { rows } = await client.query(queryUsuario, [email]);
 
-    if (rows.length === 0) {
-      return res.status(404).json({ mensaje: 'Usuario no encontrado.' });
-    }
+        if (rows.length === 0) {
+            return res.status(404).json({ mensaje: 'Usuario no encontrado.' });
+        }
 
-    const usuario = rows[0];
+        const usuario = rows[0];
 
-    // // Verificar si el correo ha sido validado
-    // if (!usuario.correo_validado) {
-    //   return res.status(400).json({ mensaje: 'Correo no validado.' });
-    // }
 
-    console.log(nuevaContraseña); // Verifica que la nueva contraseña esté llegando correctamente
-    const hashedPassword = await bcrypt.hash(nuevaContraseña, 10);
+        console.log(nuevaContraseña); // Verifica que la nueva contraseña esté llegando correctamente
+        const hashedPassword = await bcrypt.hash(nuevaContraseña, 10);
 
-    // Actualizar la contraseña en la base de datos
-    const queryActualizarContraseña = `
+        // Actualizar la contraseña en la base de datos
+        const queryActualizarContraseña = `
       UPDATE usuarios SET password_hash = $1 WHERE email = $2;
     `;
-    await client.query(queryActualizarContraseña, [hashedPassword, email]);
+        await client.query(queryActualizarContraseña, [hashedPassword, email]);
 
-    // Verificar si el correo existe en la tabla docentes
-    const queryDocente = `
+        // Verificar si el correo existe en la tabla docentes
+        const queryDocente = `
       SELECT id FROM docentes WHERE email = $1;
     `;
-    const docenteResult = await client.query(queryDocente, [email]);
+        const docenteResult = await client.query(queryDocente, [email]);
 
-    if (docenteResult.rows.length > 0) {
-      // Actualizar el rol del usuario a DOCENTE
-      const queryActualizarRol = `
+        if (docenteResult.rows.length > 0) {
+            // Actualizar el rol del usuario a DOCENTE
+            const queryActualizarRol = `
         UPDATE usuarios SET estatus = true,   rol = 'DOCENTE' WHERE email = $1;
       `;
-      await client.query(queryActualizarRol, [email]);
-    }
+            await client.query(queryActualizarRol, [email]);
+        }
 
-    res.json({ mensaje: 'Contraseña creada correctamente y rol actualizado ...' });
-  } catch (error) {
-    console.error('Error al intentar crear la contraseña:', error.message);
-    console.error('Pila de error:', error.stack); // Esto te mostrará la ubicación exacta del error.
-    res.status(500).json({ mensaje: 'Error al crear la contraseña.' });
-  } finally {
-    client.release();
-  }
+        res.json({ mensaje: 'Contraseña creada correctamente y rol actualizado ...' });
+    } catch (error) {
+        console.error('Error al intentar crear la contraseña:', error.message);
+        console.error('Pila de error:', error.stack); // Esto te mostrará la ubicación exacta del error.
+        res.status(500).json({ mensaje: 'Error al crear la contraseña.' });
+    } finally {
+        client.release();
+    }
+};
+exports.crearPasswordDocentePerfil = async(req, res) => {
+    const { email, nuevaContraseña } = req.body;
+    console.log(req.body);
+
+    const client = await pool.connect();
+    try {
+        // Verificar si el usuario existe
+        const queryUsuario = `
+      SELECT id, correo_validado FROM usuarios WHERE email = $1;
+    `;
+        const { rows } = await client.query(queryUsuario, [email]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({ mensaje: 'Usuario no encontrado.' });
+        }
+
+        const usuario = rows[0];
+
+
+        console.log(nuevaContraseña); // Verifica que la nueva contraseña esté llegando correctamente
+        const hashedPassword = await bcrypt.hash(nuevaContraseña, 10);
+
+        // Actualizar la contraseña en la base de datos
+        const queryActualizarContraseña = `
+      UPDATE usuarios SET password_hash = $1 WHERE email = $2;
+    `;
+        await client.query(queryActualizarContraseña, [hashedPassword, email]);
+
+        // Verificar si el correo existe en la tabla docentes
+        const queryDocente = `
+      SELECT id FROM docentes WHERE email = $1;
+    `;
+        const docenteResult = await client.query(queryDocente, [email]);
+
+        if (docenteResult.rows.length > 0) {
+            // Actualizar el rol del usuario a DOCENTE
+            const queryActualizarRol = `
+        UPDATE usuarios SET estatus = true,   rol = 'DOCENTE' WHERE email = $1;
+      `;
+            await client.query(queryActualizarRol, [email]);
+        }
+
+        res.json({ mensaje: 'Contraseña creada correctamente y rol actualizado ...' });
+    } catch (error) {
+        console.error('Error al intentar crear la contraseña:', error.message);
+        console.error('Pila de error:', error.stack); // Esto te mostrará la ubicación exacta del error.
+        res.status(500).json({ mensaje: 'Error al crear la contraseña.' });
+    } finally {
+        client.release();
+    }
 };

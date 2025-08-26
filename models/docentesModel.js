@@ -1,5 +1,5 @@
 const pool = require("../config/database");
-
+const bcrypt = require('bcrypt');
 const DocentesModel = {
     async getByUserId(userId) {
         try {
@@ -353,117 +353,314 @@ const DocentesModel = {
     //     }
     //   }
     // ,
-
     async update(id, docente) {
         const client = await pool.connect();
         try {
-            await client.query("BEGIN");
+            await client.query('BEGIN');
 
-            const updates = [];
-            const values = [];
-            let index = 1;
-
-            // Utilidad: checar si la clave viene en el payload (aunque sea null)
             const hasKey = (k) => Object.prototype.hasOwnProperty.call(docente, k);
-            // Normaliza: '' -> null (defensa en profundidad por si el controlador no lo hizo)
             const nn = (v) => (v === '' ? null : v);
 
-            // Campos string "normales"
-            if (hasKey('nombre')) {
-                updates.push(`nombre = $${index++}`);
-                values.push(nn(docente.nombre));
+            // 1) Traer el docente actual para conocer id_usuario y valores previos
+            const { rows: currentRows } = await client.query(
+                `SELECT id, id_usuario, email AS email_docente, telefono AS tel_docente
+       FROM docentes
+       WHERE id = $1
+       FOR UPDATE`, // bloquea fila
+                [id]
+            );
+            if (currentRows.length === 0) {
+                throw new Error('Docente no encontrado');
             }
-            if (hasKey('apellidos')) {
-                updates.push(`apellidos = $${index++}`);
-                values.push(nn(docente.apellidos));
-            }
-            if (hasKey('email')) {
-                updates.push(`email = $${index++}`);
-                values.push(nn(docente.email));
-            }
+            const { id_usuario } = currentRows[0];
 
-            // Telefono: ya contemplabas null
-            if (hasKey('telefono')) {
-                updates.push(`telefono = $${index++}`);
-                values.push(docente.telefono || null);
-            }
-
-            // Booleanos deben usar !== undefined
-            if (docente.certificado_profesional !== undefined) {
-                updates.push(`certificado_profesional = $${index++}`);
-                values.push(docente.certificado_profesional);
-            }
-
-            // ⚠️ Campos de ARCHIVO: permitir null explícito o '' -> null
-            if (hasKey('cedula_profesional')) {
-                updates.push(`cedula_profesional = $${index++}`);
-                values.push(nn(docente.cedula_profesional)); // puede ser URL o null
-            }
-            if (hasKey('documento_identificacion')) {
-                updates.push(`documento_identificacion = $${index++}`);
-                values.push(nn(docente.documento_identificacion)); // puede ser URL o null
-            }
-            if (hasKey('num_documento_identificacion')) {
-                updates.push(`num_documento_identificacion = $${index++}`);
-                values.push(nn(docente.num_documento_identificacion)); // string o null
-            }
-            if (hasKey('curriculum_url')) {
-                updates.push(`curriculum_url = $${index++}`);
-                values.push(nn(docente.curriculum_url)); // URL o null
-            }
-            if (hasKey('foto_url')) {
-                updates.push(`foto_url = $${index++}`);
-                values.push(nn(docente.foto_url)); // URL o null
-            }
-
-            // Otros metadatos
-            if (hasKey('usuario_validador_id')) {
-                updates.push(`usuario_validador_id = $${index++}`);
-                values.push(docente.usuario_validador_id);
-            }
-            if (hasKey('fecha_validacion')) {
-                updates.push(`fecha_validacion = $${index++}`);
-                values.push(docente.fecha_validacion);
-            }
-
-            if (updates.length === 0) {
-                throw new Error("No hay campos para actualizar");
-            }
-
-            const queryDocentes = `
-      UPDATE docentes
-      SET ${updates.join(", ")},
-          updated_at = NOW()
-      WHERE id = $${index}
-      RETURNING *
-    `;
-            values.push(id);
-
-            const { rows: docentesRows } = await client.query(queryDocentes, values);
-            const docenteActualizado = docentesRows[0];
-
-            // Especialidades (si vienen)
-            if (Array.isArray(docente.especialidades)) {
-                await client.query(`DELETE FROM docentes_especialidades WHERE docente_id = $1`, [id]);
-                const insertEspecialidadesQuery = `
-        INSERT INTO docentes_especialidades (docente_id, especialidad_id, estatus_id, created_at, updated_at)
-        VALUES ($1, $2, 1, NOW(), NOW())
-      `;
-                for (const especialidadId of docente.especialidades) {
-                    await client.query(insertEspecialidadesQuery, [id, especialidadId]);
+            // 2) Validaciones de unicidad si se pretenden actualizar
+            // 2.1 Correo
+            if (hasKey('email') && nn(docente.email)) {
+                const newEmail = nn(docente.email);
+                // Busca el email igual (case-insensitive) en usuarios y docentes, excluyendo los actuales
+                const { rows: emailConflicts } = await client.query(
+                    `
+        SELECT 'usuarios' AS tabla FROM usuarios
+        WHERE LOWER(email) = LOWER($1) AND id <> COALESCE($2, -1)
+        UNION ALL
+        SELECT 'docentes' AS tabla FROM docentes
+        WHERE LOWER(email) = LOWER($1) AND id <> $3
+        LIMIT 1
+        `, [newEmail, id_usuario, id]
+                );
+                if (emailConflicts.length > 0) {
+                    throw new Error(`El correo "${newEmail}" ya está registrado en ${emailConflicts[0].tabla}.`);
                 }
             }
 
-            await client.query("COMMIT");
+            // 2.2 Teléfono
+            if (hasKey('telefono') && nn(docente.telefono)) {
+                const newTel = nn(docente.telefono);
+                const { rows: telConflicts } = await client.query(
+                    `
+        SELECT 'usuarios' AS tabla FROM usuarios
+        WHERE telefono = $1 AND id <> COALESCE($2, -1)
+        UNION ALL
+        SELECT 'docentes' AS tabla FROM docentes
+        WHERE telefono = $1 AND id <> $3
+        LIMIT 1
+        `, [newTel, id_usuario, id]
+                );
+                if (telConflicts.length > 0) {
+                    throw new Error(`El teléfono "${newTel}" ya está registrado en ${telConflicts[0].tabla}.`);
+                }
+            }
+
+            // 3) Construir UPDATE de DOCENTES
+            const updates = [];
+            const values = [];
+            let idx = 1;
+
+            if (hasKey('nombre')) {
+                updates.push(`nombre = $${idx++}`);
+                values.push(nn(docente.nombre));
+            }
+            if (hasKey('apellidos')) {
+                updates.push(`apellidos = $${idx++}`);
+                values.push(nn(docente.apellidos));
+            }
+            if (hasKey('email')) {
+                updates.push(`email = $${idx++}`);
+                values.push(nn(docente.email));
+            }
+            if (hasKey('telefono')) {
+                updates.push(`telefono = $${idx++}`);
+                values.push(nn(docente.telefono));
+            }
+
+            if (docente.certificado_profesional !== undefined) {
+                updates.push(`certificado_profesional = $${idx++}`);
+                values.push(!!docente.certificado_profesional);
+            }
+
+            if (hasKey('cedula_profesional')) {
+                updates.push(`cedula_profesional = $${idx++}`);
+                values.push(nn(docente.cedula_profesional));
+            }
+            if (hasKey('documento_identificacion')) {
+                updates.push(`documento_identificacion = $${idx++}`);
+                values.push(nn(docente.documento_identificacion));
+            }
+            if (hasKey('num_documento_identificacion')) {
+                updates.push(`num_documento_identificacion = $${idx++}`);
+                values.push(nn(docente.num_documento_identificacion));
+            }
+            if (hasKey('curriculum_url')) {
+                updates.push(`curriculum_url = $${idx++}`);
+                values.push(nn(docente.curriculum_url));
+            }
+            if (hasKey('foto_url')) {
+                updates.push(`foto_url = $${idx++}`);
+                values.push(nn(docente.foto_url));
+            }
+
+            if (hasKey('usuario_validador_id')) {
+                updates.push(`usuario_validador_id = $${idx++}`);
+                values.push(docente.usuario_validador_id);
+            }
+            if (hasKey('fecha_validacion')) {
+                updates.push(`fecha_validacion = $${idx++}`);
+                values.push(docente.fecha_validacion);
+            }
+
+            if (updates.length === 0 && !Array.isArray(docente.especialidades)) {
+                throw new Error('No hay campos para actualizar');
+            }
+
+            let docenteActualizado = null;
+            if (updates.length > 0) {
+                const qDoc =
+                    `UPDATE docentes
+         SET ${updates.join(', ')}, updated_at = NOW()
+         WHERE id = $${idx}
+         RETURNING *`;
+                values.push(id);
+                const { rows } = await client.query(qDoc, values);
+                docenteActualizado = rows[0];
+            } else {
+                // Si sólo se actualizan especialidades, trae el docente sin cambiar campos
+                const { rows } = await client.query(`SELECT * FROM docentes WHERE id = $1`, [id]);
+                docenteActualizado = rows[0];
+            }
+
+            // 4) Sincronizar con USUARIOS (si existe id_usuario)
+            if (id_usuario) {
+                const uUpdates = [];
+                const uValues = [];
+                let uidx = 1;
+
+                if (hasKey('nombre')) {
+                    uUpdates.push(`nombre = $${uidx++}`);
+                    uValues.push(nn(docente.nombre));
+                }
+                if (hasKey('apellidos')) {
+                    uUpdates.push(`apellidos = $${uidx++}`);
+                    uValues.push(nn(docente.apellidos));
+                }
+
+                if (hasKey('email')) {
+                    uUpdates.push(`email = $${uidx++}`);
+                    uValues.push(nn(docente.email));
+                    // si cambia email, invalidar validación de correo
+                    uUpdates.push(`correo_validado = false`);
+                }
+
+                if (hasKey('telefono')) {
+                    uUpdates.push(`telefono = $${uidx++}`);
+                    uValues.push(nn(docente.telefono));
+                }
+
+                if (uUpdates.length > 0) {
+                    const qUser =
+                        `UPDATE usuarios
+           SET ${uUpdates.join(', ')}, updated_at = NOW()
+           WHERE id = $${uidx}
+           RETURNING *`;
+                    uValues.push(id_usuario);
+                    await client.query(qUser, uValues);
+                }
+            }
+
+            // 5) Especialidades (reemplazo completo si vienen)
+            if (Array.isArray(docente.especialidades)) {
+                await client.query(`DELETE FROM docentes_especialidades WHERE docente_id = $1`, [id]);
+                if (docente.especialidades.length > 0) {
+                    const insertEsp =
+                        `INSERT INTO docentes_especialidades (docente_id, especialidad_id, estatus_id, created_at, updated_at)
+           VALUES ($1, $2, 1, NOW(), NOW())`;
+                    for (const especialidadId of docente.especialidades) {
+                        await client.query(insertEsp, [id, especialidadId]);
+                    }
+                }
+            }
+
+            await client.query('COMMIT');
             return docenteActualizado;
-        } catch (error) {
-            await client.query("ROLLBACK");
-            console.error("Error al actualizar el docente:", error);
-            throw error;
+        } catch (err) {
+            await client.query('ROLLBACK');
+            console.error('Error al actualizar el docente:', err);
+            // Opcional: mapear a 409 si es conflicto de unicidad
+            throw err;
         } finally {
             client.release();
         }
     },
+    // async update(id, docente) {
+    //     const client = await pool.connect();
+    //     try {
+    //         await client.query("BEGIN");
+
+    //         const updates = [];
+    //         const values = [];
+    //         let index = 1;
+
+    //         // Utilidad: checar si la clave viene en el payload (aunque sea null)
+    //         const hasKey = (k) => Object.prototype.hasOwnProperty.call(docente, k);
+    //         // Normaliza: '' -> null (defensa en profundidad por si el controlador no lo hizo)
+    //         const nn = (v) => (v === '' ? null : v);
+
+    //         // Campos string "normales"
+    //         if (hasKey('nombre')) {
+    //             updates.push(`nombre = $${index++}`);
+    //             values.push(nn(docente.nombre));
+    //         }
+    //         if (hasKey('apellidos')) {
+    //             updates.push(`apellidos = $${index++}`);
+    //             values.push(nn(docente.apellidos));
+    //         }
+    //         if (hasKey('email')) {
+    //             updates.push(`email = $${index++}`);
+    //             values.push(nn(docente.email));
+    //         }
+
+    //         // Telefono: ya contemplabas null
+    //         if (hasKey('telefono')) {
+    //             updates.push(`telefono = $${index++}`);
+    //             values.push(docente.telefono || null);
+    //         }
+
+    //         // Booleanos deben usar !== undefined
+    //         if (docente.certificado_profesional !== undefined) {
+    //             updates.push(`certificado_profesional = $${index++}`);
+    //             values.push(docente.certificado_profesional);
+    //         }
+
+    //         // ⚠️ Campos de ARCHIVO: permitir null explícito o '' -> null
+    //         if (hasKey('cedula_profesional')) {
+    //             updates.push(`cedula_profesional = $${index++}`);
+    //             values.push(nn(docente.cedula_profesional)); // puede ser URL o null
+    //         }
+    //         if (hasKey('documento_identificacion')) {
+    //             updates.push(`documento_identificacion = $${index++}`);
+    //             values.push(nn(docente.documento_identificacion)); // puede ser URL o null
+    //         }
+    //         if (hasKey('num_documento_identificacion')) {
+    //             updates.push(`num_documento_identificacion = $${index++}`);
+    //             values.push(nn(docente.num_documento_identificacion)); // string o null
+    //         }
+    //         if (hasKey('curriculum_url')) {
+    //             updates.push(`curriculum_url = $${index++}`);
+    //             values.push(nn(docente.curriculum_url)); // URL o null
+    //         }
+    //         if (hasKey('foto_url')) {
+    //             updates.push(`foto_url = $${index++}`);
+    //             values.push(nn(docente.foto_url)); // URL o null
+    //         }
+
+    //         // Otros metadatos
+    //         if (hasKey('usuario_validador_id')) {
+    //             updates.push(`usuario_validador_id = $${index++}`);
+    //             values.push(docente.usuario_validador_id);
+    //         }
+    //         if (hasKey('fecha_validacion')) {
+    //             updates.push(`fecha_validacion = $${index++}`);
+    //             values.push(docente.fecha_validacion);
+    //         }
+
+    //         if (updates.length === 0) {
+    //             throw new Error("No hay campos para actualizar");
+    //         }
+
+    //         const queryDocentes = `
+    //   UPDATE docentes
+    //   SET ${updates.join(", ")},
+    //       updated_at = NOW()
+    //   WHERE id = $${index}
+    //   RETURNING *
+    // `;
+    //         values.push(id);
+
+    //         const { rows: docentesRows } = await client.query(queryDocentes, values);
+    //         const docenteActualizado = docentesRows[0];
+
+    //         // Especialidades (si vienen)
+    //         if (Array.isArray(docente.especialidades)) {
+    //             await client.query(`DELETE FROM docentes_especialidades WHERE docente_id = $1`, [id]);
+    //             const insertEspecialidadesQuery = `
+    //     INSERT INTO docentes_especialidades (docente_id, especialidad_id, estatus_id, created_at, updated_at)
+    //     VALUES ($1, $2, 1, NOW(), NOW())
+    //   `;
+    //             for (const especialidadId of docente.especialidades) {
+    //                 await client.query(insertEspecialidadesQuery, [id, especialidadId]);
+    //             }
+    //         }
+
+    //         await client.query("COMMIT");
+    //         return docenteActualizado;
+    //     } catch (error) {
+    //         await client.query("ROLLBACK");
+    //         console.error("Error al actualizar el docente:", error);
+    //         throw error;
+    //     } finally {
+    //         client.release();
+    //     }
+    // },
     // async update(id, docente) {
     //     const client = await pool.connect();
     //     try {
@@ -598,6 +795,82 @@ const DocentesModel = {
         const { rows } = await pool.query(query, [id]);
         return rows[0];
     },
+
+
+    getUserById: async(userId) => {
+        const query = `
+            SELECT id, password_hash
+            FROM usuarios
+            WHERE id = $1 AND estatus = true
+            LIMIT 1;
+        `;
+        const result = await pool.query(query, [userId]);
+        return result.rows[0];
+    },
+
+    // Actualizar contraseña
+    updatePassword: async(userId, newHash) => {
+        const query = `
+            UPDATE usuarios
+            SET password_hash = $1, updated_at = now()
+            WHERE id = $2
+            RETURNING id;
+        `;
+        const result = await pool.query(query, [newHash, userId]);
+        return result.rows[0];
+    },
+
+    // Registrar log de acción
+    logAction: async(userId, accion, detalle, ip, userAgent) => {
+        const query = `
+            INSERT INTO acciones_log (usuario_id, accion, detalle, ip, user_agent)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING id;
+        `;
+        const result = await pool.query(query, [userId, accion, detalle, ip, userAgent]);
+        return result.rows[0];
+    },
+
+    // Verificar si la contraseña coincide
+    verifyPassword: async(plainPassword, hashedPassword) => {
+        return await bcrypt.compare(plainPassword, hashedPassword || '');
+    },
+
+    // Hashear nueva contraseña
+    hashPassword: async(password) => {
+        const saltRounds = 10;
+        return await bcrypt.hash(password, saltRounds);
+    },
+
+    // Validar política de contraseña
+    validatePasswordPolicy: (password) => {
+        const policy = {
+            minLen: 8,
+            upper: /[A-Z]/,
+            lower: /[a-z]/,
+            digit: /[0-9]/,
+            special: /[^A-Za-z0-9]/,
+        };
+
+        return {
+            isValid: (
+                password.length >= policy.minLen &&
+                policy.upper.test(password) &&
+                policy.lower.test(password) &&
+                policy.digit.test(password) &&
+                policy.special.test(password)
+            ),
+            requirements: {
+                minLength: policy.minLen,
+                hasUpperCase: policy.upper.test(password),
+                hasLowerCase: policy.lower.test(password),
+                hasDigit: policy.digit.test(password),
+                hasSpecialChar: policy.special.test(password)
+            }
+        };
+    }
+
+
 };
 
 module.exports = DocentesModel;
