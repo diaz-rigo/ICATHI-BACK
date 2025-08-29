@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require("cors");
 const app = express();
@@ -11,24 +10,25 @@ const temariosRouter = require('./routes/temariosRouter');
 const plantelRouter = require('./routes/plantelesRouter');
 const areasRoutes = require('./routes/areasRoutes');
 const especialidadesRoutes = require('./routes/especialidadesRoutes');
-const tipos_curso = require ('./routes/tiposCursoRoutes')
-const docentes = require ('./routes/docentes')
-const plantelesRouter = require ('./routes/planteles_cursosRoutes')
-const plantelesCursosRouter = require ('./routes/planteles_cursosRoutes')
-const cursosDocente = require ('./routes/cursosDocente.Router')
-const alumnosPlantelCursosRouter = require ('./routes/alumnosPlantelCursos.Router')
+const tipos_curso = require('./routes/tiposCursoRoutes')
+const docentes = require('./routes/docentes')
+const plantelesRouter = require('./routes/planteles_cursosRoutes')
+const plantelesCursosRouter = require('./routes/planteles_cursosRoutes')
+const cursosDocente = require('./routes/cursosDocente.Router')
+const alumnosPlantelCursosRouter = require('./routes/alumnosPlantelCursos.Router')
 
-const correoRoutes = require ('./routes/correoRouter')
-const postulacion = require ('./routes/postulacionRouter')
-const alumno = require ('./routes/alumnoRouter')
+const correoRoutes = require('./routes/correoRouter')
+const postulacion = require('./routes/postulacionRouter')
+const alumno = require('./routes/alumnoRouter')
 
-const aspirante= require ('./routes/registrosAspirantesRouter')
-const archivos= require ('./routes/archivos.Router')
-const especialidades_docentes= require ('./routes/docentesEspecialidadesRouter')
-const alumnos_cursos= require ('./routes/alumnosCursosRoutes')
-const asistencias_alumnos= require ('./routes/asistencias')
-const verificarCorreoRouter= require ('./routes/verificarCorreo')
-const adminreporte= require ('./routes/reporteAdmin.routes')
+const aspirante = require('./routes/registrosAspirantesRouter')
+const archivos = require('./routes/archivos.Router')
+const especialidades_docentes = require('./routes/docentesEspecialidadesRouter')
+const alumnos_cursos = require('./routes/alumnosCursosRoutes')
+const asistencias_alumnos = require('./routes/asistencias')
+const verificarCorreoRouter = require('./routes/verificarCorreo')
+const adminreporte = require('./routes/reporteAdmin.routes')
+const solicitudesCursosRoutes = require('./routes/solicitudesCursos.routes');
 
 // const pool = require('./config/database'); // Importa el pool de conexión
 
@@ -40,22 +40,22 @@ app.use(express.json());
 
 
 const allowedOrigins = [
-  "https://icathi.vercel.app",
-  "http://localhost:4200",
-  "http://201.116.27.119:4200"
+    "https://icathi.vercel.app",
+    "http://localhost:4200",
+    "http://201.116.27.119:4200"
 ];
 
 
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+    origin: function(origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"]
 }));
 // Permitir preflight requests (OPTIONS)
 app.options("*", cors());
@@ -89,20 +89,22 @@ app.use('/alumnos-cursos', alumnos_cursos);
 app.use('/asistencias_alumnos', asistencias_alumnos);
 app.use('/verificar-correo', verificarCorreoRouter);
 app.use('/adminreporte', adminreporte);
+app.use('/solicitudes-cursos', solicitudesCursosRoutes);
+
 // Middleware para manejar errores de rutas no encontradas
 app.use((req, res, next) => {
-  const error = new Error('Recurso no encontrado');
-  error.status = 404;
-  next(error);
+    const error = new Error('Recurso no encontrado');
+    error.status = 404;
+    next(error);
 });
 
 // Middleware de manejo de errores
 app.use((error, req, res, next) => {
-  res.status(error.status || 500).json({
-    error: {
-      message: error.message,
-    },
-  });
+    res.status(error.status || 500).json({
+        error: {
+            message: error.message,
+        },
+    });
 });
 
 // Exporta la aplicación
