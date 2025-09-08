@@ -39,12 +39,13 @@ app.use(morgan('dev'));
 app.use(express.json());
 
 
+// "https://icathi.vercel.app",
 const allowedOrigins = [
-    "https://icathi.vercel.app",
     "http://localhost:4200",
+    "https://app-icathi.vercel.app",
     "http://201.116.27.119:4200"
 ];
-
+// https://app-icathi.vercel.app/
 
 app.use(cors({
     origin: function(origin, callback) {
