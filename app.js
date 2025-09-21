@@ -41,9 +41,10 @@ app.use(express.json());
 
 
 // "https://icathi.vercel.app",
+
 const allowedOrigins = [
     "http://localhost:4200",
-    "https://app-icathi.vercel.app",
+    "https://icathi.vercel.app",
     "http://201.116.27.119:4200"
 ];
 // https://app-icathi.vercel.app/
