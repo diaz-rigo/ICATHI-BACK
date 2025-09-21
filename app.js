@@ -29,6 +29,7 @@ const asistencias_alumnos = require('./routes/asistencias')
 const verificarCorreoRouter = require('./routes/verificarCorreo')
 const adminreporte = require('./routes/reporteAdmin.routes')
 const solicitudesCursosRoutes = require('./routes/solicitudesCursos.routes');
+const validacionRoutes = require('./routes/validacion.routes');
 
 // const pool = require('./config/database'); // Importa el pool de conexión
 
@@ -91,11 +92,12 @@ app.use('/asistencias_alumnos', asistencias_alumnos);
 app.use('/verificar-correo', verificarCorreoRouter);
 app.use('/adminreporte', adminreporte);
 app.use('/solicitudes-cursos', solicitudesCursosRoutes);
+app.use('/validacion-dictamen', validacionRoutes);
 
 // Middleware para manejar errores de rutas no encontradas
 app.use((req, res, next) => {
     const error = new Error('Recurso no encontrado');
-    error.status = 404; 
+    error.status = 404;
     next(error);
 });
 
