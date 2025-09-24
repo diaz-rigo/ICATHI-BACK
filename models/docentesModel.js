@@ -138,36 +138,79 @@ const DocentesModel = {
         }
     },
 
-
     async updateStatus(docenteId, nuevoEstatusId, usuarioValidadorId) {
         try {
-            // Consulta SQL para actualizar el estatus de un docente
             const query = `
-      UPDATE docentes
-      SET 
-        estatus_id = $1, 
-        updated_at = NOW(), 
-        usuario_validador_id = $2, 
-        fecha_validacion = NOW()
-      WHERE id = $3
-      RETURNING *; -- Devuelve el registro actualizado
-    `;
+            WITH upd_docente AS (
+                UPDATE docentes
+                SET estatus_id = $1,
+                    updated_at = NOW(),
+                    usuario_validador_id = $2,
+                    fecha_validacion = NOW()
+                WHERE id = $3
+                RETURNING *
+            ),
+            upd_usuario AS (
+                UPDATE usuarios u
+                SET estatus = CASE 
+                                WHEN d.estatus_id IN (4,6) THEN true 
+                                ELSE false 
+                            END,
+                    updated_at = NOW()
+                FROM upd_docente d
+                WHERE u.id = d.id_usuario
+                RETURNING u.id AS usuario_id, u.estatus
+            )
+            SELECT d.*, uu.usuario_id, uu.estatus AS usuario_estatus
+            FROM upd_docente d
+            LEFT JOIN upd_usuario uu ON true
+            LIMIT 1;
+            `;
 
-            // Ejecutamos la consulta con los valores proporcionados
-            const result = await pool.query(query, [nuevoEstatusId, usuarioValidadorId, docenteId]);
+            const values = [nuevoEstatusId, usuarioValidadorId, docenteId];
+            const result = await pool.query(query, values);
 
-            // Verifica si se actualizó algún registro
             if (result.rowCount === 0) {
-                return null; // Retornar null si no se encuentra el docente
+                return null; // no se encontró el docente
             }
 
-            return result.rows[0]; // Retorna el registro actualizado
+            return result.rows[0];
         } catch (error) {
-            // Manejo de errores
-            console.error('Error al actualizar el estatus del docente:', error);
+            console.error('Error al actualizar estatus del docente y usuario:', error);
             throw error;
         }
     }
+
+
+    // async updateStatus(docenteId, nuevoEstatusId, usuarioValidadorId) {
+    //     try {
+    //         // Consulta SQL para actualizar el estatus de un docente
+    //         const query = `
+    //           UPDATE docentes
+    //           SET 
+    //             estatus_id = $1, 
+    //             updated_at = NOW(), 
+    //             usuario_validador_id = $2, 
+    //             fecha_validacion = NOW()
+    //           WHERE id = $3
+    //           RETURNING *; 
+    //         `;
+
+    //         // Ejecutamos la consulta con los valores proporcionados
+    //         const result = await pool.query(query, [nuevoEstatusId, usuarioValidadorId, docenteId]);
+
+    //         // Verifica si se actualizó algún registro
+    //         if (result.rowCount === 0) {
+    //             return null; // Retornar null si no se encuentra el docente
+    //         }
+
+    //         return result.rows[0]; // Retorna el registro actualizado
+    //     } catch (error) {
+    //         // Manejo de errores
+    //         console.error('Error al actualizar el estatus del docente:', error);
+    //         throw error;
+    //     }
+    // }
 
     ,
 
