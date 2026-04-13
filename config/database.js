@@ -2,10 +2,11 @@ const { Pool } = require('pg');
 
 // // Configuración del pool de conexiones
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://iicathi:IukFwhv3roNxG7uwUMgPQawmWNEaBpIc@dpg-cupv77lumphs73ebghs0-a.oregon-postgres.render.com/iicathi',
-  ssl: {
-    rejectUnauthorized: false, // Para conexiones SSL a servicios en la nube como Render
-  },
+  // connectionString: process.env.DATABASE_URL || 'postgresql://iicathi:IukFwhv3roNxG7uwUMgPQawmWNEaBpIc@dpg-cupv77lumphs73ebghs0-a.oregon-postgres.render.com/iicathi',
+  connectionString: process.env.DATABASE_URL ,
+  // ssl: {
+  //   rejectUnauthorized: false, // Para conexiones SSL a servicios en la nube como Render
+  // },
 });
 
 
